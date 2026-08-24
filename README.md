@@ -53,9 +53,9 @@ are persisted to the browser's `localStorage` only.
 ```bash
 npm install
 npm run dev       # start the dev server (http://localhost:5173)
-npm run build      # type-check and produce a production build in dist/
-npm run preview    # preview the production build locally
-npm run lint        # run oxlint
+npm run build     # type-check and produce a production build in dist/
+npm run preview   # preview the production build locally
+npm run lint      # run oxlint
 ```
 
 ## Deployment
