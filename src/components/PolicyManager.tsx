@@ -19,10 +19,16 @@ const emptyDraft: Omit<PolicyClause, 'id'> = {
 
 const severityOptions: PolicySeverity[] = ['critical', 'major', 'minor', 'informational'];
 
+function isPolicySeverity(value: unknown): value is PolicySeverity {
+  return typeof value === 'string' && (severityOptions as string[]).includes(value);
+}
+
 export default function PolicyManager({ policies, onChange }: Props) {
   const [draft, setDraft] = useState<Omit<PolicyClause, 'id'>>(emptyDraft);
   const [keywordsInput, setKeywordsInput] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [status, setStatus] = useState<{ kind: 'success' | 'error'; message: string } | null>(null);
+  const [confirmingReset, setConfirmingReset] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const startEdit = (policy: PolicyClause) => {
@@ -72,15 +78,55 @@ export default function PolicyManager({ policies, onChange }: Props) {
     const reader = new FileReader();
     reader.onload = () => {
       try {
-        const parsed = JSON.parse(String(reader.result)) as PolicyClause[];
-        if (!Array.isArray(parsed)) throw new Error('Expected an array of policy clauses');
-        const valid = parsed.every((p) => p.id && p.code && p.title && Array.isArray(p.keywords));
-        if (!valid) throw new Error('One or more entries are missing required fields (id, code, title, keywords)');
-        onChange(parsed);
+        const parsed = JSON.parse(String(reader.result)) as unknown;
+        if (!Array.isArray(parsed)) {
+          throw new Error('The file must contain a JSON array of policy clauses (e.g. [{ "code": "...", "title": "...", ... }]).');
+        }
+        if (parsed.length === 0) {
+          throw new Error('The file contains an empty array — nothing to import.');
+        }
+
+        const usedIds = new Set<string>();
+        let skipped = 0;
+        const normalized: PolicyClause[] = [];
+
+        for (const raw of parsed as Record<string, unknown>[]) {
+          const code = typeof raw.code === 'string' ? raw.code.trim() : '';
+          const title = typeof raw.title === 'string' ? raw.title.trim() : '';
+          if (!code || !title) {
+            skipped++;
+            continue;
+          }
+          let id = typeof raw.id === 'string' && raw.id.trim() ? raw.id.trim() : `imported-${code.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${normalized.length}`;
+          while (usedIds.has(id)) id = `${id}-${Math.random().toString(36).slice(2, 6)}`;
+          usedIds.add(id);
+
+          normalized.push({
+            id,
+            code,
+            title,
+            category: typeof raw.category === 'string' ? raw.category : '',
+            severity: isPolicySeverity(raw.severity) ? raw.severity : 'major',
+            description: typeof raw.description === 'string' ? raw.description : '',
+            keywords: Array.isArray(raw.keywords) ? raw.keywords.filter((k): k is string => typeof k === 'string') : [],
+            isCustom: true,
+          });
+        }
+
+        if (normalized.length === 0) {
+          throw new Error('No valid entries found — each clause needs at least a "code" and a "title".');
+        }
+
+        onChange(normalized);
+        setStatus({
+          kind: 'success',
+          message: `Imported ${normalized.length} clause${normalized.length === 1 ? '' : 's'}, replacing the current library.${skipped ? ` Skipped ${skipped} entr${skipped === 1 ? 'y' : 'ies'} missing "code" or "title".` : ''}`,
+        });
       } catch (err) {
-        alert(`Could not import policy library: ${(err as Error).message}`);
+        setStatus({ kind: 'error', message: `Could not import "${file.name}": ${(err as Error).message}` });
       }
     };
+    reader.onerror = () => setStatus({ kind: 'error', message: `Could not read "${file.name}".` });
     reader.readAsText(file);
   };
 
@@ -203,7 +249,7 @@ export default function PolicyManager({ policies, onChange }: Props) {
             <input
               ref={fileInputRef}
               type="file"
-              accept="application/json"
+              accept=".json,application/json"
               className="hidden"
               onChange={(e) => {
                 const file = e.target.files?.[0];
@@ -211,19 +257,56 @@ export default function PolicyManager({ policies, onChange }: Props) {
                 e.target.value = '';
               }}
             />
-            <button
-              onClick={() => {
-                if (confirm('Reset to the built-in starter template? This replaces the current library.')) {
-                  onChange(resetPolicyLibrary());
-                  cancelEdit();
-                }
-              }}
-              className="rounded-md border border-rose-300 px-2.5 py-1 text-xs font-medium text-rose-600 hover:bg-rose-50"
-            >
-              Reset to Template
-            </button>
+            {confirmingReset ? (
+              <span className="flex items-center gap-1.5 rounded-md border border-rose-300 bg-rose-50 px-2 py-1 text-xs">
+                <span className="text-rose-700">Replace current library with the template?</span>
+                <button
+                  onClick={() => {
+                    onChange(resetPolicyLibrary());
+                    cancelEdit();
+                    setConfirmingReset(false);
+                    setStatus({ kind: 'success', message: 'Policy library reset to the built-in starter template.' });
+                  }}
+                  className="rounded bg-rose-600 px-2 py-0.5 font-medium text-white hover:bg-rose-700"
+                >
+                  Yes, reset
+                </button>
+                <button
+                  onClick={() => setConfirmingReset(false)}
+                  className="rounded border border-slate-300 px-2 py-0.5 font-medium text-slate-600 hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+              </span>
+            ) : (
+              <button
+                onClick={() => setConfirmingReset(true)}
+                className="rounded-md border border-rose-300 px-2.5 py-1 text-xs font-medium text-rose-600 hover:bg-rose-50"
+              >
+                Reset to Template
+              </button>
+            )}
           </div>
         </div>
+        {status && (
+          <div
+            role="status"
+            className={`mb-3 flex items-start justify-between gap-3 rounded-md border px-3 py-2 text-sm ${
+              status.kind === 'success'
+                ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                : 'border-rose-200 bg-rose-50 text-rose-800'
+            }`}
+          >
+            <span>{status.message}</span>
+            <button
+              onClick={() => setStatus(null)}
+              aria-label="Dismiss"
+              className="shrink-0 text-xs font-medium underline opacity-70 hover:opacity-100"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
         <ul className="flex flex-col gap-2">
           {policies.map((p) => (
             <li key={p.id} className="flex items-start justify-between gap-3 rounded-md border border-slate-200 p-3 text-sm">
