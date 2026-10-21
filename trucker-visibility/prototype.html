@@ -1,0 +1,1100 @@
+<title>Trucker Visibility Platform</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: top bar switches three views. Trucker = phone + demo rail. Command Center = role nav + board/drawer. How it works = rules reference. */
+:root{
+  --bg:#F5F4F8; --surface:#FFFFFF; --sunk:#EEECF3; --ink:#1C1827; --muted:#665F75; --line:#E0DCE8;
+  --magenta:#C1006C; --violet:#5A2BC2; --on-accent:#FFFFFF;
+  --hit:#0D7650; --hit-bg:#E1F4EA; --miss:#BC2329; --miss-bg:#FBE6E6; --risk:#965800; --risk-bg:#FFF0D2;
+  --info:#2E58CC; --info-bg:#E5EBFB; --neutral-bg:#ECEAF1;
+  --bezel:#17141E; --view:#0E0C12;
+  --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  --shadow:0 1px 2px rgba(28,24,39,.06),0 8px 24px rgba(28,24,39,.06);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#110F16; --surface:#1A1722; --sunk:#14121B; --ink:#ECE9F3; --muted:#A49DB3; --line:#2D2938;
+  --magenta:#FF55AA; --violet:#A887FF; --on-accent:#14111B;
+  --hit:#4AD49E; --hit-bg:#0F2A20; --miss:#FF7C7C; --miss-bg:#36171A; --risk:#F3B64A; --risk-bg:#30250F;
+  --info:#86A6FF; --info-bg:#182143; --neutral-bg:#26222F;
+  --bezel:#000000; --view:#08070B; --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.3); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#110F16; --surface:#1A1722; --sunk:#14121B; --ink:#ECE9F3; --muted:#A49DB3; --line:#2D2938;
+  --magenta:#FF55AA; --violet:#A887FF; --on-accent:#14111B;
+  --hit:#4AD49E; --hit-bg:#0F2A20; --miss:#FF7C7C; --miss-bg:#36171A; --risk:#F3B64A; --risk-bg:#30250F;
+  --info:#86A6FF; --info-bg:#182143; --neutral-bg:#26222F;
+  --bezel:#000000; --view:#08070B; --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.3); color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--magenta);outline-offset:2px}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+h1,h2,h3{font-family:var(--f-display);font-weight:700;letter-spacing:.01em;text-wrap:balance;margin:0}
+.eyebrow{font-family:var(--f-display);font-weight:600;text-transform:uppercase;letter-spacing:.08em;font-size:12px;color:var(--muted)}
+
+/* Top bar */
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--surface);border-bottom:1px solid var(--line)}
+.top-in{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.mark{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--magenta),var(--violet));display:grid;place-items:center;flex:none}
+.brand b{font-family:var(--f-display);font-size:20px;line-height:1;display:block}
+.brand small{font-size:12px;color:var(--muted)}
+.tabs{display:flex;gap:4px;background:var(--sunk);padding:4px;border-radius:10px;overflow-x:auto;max-width:100%}
+.tab{border:0;background:none;padding:7px 14px;border-radius:7px;font-weight:600;white-space:nowrap;color:var(--muted)}
+.tab[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.clock{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:13px}
+.clock .mono{font-size:15px;font-weight:600}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--hit);box-shadow:0 0 0 3px var(--hit-bg)}
+.sample{font-size:12px;background:var(--risk-bg);color:var(--risk);padding:2px 8px;border-radius:99px;font-weight:600}
+
+.wrap{padding-block:20px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));max-width:1440px;margin:0 auto}
+
+/* Chips */
+.chip{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:700;letter-spacing:.02em;white-space:nowrap;font-family:var(--f-display);text-transform:uppercase}
+.c-hit{background:var(--hit-bg);color:var(--hit)} .c-miss{background:var(--miss-bg);color:var(--miss)}
+.c-risk{background:var(--risk-bg);color:var(--risk)} .c-info{background:var(--info-bg);color:var(--info)}
+.c-neutral{background:var(--neutral-bg);color:var(--muted)}
+.btn{border:1px solid var(--line);background:var(--surface);padding:8px 14px;border-radius:8px;font-weight:600;display:inline-flex;align-items:center;gap:6px;justify-content:center}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--magenta);border-color:var(--magenta);color:var(--on-accent)}
+.btn.ok{background:var(--hit);border-color:var(--hit);color:var(--on-accent)}
+.btn.bad{color:var(--miss);border-color:var(--miss)}
+.btn.sm{padding:5px 10px;font-size:13px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+
+/* ============ TRUCKER VIEW ============ */
+.trucker{display:grid;grid-template-columns:auto minmax(0,1fr);gap:28px;align-items:start}
+.phone{width:min(372px,100%);background:var(--bezel);border-radius:44px;padding:12px;box-shadow:0 30px 60px -20px rgba(20,10,40,.45)}
+.screen{background:#F4F3F7;color:#16131E;border-radius:34px;overflow:hidden;height:760px;max-height:calc(100vh - 140px);min-height:600px;display:flex;flex-direction:column;position:relative;
+  --p-ink:#16131E;--p-muted:#5E5870;--p-line:#DDD9E5;--p-card:#FFFFFF;--p-accent:#B8005F;--p-hit:#0B6E49;--p-miss:#B3141B;--p-risk:#8A4F00}
+.sbar{display:flex;justify-content:space-between;align-items:center;padding:10px 22px 6px;font-size:13px;font-weight:600;background:#FFFFFF}
+.sbar .ic{display:flex;gap:6px;align-items:center}
+.appbar{background:#FFFFFF;padding:6px 16px 12px;border-bottom:1px solid var(--p-line);display:flex;align-items:center;gap:10px}
+.appbar h2{font-size:22px;color:var(--p-ink)}
+.appbar .back{border:0;background:#EEEBF3;width:36px;height:36px;border-radius:50%;font-size:18px;color:var(--p-ink);flex:none}
+.pbody{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px}
+.offline-bar{background:#2A2533;color:#FFFFFF;font-size:13px;padding:7px 14px}
+.offline-bar b{color:#FFC94D}
+.pcard{background:var(--p-card);border-radius:16px;padding:14px;border:1px solid var(--p-line);display:flex;flex-direction:column;gap:8px;text-align:left;width:100%}
+button.pcard:hover{border-color:var(--p-accent)}
+.pcard .row{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.big-time{font-family:var(--f-mono);font-size:26px;font-weight:600;color:var(--p-ink);line-height:1}
+.pk{font-size:12px;color:var(--p-muted)}
+.pv{font-weight:600;color:var(--p-ink)}
+.kv{display:grid;grid-template-columns:110px 1fr;gap:6px 10px;font-size:14px}
+.kv dt{color:var(--p-muted)} .kv dd{margin:0;font-weight:600;color:var(--p-ink);min-width:0;overflow-wrap:anywhere}
+.pbtn{width:100%;min-height:56px;border-radius:14px;border:0;font-family:var(--f-display);font-size:20px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;background:var(--p-accent);color:#FFFFFF}
+.pbtn.alt{background:#FFFFFF;color:var(--p-ink);border:2px solid var(--p-line)}
+.pbtn.go{background:var(--p-hit)}
+.pbtn:disabled{background:#CFCBD8;color:#7A748A}
+.pbtn small{display:block;font-family:var(--f-body);text-transform:none;font-size:12px;font-weight:500;letter-spacing:0;opacity:.85}
+.checks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.checks li{display:flex;gap:10px;align-items:flex-start;font-size:14px}
+.ck{width:24px;height:24px;border-radius:50%;flex:none;display:grid;place-items:center;font-weight:700;font-size:14px;color:#FFFFFF}
+.ck.y{background:var(--p-hit)} .ck.n{background:var(--p-miss)} .ck.w{background:var(--p-risk)} .ck.p{background:#B9B4C4}
+.checks small{display:block;color:var(--p-muted);font-size:12px}
+.dist{font-family:var(--f-mono);font-size:34px;font-weight:600;line-height:1;color:var(--p-ink)}
+.track{height:8px;border-radius:99px;background:#E6E2EC;overflow:hidden}
+.track i{display:block;height:100%;background:var(--p-accent);border-radius:99px}
+.note{font-size:12px;color:var(--p-muted);display:flex;gap:6px;align-items:flex-start}
+.finder{background:#0C0B10;border-radius:16px;aspect-ratio:4/3;position:relative;overflow:hidden;display:grid;place-items:center;max-width:100%}
+.finder svg{width:100%;height:100%;display:block}
+.qrframe{position:absolute;inset:22% 28%;border:3px solid #FFFFFF;border-radius:10px;box-shadow:0 0 0 999px rgba(0,0,0,.45)}
+.scanline{position:absolute;left:28%;right:28%;height:2px;background:#FF4FA3;top:50%;animation:scan 1.6s ease-in-out infinite alternate}
+@keyframes scan{from{top:24%}to{top:76%}}
+@media (prefers-reduced-motion:reduce){.scanline{animation:none}}
+.shutter{width:68px;height:68px;border-radius:50%;border:5px solid #FFFFFF;background:var(--p-accent);margin:0 auto;display:block}
+.steps{display:flex;gap:6px}
+.steps span{flex:1;height:4px;border-radius:99px;background:#DDD9E5}
+.steps span.on{background:var(--p-accent)}
+.result{border-radius:20px;padding:22px 16px;text-align:center;color:#FFFFFF;display:flex;flex-direction:column;gap:6px;align-items:center}
+.result.hit{background:var(--p-hit)} .result.miss{background:var(--p-miss)}
+.result h3{font-size:52px;line-height:1}
+.opt{display:flex;gap:10px;align-items:center;padding:12px;border-radius:12px;border:2px solid var(--p-line);background:#FFFFFF;text-align:left;width:100%;color:var(--p-ink)}
+.opt[aria-pressed="true"]{border-color:var(--p-accent);background:#FFF0F7}
+.opt .code{font-family:var(--f-mono);font-size:12px;color:var(--p-muted);min-width:54px}
+.ptxt{width:100%;border:2px solid var(--p-line);border-radius:12px;padding:10px;background:#FFFFFF;color:var(--p-ink);min-height:70px}
+.pinput{width:100%;border:2px solid var(--p-line);border-radius:12px;padding:12px;background:#FFFFFF;color:var(--p-ink);font-family:var(--f-mono);font-size:16px;text-transform:uppercase}
+.err{color:var(--p-miss);font-size:13px;font-weight:600}
+.toast{position:absolute;left:12px;right:12px;bottom:14px;background:#1E1A27;color:#FFFFFF;border-radius:12px;padding:10px 14px;font-size:13px;z-index:5}
+.pchip{display:inline-block;padding:2px 9px;border-radius:99px;font-size:11px;font-weight:700;font-family:var(--f-display);letter-spacing:.04em;text-transform:uppercase}
+.pc-hit{background:#DDF3E8;color:var(--p-hit)} .pc-miss{background:#FBE3E4;color:var(--p-miss)} .pc-risk{background:#FFEFCF;color:var(--p-risk)} .pc-n{background:#ECE9F1;color:#5E5870} .pc-info{background:#E3E9FB;color:#2B50B8}
+
+.rail{display:flex;flex-direction:column;gap:16px;min-width:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.panel h3{font-size:19px}
+.ctrls{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.ctrl{display:flex;flex-direction:column;gap:6px;padding:12px;border-radius:10px;background:var(--sunk)}
+.ctrl .lbl{font-weight:600;font-size:14px}
+.ctrl p{margin:0;font-size:12px;color:var(--muted)}
+.seg{display:flex;gap:4px;flex-wrap:wrap}
+.seg button{border:1px solid var(--line);background:var(--surface);padding:5px 10px;border-radius:7px;font-size:13px;font-weight:600}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.cheat[aria-pressed="true"]{background:var(--miss)!important;border-color:var(--miss)!important;color:var(--on-accent)!important}
+.evlog{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:300px;overflow-y:auto}
+.evlog li{display:grid;grid-template-columns:62px minmax(0,1fr) auto;gap:10px;align-items:baseline;font-size:13px;padding:6px 0;border-bottom:1px dashed var(--line)}
+.evlog code{font-family:var(--f-mono);font-size:12px;color:var(--violet)}
+.guide{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:14px}
+
+/* ============ COMMAND CENTER ============ */
+.cc{display:grid;grid-template-columns:220px minmax(0,1fr);gap:22px;align-items:start}
+.nav{position:sticky;top:calc(env(safe-area-inset-top,0px) + 76px);display:flex;flex-direction:column;gap:14px}
+.role{display:flex;flex-direction:column;gap:6px}
+.role select{padding:9px 10px;border-radius:9px;border:1px solid var(--line);background:var(--surface);font-weight:600}
+.navlist{display:flex;flex-direction:column;gap:2px}
+.navlist button{border:0;background:none;text-align:left;padding:9px 12px;border-radius:8px;font-weight:600;color:var(--muted);display:flex;justify-content:space-between;align-items:center;gap:8px}
+.navlist button[aria-current="page"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.navlist .n{font-family:var(--f-mono);font-size:12px;background:var(--miss-bg);color:var(--miss);border-radius:99px;padding:0 7px}
+.navgroup{font-size:11px;padding:8px 12px 2px}
+.perm{font-size:12px;color:var(--muted);background:var(--sunk);border-radius:9px;padding:10px;line-height:1.4}
+.main{display:flex;flex-direction:column;gap:16px;min-width:0}
+.head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:10px}
+.head h2{font-size:30px;line-height:1.05}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:10px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:2px;text-align:left;position:relative;overflow:hidden}
+button.kpi:hover{border-color:var(--muted)}
+.kpi[aria-pressed="true"]{border-color:var(--ink)}
+.kpi .v{font-family:var(--f-display);font-size:34px;font-weight:700;line-height:1.05;font-variant-numeric:tabular-nums}
+.kpi .l{font-size:12px;color:var(--muted);font-weight:600}
+.kpi .s{font-size:12px;color:var(--muted)}
+.kpi.k-hit .v{color:var(--hit)} .kpi.k-miss .v{color:var(--miss)} .kpi.k-risk .v{color:var(--risk)}
+.kpi.k-miss::before,.kpi.k-risk::before,.kpi.k-hit::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px}
+.kpi.k-miss::before{background:var(--miss)} .kpi.k-risk::before{background:var(--risk)} .kpi.k-hit::before{background:var(--hit)}
+.boardgrid{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;align-items:start}
+@media (min-width:1560px){.boardgrid{grid-template-columns:minmax(0,1fr) 300px}}
+.board-table{min-width:1000px}
+.board-table td.nw{white-space:nowrap}
+.filters{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.filters button{border:1px solid var(--line);background:var(--surface);padding:5px 11px;border-radius:99px;font-size:13px;font-weight:600}
+.filters button[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.filters select{padding:5px 8px;border-radius:99px;border:1px solid var(--line);background:var(--surface);font-size:13px}
+.tablebox{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th{text-align:left;font-family:var(--f-display);font-weight:600;text-transform:uppercase;letter-spacing:.06em;font-size:12px;color:var(--muted);padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--surface)}
+td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+tbody tr:last-child td{border-bottom:0}
+tr.click{cursor:pointer} tr.click:hover td{background:var(--sunk)}
+tr.sel td{background:var(--sunk)}
+td .sub{font-size:12px;color:var(--muted)}
+.var-pos{color:var(--miss);font-weight:600} .var-neg{color:var(--hit);font-weight:600}
+.icons{display:flex;gap:4px;flex-wrap:wrap}
+.feed{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;max-height:560px;overflow-y:auto}
+.feed li{display:grid;grid-template-columns:44px minmax(0,1fr);gap:8px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px}
+.feed li:last-child{border-bottom:0}
+.feed .t{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.feed .k-hit b{color:var(--hit)} .feed .k-miss b{color:var(--miss)} .feed .k-risk b{color:var(--risk)} .feed .k-info b{color:var(--info)}
+button.linkish{border:0;background:none;padding:0;color:var(--violet);font-weight:600;font-size:inherit;text-decoration:underline;text-underline-offset:2px}
+
+.drawer-bg{position:fixed;inset:0;background:rgba(14,10,22,.35);z-index:40}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(560px,100%);background:var(--bg);z-index:41;overflow-y:auto;border-left:1px solid var(--line);
+  padding:calc(env(safe-area-inset-top,0px) + 18px) max(18px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 24px) 18px;display:flex;flex-direction:column;gap:14px}
+.dhead{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.dhead h2{font-size:26px}
+.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 16px;font-size:14px}
+.facts div{display:flex;flex-direction:column;min-width:0}
+.facts .k{font-size:12px;color:var(--muted)} .facts .v{font-weight:600;overflow-wrap:anywhere}
+.split{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.figure{border-radius:10px;overflow:hidden;background:var(--sunk);aspect-ratio:4/3;display:grid;place-items:center;max-width:100%}
+.figure svg{width:100%;height:100%;display:block}
+.timeline{list-style:none;margin:0;padding:0;position:relative}
+.timeline li{display:grid;grid-template-columns:52px 16px minmax(0,1fr);gap:8px;padding-bottom:12px;font-size:14px;position:relative}
+.timeline li::before{content:"";position:absolute;left:67px;top:14px;bottom:-2px;width:2px;background:var(--line)}
+.timeline li:last-child::before{display:none}
+.timeline .dot{width:12px;height:12px;border-radius:50%;margin-top:4px;background:var(--violet);border:2px solid var(--bg);box-shadow:0 0 0 1px var(--violet)}
+.timeline .dot.off{background:var(--risk);box-shadow:0 0 0 1px var(--risk)}
+.timeline .dot.bad{background:var(--miss);box-shadow:0 0 0 1px var(--miss)}
+.timeline small{display:block;color:var(--muted);font-size:12px}
+.flag{display:flex;flex-direction:column;gap:6px;border:1px solid var(--line);border-left:4px solid var(--miss);border-radius:8px;padding:10px 12px;background:var(--surface)}
+.flag.cleared{border-left-color:var(--muted);opacity:.75}
+.flag .row{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}
+textarea.in,input.in,select.in{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--surface)}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+.copybox{font-family:var(--f-mono);font-size:12px;background:var(--sunk);border-radius:8px;padding:10px;white-space:pre-wrap;user-select:all}
+
+.cards2{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px}
+.chart svg{width:100%;height:auto;display:block}
+.chart .legend{display:flex;gap:14px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+.chart .legend i{display:inline-block;width:12px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
+.pareto{display:flex;flex-direction:column;gap:8px}
+.pareto .r{display:grid;grid-template-columns:150px minmax(0,1fr) 34px;gap:10px;align-items:center;font-size:13px}
+.pareto .bar{height:14px;border-radius:4px;background:var(--sunk);overflow:hidden}
+.pareto .bar i{display:block;height:100%;border-radius:4px}
+.formgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-weight:600;font-size:14px}
+.field small{color:var(--muted);font-size:12px}
+.field .inrow{display:flex;align-items:center;gap:8px}
+.field .inrow input{width:110px}
+
+/* ============ HOW IT WORKS ============ */
+.spec{display:flex;flex-direction:column;gap:22px}
+.lede{max-width:70ch;font-size:16px;margin:0}
+.fw{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.fw .step{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.fw .num{font-family:var(--f-display);font-weight:700;font-size:15px;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;color:var(--on-accent);background:var(--magenta)}
+.fw .step:nth-child(2) .num{background:var(--violet)}
+.fw .step:nth-child(3) .num{background:var(--info)}
+.fw .step:nth-child(4) .num{background:var(--violet)}
+.fw ul{margin:0;padding-left:18px;font-size:14px;display:flex;flex-direction:column;gap:4px}
+.fw .who{font-size:12px;color:var(--muted);margin-top:auto;padding-top:8px;border-top:1px solid var(--line)}
+.rule{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+.rule .formula{font-family:var(--f-mono);font-size:14px;background:var(--sunk);padding:10px 12px;border-radius:8px}
+pre.payload{margin:0;font-family:var(--f-mono);font-size:12px;background:var(--sunk);border-radius:10px;padding:14px;overflow-x:auto;line-height:1.5}
+
+@media (max-width:1100px){.fw{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:860px){
+  .trucker{grid-template-columns:minmax(0,1fr);justify-items:center}.rail{width:100%}
+  .cc{grid-template-columns:minmax(0,1fr)}
+  .nav{position:static}
+  .navlist{flex-direction:row;overflow-x:auto}
+  .navlist button{white-space:nowrap}
+  .navgroup{display:none}
+  .perm{display:none}
+}
+@media (max-width:560px){
+  .fw{grid-template-columns:minmax(0,1fr)}
+  .split,.facts{grid-template-columns:minmax(0,1fr)}
+  .clock{margin-left:0}
+  .screen{height:700px}
+  .pareto .r{grid-template-columns:110px minmax(0,1fr) 30px}
+}
+</style>
+
+<div id="app"></div>
+
+<script>
+/* ---------- time helpers (all times shown in Asia/Manila, UTC+8) ---------- */
+const MIN = 60000;
+const BASE = Date.UTC(2026, 9, 20, 16, 0, 0); // 2026-10-21 00:00 +08:00
+const T = (h, m) => BASE + (h * 60 + m) * MIN;
+const pad = n => String(n).padStart(2, '0');
+const local = ms => new Date(ms + 8 * 3600000);
+const hm = ms => { const d = local(ms); return pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes()); };
+const hms = ms => { const d = local(ms); return hm(ms) + ':' + pad(d.getUTCSeconds()); };
+const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'], MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const dateLabel = ms => { const d = local(ms); return `${DAYS[d.getUTCDay()]} ${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`; };
+const isoLocal = ms => { const d = local(ms); return `${d.getUTCFullYear()}-${pad(d.getUTCMonth()+1)}-${pad(d.getUTCDate())}T${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}+08:00`; };
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const relMin = ms => { const m = Math.round(ms / MIN); const a = Math.abs(m); const txt = a >= 60 ? `${Math.floor(a/60)} h ${a%60} min` : `${a} min`; return { m, txt }; };
+
+/* ---------- ISO 6346 container numbers (owner code + serial + check digit) ---------- */
+function letterValue(ch) { if (/\d/.test(ch)) return +ch; let v = 10; for (let c = 65; c < ch.charCodeAt(0); c++) { v++; if (v % 11 === 0) v++; } return v; }
+function checkDigit(s10) { let sum = 0; for (let i = 0; i < 10; i++) sum += letterValue(s10[i]) * Math.pow(2, i); return (sum % 11) % 10; }
+const cntr = (owner, serial) => owner + serial + checkDigit(owner + serial);
+const fmtCntr = c => `${c.slice(0,4)} ${c.slice(4,10)} ${c.slice(10)}`;
+const validCntr = c => /^[A-Z]{3}[UJZ]\d{7}$/.test(c) && checkDigit(c.slice(0,10)) === +c[10];
+
+/* ---------- reference data (sample) ---------- */
+const REASONS = [
+  { code:'CUS-01', label:'Customer not ready / asked for later arrival', cls:'Uncontrollable' },
+  { code:'CUS-02', label:'Gate closed / access refused at site', cls:'Uncontrollable' },
+  { code:'PRT-01', label:'Port or depot congestion at pick-up', cls:'Uncontrollable' },
+  { code:'PRT-02', label:'Container on hold / not released', cls:'Uncontrollable' },
+  { code:'TRF-01', label:'Road closure, accident or heavy traffic', cls:'Uncontrollable' },
+  { code:'TRF-02', label:'Truck ban window (LGU / MMDA)', cls:'Controllable' },
+  { code:'WTH-01', label:'Weather or flooding', cls:'Uncontrollable' },
+  { code:'TRK-01', label:'Truck breakdown / flat tire', cls:'Controllable' },
+  { code:'TRK-02', label:'Late dispatch / driver late', cls:'Controllable' },
+  { code:'DOC-01', label:'Incomplete documents at pick-up', cls:'Controllable' },
+  { code:'OTH-99', label:'Other (remarks required)', cls:'TMD decides' },
+];
+const reason = code => REASONS.find(r => r.code === code);
+const FLAGS = {
+  MOCK_LOCATION:'Fake GPS app detected', CLOCK_DRIFT:'Phone clock does not match server', MANUAL_ENTRY:'Container number typed, not scanned',
+  LATE_SYNC:'Event synced late', PHOTO_REUSED:'Photo matches an earlier upload', CONTAINER_MISMATCH:'Scanned container does not match job',
+  DEVICE_CHANGE:'Login from a new device', IMPOSSIBLE_SPEED:'Impossible travel speed', DEVICE_INTEGRITY:'Rooted phone',
+};
+const SITES = {
+  STR:{ customer:'Sta. Rosa Food Packers', city:'Sta. Rosa, Laguna', addr:'Lot 7, LISP II, Sta. Rosa, Laguna', lat:14.2861, lng:121.0905, radius:150, gate:'Gate 3, enter via Greenfield Ave. Receiving 07:00–17:00.' },
+  CAL:{ customer:'Calamba Steel Fabricators', city:'Calamba, Laguna', addr:'Brgy. Real, National Hwy, Calamba', lat:14.2117, lng:121.1653, radius:200, gate:'Weigh-in at main gate. Hard hat required.' },
+  GTR:{ customer:'Gen. Trias Electronics Assembly', city:'Gen. Trias, Cavite', addr:'Block 4, Gateway Business Park, Gen. Trias', lat:14.3302, lng:120.8913, radius:150, gate:'Security escort from Gate 1.' },
+  VAL:{ customer:'Valenzuela Plastics Inc.', city:'Valenzuela City', addr:'MacArthur Hwy, Brgy. Malinta, Valenzuela', lat:14.6942, lng:120.9706, radius:120, gate:'Narrow lane. Back in from Gen. Luis St.' },
+  MEY:{ customer:'Meycauayan Paper Mills', city:'Meycauayan, Bulacan', addr:'Brgy. Iba, Meycauayan, Bulacan', lat:14.7364, lng:120.9605, radius:180, gate:'Gate pass at guard house.' },
+  TAG:{ customer:'Taguig Consumer Goods DC', city:'Taguig City', addr:'FTI Complex, Taguig', lat:14.5081, lng:121.0390, radius:250, gate:'Dock 5 to 9. Book slot with DC control.' },
+  LIP:{ customer:'Lipa Agri Feeds', city:'Lipa, Batangas', addr:'Lima Technology Center, Malvar–Lipa', lat:14.0526, lng:121.1667, radius:200, gate:'Use Lima Gate B.' },
+};
+const TRUCKERS = {
+  T01:{ name:'Ramon Dela Cruz', plate:'NBK 4821', mobile:'0917 555 0142', haulier:'RDC Trucking', device:'Samsung A15 · Android 14', app:'1.0.3', integrity:'Pass', bound:'02 Oct 2026' },
+  T02:{ name:'Arnel Bautista', plate:'NDE 2290', mobile:'0918 555 0377', haulier:'Bautista Haulers', device:'Redmi 13C · Android 14', app:'1.0.3', integrity:'Pass', bound:'02 Oct 2026' },
+  T03:{ name:'Joel Santos', plate:'CAU 7714', mobile:'0919 555 0860', haulier:'JS Logistics', device:'Oppo A58 · Android 13', app:'1.0.3', integrity:'Pass', bound:'03 Oct 2026' },
+  T04:{ name:'Mark Villanueva', plate:'NGH 1045', mobile:'0927 555 0218', haulier:'RDC Trucking', device:'Realme C55 · Android 14', app:'1.0.2', integrity:'Pass', bound:'05 Oct 2026' },
+  T05:{ name:'Rodel Garcia', plate:'NAX 6632', mobile:'0905 555 0491', haulier:'Garcia Brothers', device:'Vivo Y17s · Android 13', app:'1.0.3', integrity:'Pass', bound:'02 Oct 2026' },
+  T06:{ name:'Dennis Reyes', plate:'DBA 3308', mobile:'0916 555 0723', haulier:'JS Logistics', device:'Samsung A05 · Android 14', app:'1.0.3', integrity:'Review', bound:'19 Oct 2026' },
+};
+const PICKUPS = { MICT:'MICT, Tondo (laden)', NH:'North Harbor, Tondo (laden)', VEY:'Valenzuela empty yard', BCT:'Batangas Container Terminal (laden)' };
+
+/* ---------- state ---------- */
+let S;
+function seed() {
+  const J = (o) => Object.assign({ events:[], flags:[], exception:null, prealert:null, arrival:null, confirmedAt:null, status:'Assigned', photo:false, scan:null }, o);
+  const ev = (type, at, label, extra) => Object.assign({ type, at, label }, extra || {});
+  const jobs = [
+    J({ id:'HJ-2610-0411', booking:'BKG-551801', container:cntr('TMDU','202611'), size:"40' HC", move:'Import delivery', site:'TAG', pickup:'MICT', agreed:T(8,0), trucker:'T02', status:'Confirmed', photo:true, scan:'QR',
+        arrival:{ at:T(7,46)+20000, acc:9, offline:false }, confirmedAt:T(7,49),
+        events:[ev('job.assigned',T(5,10),'Assigned from TMD-Haulage'), ev('trip.started',T(6,2),'Trip started at MICT'), ev('geofence.entered',T(7,46)+20000,'Entered site geofence (250 m)'), ev('arrival.confirmed',T(7,49),'Confirmed with photo + QR scan')] }),
+    J({ id:'HJ-2610-0412', booking:'BKG-551806', container:cntr('TMDU','318204'), size:"20' GP", move:'Import delivery', site:'VAL', pickup:'NH', agreed:T(8,30), trucker:'T03', status:'Confirmed', photo:true, scan:'QR',
+        arrival:{ at:T(8,52)+40000, acc:14, offline:false }, confirmedAt:T(8,55),
+        exception:{ code:'TRF-01', remarks:'Accident on MacArthur Hwy near Malinta exit, 1 lane open.', filedAt:T(8,58), status:'Pending', photo:true },
+        events:[ev('job.assigned',T(5,20),'Assigned from TMD-Haulage'), ev('trip.started',T(7,25),'Trip started at North Harbor'), ev('geofence.entered',T(8,52)+40000,'Entered site geofence (120 m)'), ev('arrival.confirmed',T(8,55),'Confirmed with photo + QR scan'), ev('exception.filed',T(8,58),'Exception TRF-01 filed')] }),
+    J({ id:'HJ-2610-0413', booking:'BKG-551809', container:cntr('PHCU','551207'), size:"40' HC", move:'Import delivery', site:'MEY', pickup:'MICT', agreed:T(9,0), trucker:'T04', status:'Confirmed', photo:true, scan:'Manual',
+        arrival:{ at:T(8,41)+5000, acc:11, offline:false }, confirmedAt:T(8,44),
+        flags:[{ type:'MANUAL_ENTRY', detail:'Driver typed PHCU 551207 instead of scanning. Check digit valid.', at:T(8,44), status:'Open' }],
+        events:[ev('job.assigned',T(5,25),'Assigned from TMD-Haulage'), ev('trip.started',T(7,5),'Trip started at MICT'), ev('geofence.entered',T(8,41)+5000,'Entered site geofence (180 m)'), ev('arrival.confirmed',T(8,44),'Confirmed with photo + typed container no.')] }),
+    J({ id:'HJ-2610-0414', booking:'BKG-551812', container:cntr('TMDU','407795'), size:"40' GP", move:'Export empty', site:'GTR', pickup:'VEY', agreed:T(9,30), trucker:'T05', status:'Confirmed', photo:true, scan:'QR',
+        arrival:{ at:T(9,58)+10000, acc:16, offline:false }, confirmedAt:T(10,1),
+        exception:{ code:'TRK-01', remarks:'Flat tire on CAVITEX, changed at Kawit.', filedAt:T(10,3), status:'Validated', cls:'Controllable', reviewer:'TMD · L. Ramos', reviewNote:'Confirmed by haulier. Counted as controllable.', reviewedAt:T(10,4) },
+        events:[ev('job.assigned',T(5,30),'Assigned from TMD-Haulage'), ev('trip.started',T(7,40),'Trip started at Valenzuela empty yard'), ev('geofence.entered',T(9,58)+10000,'Entered site geofence (150 m)'), ev('arrival.confirmed',T(10,1),'Confirmed with photo + QR scan'), ev('exception.filed',T(10,3),'Exception TRK-01 filed'), ev('exception.reviewed',T(10,4),'Validated · Controllable by L. Ramos')] }),
+    J({ id:'HJ-2610-0415', booking:'BKG-551815', container:cntr('TMDU','520388'), size:"20' GP", move:'Import delivery', site:'CAL', pickup:'MICT', agreed:T(9,45), trucker:'T06', status:'En route',
+        prealert:{ code:'PRT-01', eta:T(10,40), at:T(8,50), remarks:'Long queue at MICT gate-out, 2 h wait.' },
+        events:[ev('job.assigned',T(5,40),'Assigned from TMD-Haulage'), ev('delay.prealert',T(8,50),'Delay pre-alert PRT-01, new ETA 10:40'), ev('trip.started',T(9,12),'Trip started at MICT')] }),
+    J({ id:'HJ-2610-0417', booking:'BKG-551821', container:cntr('PHCU','610042'), size:"40' HC", move:'Import delivery', site:'LIP', pickup:'BCT', agreed:T(10,0), trucker:'T05', status:'Confirmed', photo:true, scan:'QR',
+        arrival:{ at:T(9,51)+30000, acc:18, offline:true, syncedAt:T(10,2) }, confirmedAt:T(9,53),
+        events:[ev('job.assigned',T(5,45),'Assigned from TMD-Haulage'), ev('trip.started',T(8,30),'Trip started at Batangas Container Terminal'), ev('geofence.entered',T(9,51)+30000,'Entered site geofence (200 m) · captured offline',{offline:true}), ev('arrival.confirmed',T(9,53),'Confirmed with photo + QR scan · captured offline',{offline:true}), ev('sync',T(10,2),'Synced 2 queued events')] }),
+    J({ id:'HJ-2610-0416', booking:'BKG-551818', container:cntr('TMDU','733419'), size:"40' HC", move:'Import delivery', site:'LIP', pickup:'BCT', agreed:T(10,15), trucker:'T06', status:'Assigned',
+        flags:[{ type:'DEVICE_CHANGE', detail:'Login from a new phone on 19 Oct. Admin reset approved by IT.', at:T(5,41), status:'Open' }],
+        events:[ev('job.assigned',T(5,40),'Assigned from TMD-Haulage')] }),
+    J({ id:'HJ-2610-0418', booking:'BKG-551820', container:cntr('TMDU','202645'), size:"40' HC", move:'Import delivery', site:'STR', pickup:'MICT', agreed:T(10,30), trucker:'T01', status:'Assigned', demo:true, d0:6.2,
+        events:[ev('job.assigned',T(5,50),'Assigned from TMD-Haulage'), ev('pickup.confirmed',T(8,58),'Pick-up confirmed at MICT')] }),
+    J({ id:'HJ-2610-0419', booking:'BKG-551826', container:cntr('TMDU','845120'), size:"20' GP", move:'Import delivery', site:'TAG', pickup:'MICT', agreed:T(11,0), trucker:'T02', status:'En route',
+        events:[ev('job.assigned',T(6,0),'Assigned from TMD-Haulage'), ev('trip.started',T(9,40),'Trip started at MICT')] }),
+    J({ id:'HJ-2610-0420', booking:'BKG-551830', container:cntr('PHCU','229861'), size:"40' GP", move:'Export empty', site:'VAL', pickup:'VEY', agreed:T(13,0), trucker:'T03', events:[ev('job.assigned',T(6,5),'Assigned from TMD-Haulage')] }),
+    J({ id:'HJ-2610-0421', booking:'BKG-551834', container:cntr('TMDU','390576'), size:"20' GP", move:'Import delivery', site:'CAL', pickup:'MICT', agreed:T(14,30), trucker:'T01', demo:true, d0:18.4, events:[ev('job.assigned',T(6,10),'Assigned from TMD-Haulage')] }),
+    J({ id:'HJ-2610-0422', booking:'BKG-551839', container:cntr('TMDU','118053'), size:"40' HC", move:'Import delivery', site:'MEY', pickup:'NH', agreed:T(15,0), trucker:'T04', events:[ev('job.assigned',T(6,12),'Assigned from TMD-Haulage')] }),
+  ];
+  const feed = [
+    { at:T(10,4), kind:'info', text:'<b>Exception validated</b> · HJ-2610-0414 TRK-01 counted as controllable', job:'HJ-2610-0414' },
+    { at:T(10,2), kind:'info', text:'<b>Offline events synced</b> · HJ-2610-0417, 2 events, 11 min after capture', job:'HJ-2610-0417' },
+    { at:T(10,1), kind:'miss', text:'<b>Arrival confirmed · MISS</b> · Gen. Trias Electronics, 28 min late', job:'HJ-2610-0414' },
+    { at:T(9,53), kind:'hit', text:'<b>Arrival confirmed · HIT</b> · Lipa Agri Feeds, 8 min early', job:'HJ-2610-0417' },
+    { at:T(9,46), kind:'miss', text:'<b>Missed agreed time</b> · HJ-2610-0415 Calamba Steel, truck not arrived', job:'HJ-2610-0415' },
+    { at:T(8,58), kind:'risk', text:'<b>Exception filed</b> · HJ-2610-0412 TRF-01, awaiting TMD review', job:'HJ-2610-0412' },
+    { at:T(8,50), kind:'risk', text:'<b>Delay pre-alert</b> · HJ-2610-0415 PRT-01, new ETA 10:40', job:'HJ-2610-0415' },
+    { at:T(8,44), kind:'risk', text:'<b>Integrity flag</b> · HJ-2610-0413 container number typed', job:'HJ-2610-0413' },
+  ];
+  const audit = [
+    { at:T(10,4), who:'L. Ramos', role:'TMD Team', action:'Validated exception', detail:'HJ-2610-0414 · TRK-01 → Controllable' },
+    { at:T(7,30), who:'System', role:'Integration', action:'Imported jobs', detail:'12 jobs for 21 Oct from TMD-Haulage' },
+    { at:BASE - 18 * 60 * MIN, who:'K. Uy', role:'System Admin', action:'Reset device binding', detail:'Dennis Reyes · new phone Samsung A05 (ticket IT-8841)' },
+    { at:BASE - 3 * 24 * 60 * MIN, who:'K. Uy', role:'System Admin', action:'Changed rule', detail:'Geofence radius for Taguig Consumer Goods DC 150 m → 250 m (large yard)' },
+  ];
+  S = {
+    now: T(10,5), view: 'trucker', role: 'TMD', page: 'board', filter: 'all', customer: '', sel: null,
+    config: { grace:0, radius:150, acc:50, drift:2, atRisk:30, lateSync:240, otp:false, scanRequired:true },
+    jobs, feed, audit, drafts: {}, lastPayload: null,
+    phone: { online:true, mock:false, skew:0, traffic:false, screen:'list', jobId:null, step:'photo', toast:null, queue:[], log:[], local:{}, sel:null, manual:false, scanErr:'' },
+  };
+  for (const j of jobs) if (j.demo) S.phone.local[j.id] = { tripStart:null, travelled:0, entry:null, photo:null, scan:null, confirmed:null, mockFlagged:false, driftFlagged:false };
+}
+seed();
+
+const job = id => S.jobs.find(j => j.id === id);
+const site = j => SITES[j.site];
+const trk = j => TRUCKERS[j.trucker];
+
+/* ---------- Hit / Miss engine ---------- */
+function evaluate(j) {
+  const due = j.agreed + S.config.grace * MIN;
+  if (j.arrival) return j.arrival.at <= due ? 'HIT' : 'MISS';
+  if (S.now > due) return 'MISS_NA';
+  if (j.agreed - S.now <= S.config.atRisk * MIN) return 'AT_RISK';
+  return 'ON_SCHEDULE';
+}
+const RESULT_CHIP = {
+  HIT:['c-hit','Hit'], MISS:['c-miss','Miss'], MISS_NA:['c-miss','Miss · not arrived'], AT_RISK:['c-risk','At risk'], ON_SCHEDULE:['c-neutral','On schedule'],
+};
+const resultChip = j => { const [c, t] = RESULT_CHIP[evaluate(j)]; const early = j.arrival && j.arrival.at < j.agreed - 15 * MIN ? ' <span class="chip c-info">Early</span>' : ''; return `<span class="chip ${c}">${t}</span>${early}`; };
+function kpis() {
+  const r = S.jobs.map(j => ({ j, e: evaluate(j) }));
+  const hits = r.filter(x => x.e === 'HIT').length;
+  const misses = r.filter(x => x.e === 'MISS' || x.e === 'MISS_NA');
+  const decided = hits + misses.length;
+  const excused = misses.filter(x => x.j.exception && x.j.exception.status === 'Validated' && x.j.exception.cls === 'Uncontrollable').length;
+  const missArrived = misses.filter(x => x.e === 'MISS');
+  return {
+    total: S.jobs.length, arrived: S.jobs.filter(j => j.arrival).length, hits, misses: misses.length, decided,
+    raw: decided ? Math.round(hits / decided * 100) : null,
+    adj: decided - excused ? Math.round(hits / (decided - excused) * 100) : null,
+    risk: r.filter(x => x.e === 'AT_RISK').length,
+    pend: S.jobs.filter(j => j.exception && j.exception.status === 'Pending').length,
+    flags: S.jobs.reduce((n, j) => n + j.flags.filter(f => f.status === 'Open').length, 0),
+    noExc: missArrived.filter(x => !x.j.exception).length,
+    notArrived: misses.filter(x => x.e === 'MISS_NA').length,
+  };
+}
+
+/* ---------- phone → platform events ---------- */
+function plog(type, at, detail) { S.phone.log.unshift({ type, at, detail, queued: !S.phone.online }); }
+function emit(ev) {
+  plog(ev.type, ev.at, ev.detail || '');
+  ev.deviceAt = ev.at + S.phone.skew * MIN;
+  if (S.phone.online) apply(ev, false); else S.phone.queue.push(ev);
+}
+function feed(kind, text, jid, at) { S.feed.unshift({ at: at ?? S.now, kind, text, job: jid }); }
+function addFlag(j, type, detail, at) { if (!j.flags.some(f => f.type === type && f.status === 'Open')) { j.flags.push({ type, detail, at, status:'Open' }); feed('risk', `<b>Integrity flag</b> · ${j.id} ${FLAGS[type].toLowerCase()}`, j.id); } }
+function apply(ev, synced) {
+  const j = job(ev.job); const off = !!synced;
+  const tag = off ? ' · captured offline' : '';
+  if (Math.abs(S.phone.skew) > S.config.drift && !S.phone.local[j.id].driftFlagged) {
+    S.phone.local[j.id].driftFlagged = true;
+    addFlag(j, 'CLOCK_DRIFT', `Phone clock ${S.phone.skew > 0 ? 'ahead' : 'behind'} by ${Math.abs(S.phone.skew)} min. Server time used for all events.`, ev.at);
+  }
+  switch (ev.type) {
+    case 'trip.started': j.status = 'En route'; j.events.push({ type:ev.type, at:ev.at, label:'Trip started at ' + PICKUPS[j.pickup].split(' (')[0] + tag, offline:off }); break;
+    case 'geofence.entered':
+      j.arrival = { at: ev.at, acc: 12, offline: off }; j.status = 'At site';
+      j.events.push({ type:ev.type, at:ev.at, label:`Entered site geofence (${site(j).radius} m)${tag}`, offline:off });
+      feed(evaluate(j) === 'HIT' ? 'hit' : 'miss', `<b>Truck at site · ${evaluate(j) === 'HIT' ? 'HIT' : 'MISS'}</b> · ${site(j).customer}, ${variance(j)}`, j.id, ev.at);
+      break;
+    case 'arrival.confirmed': {
+      j.confirmedAt = ev.at; j.status = 'Confirmed'; j.photo = true; j.scan = ev.scan;
+      j.events.push({ type:ev.type, at:ev.at, label:`Confirmed with photo + ${ev.scan === 'QR' ? 'QR scan' : 'typed container no.'}${tag}`, offline:off });
+      if (ev.scan === 'Manual') addFlag(j, 'MANUAL_ENTRY', `Driver typed ${fmtCntr(j.container)} instead of scanning. Check digit valid.`, ev.at);
+      const res = evaluate(j);
+      feed(res === 'HIT' ? 'hit' : 'miss', `<b>Arrival confirmed · ${res}</b> · ${site(j).customer}, ${variance(j)}`, j.id, ev.at);
+      feed('info', `<b>Notification sent</b> · SMS and email to ${site(j).customer} receiving and Sales Support`, j.id, ev.at);
+      S.lastPayload = payload(j, off);
+      break; }
+    case 'delay.prealert':
+      j.prealert = { code: ev.code, eta: ev.eta, at: ev.at, remarks: ev.remarks };
+      j.events.push({ type:ev.type, at:ev.at, label:`Delay pre-alert ${ev.code}, new ETA ${hm(ev.eta)}${tag}`, offline:off });
+      feed('risk', `<b>Delay pre-alert</b> · ${j.id} ${ev.code}, new ETA ${hm(ev.eta)}`, j.id, ev.at); break;
+    case 'exception.filed':
+      j.exception = { code: ev.code, remarks: ev.remarks, filedAt: ev.at, status:'Pending', photo: ev.photo };
+      j.events.push({ type:ev.type, at:ev.at, label:`Exception ${ev.code} filed${tag}`, offline:off });
+      feed('risk', `<b>Exception filed</b> · ${j.id} ${ev.code}, awaiting TMD review`, j.id, ev.at); break;
+    case 'integrity.flagged': addFlag(j, ev.flag, ev.detail, ev.at); j.events.push({ type:ev.type, at:ev.at, label:'Integrity flag: ' + FLAGS[ev.flag], bad:true }); break;
+  }
+}
+function syncQueue() {
+  const q = S.phone.queue; if (!q.length) return;
+  S.phone.queue = [];
+  for (const ev of q) {
+    apply(ev, true);
+    const j = job(ev.job);
+    if (S.now - ev.at > S.config.lateSync * MIN) addFlag(j, 'LATE_SYNC', `Event captured ${hm(ev.at)}, synced ${hm(S.now)}.`, S.now);
+  }
+  const j = job(q[0].job);
+  j.events.push({ type:'sync', at:S.now, label:`Synced ${q.length} queued event${q.length > 1 ? 's' : ''}` });
+  feed('info', `<b>Offline events synced</b> · ${q.length} event${q.length > 1 ? 's' : ''} from ${trk(j).name}`, j.id);
+  for (const l of S.phone.log) l.queued = false;
+}
+function variance(j) {
+  if (!j.arrival) return '';
+  const { m, txt } = relMin(j.arrival.at - j.agreed);
+  return m === 0 ? 'on the minute' : m < 0 ? `${txt} early` : `${txt} late`;
+}
+function payload(j, offline) {
+  return {
+    event:'arrival.confirmed', event_id:'evt_' + j.id.slice(-4) + (j.confirmedAt % 100000).toString(36).toUpperCase(),
+    job_id:j.id, booking_ref:j.booking, container_no:j.container, stop:'customer',
+    agreed_time:isoLocal(j.agreed), arrival_time:isoLocal(j.arrival.at), arrival_time_source:'server_trusted_geofence_entry',
+    result:evaluate(j), variance_min:Math.round((j.arrival.at - j.agreed) / MIN),
+    location:{ lat:site(j).lat, lng:site(j).lng, accuracy_m:j.arrival.acc },
+    evidence:{ photo_id:'ph_' + j.id.slice(-4), container_scan:j.scan },
+    integrity_flags:j.flags.filter(f => f.status === 'Open').map(f => f.type), captured_offline:!!offline,
+  };
+}
+
+/* ---------- simulated clock and driving ---------- */
+function speedKmMin() { return (S.phone.traffic ? 10 : 30) / 60; }
+function distanceKm(j) { const L = S.phone.local[j.id]; if (S.phone.mock && L.tripStart && !L.entry) return 0; return Math.max(0, j.d0 - L.travelled); }
+function advance(ms) {
+  const prev = S.now; S.now += ms;
+  for (const j of S.jobs) {
+    const L = S.phone.local[j.id];
+    if (!L || !L.tripStart || L.entry) continue;
+    const sp = speedKmMin(), can = sp * ms / MIN, need = j.d0 - L.travelled - site(j).radius / 1000;
+    if (can >= need) {
+      const at = prev + Math.max(0, need) / sp * MIN;
+      L.travelled = Math.min(j.d0, L.travelled + can); L.entry = at;
+      emit({ type:'geofence.entered', job:j.id, at, detail:'Automatic, no tap needed' });
+      toast('You are at the customer site. Arrival time recorded: ' + hm(at));
+    } else L.travelled += can;
+  }
+}
+let lastSig = '';
+function tick() {
+  const before = phoneSig();
+  advance(1000);
+  const sig = S.jobs.map(evaluate).join() + phoneSig();
+  document.querySelectorAll('[data-clock]').forEach(el => el.textContent = hms(S.now));
+  document.querySelectorAll('[data-dclock]').forEach(el => el.textContent = hm(S.now + S.phone.skew * MIN));
+  if (sig !== lastSig || before !== phoneSig()) { lastSig = sig; render(); return; }
+  document.querySelectorAll('[data-cd]').forEach(el => el.textContent = countdown(+el.dataset.cd));
+  document.querySelectorAll('[data-dist]').forEach(el => { const j = job(el.dataset.dist); el.textContent = distanceKm(j).toFixed(1) + ' km'; });
+  document.querySelectorAll('[data-prog]').forEach(el => { const j = job(el.dataset.prog); el.style.width = Math.min(100, (1 - distanceKm(j) / j.d0) * 100) + '%'; });
+}
+const phoneSig = () => Object.values(S.phone.local).map(l => (l.entry || 0)).join();
+function countdown(agreed) { const { m, txt } = relMin(agreed - S.now); return m >= 0 ? `in ${txt}` : `${txt} past agreed time`; }
+let toastTimer;
+function toast(msg) { S.phone.toast = msg; clearTimeout(toastTimer); toastTimer = setTimeout(() => { S.phone.toast = null; render(); }, 4200); }
+
+/* ---------- graphics ---------- */
+function containerArt(j, opts = {}) {
+  const colors = { TMDU:'#B4185F', PHCU:'#2F5EA8' };
+  const c = colors[j.container.slice(0,4)] || '#7A3E9D';
+  let ribs = ''; for (let x = 70; x < 330; x += 13) ribs += `<rect x="${x}" y="70" width="5" height="130" fill="#000" opacity=".14"/>`;
+  const wm = opts.watermark ? `<rect x="0" y="246" width="400" height="54" fill="#000" opacity=".62"/><text x="12" y="266" fill="#fff" font-family="IBM Plex Mono,monospace" font-size="12">${esc(opts.watermark[0])}</text><text x="12" y="286" fill="#fff" font-family="IBM Plex Mono,monospace" font-size="12">${esc(opts.watermark[1])}</text>` : '';
+  return `<svg viewBox="0 0 400 300" role="img" aria-label="Container ${fmtCntr(j.container)} at gate"><rect width="400" height="300" fill="#8FA6B8"/><rect y="200" width="400" height="100" fill="#5B5F66"/><rect y="214" width="400" height="4" fill="#D9C24A" opacity=".8"/>
+  <rect x="58" y="62" width="284" height="146" rx="3" fill="${c}"/>${ribs}<rect x="58" y="62" width="284" height="10" fill="#000" opacity=".18"/>
+  <rect x="236" y="86" width="96" height="30" rx="2" fill="#fff" opacity=".92"/><text x="284" y="106" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="13" font-weight="600" fill="#111">${fmtCntr(j.container)}</text>
+  <text x="284" y="132" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="11" fill="#fff">${j.size.includes('40') ? (j.size.includes('HC') ? '45G1' : '42G1') : '22G1'}</text>
+  <rect x="96" y="120" width="44" height="44" fill="#fff"/>${qrBits(96,120,44)}
+  <rect x="20" y="206" width="40" height="40" rx="20" fill="#222"/><rect x="340" y="206" width="40" height="40" rx="20" fill="#222"/>${wm}</svg>`;
+}
+function qrBits(x, y, s) { let out = '', n = 7, c = s / n, seed = 7; for (let i = 0; i < n; i++) for (let k = 0; k < n; k++) { seed = (seed * 31 + 11) % 97; const corner = (i < 2 && k < 2) || (i < 2 && k > 4) || (i > 4 && k < 2); if (corner || seed % 2) out += `<rect x="${x + k * c}" y="${y + i * c}" width="${c}" height="${c}" fill="#111"/>`; } return out; }
+function geofenceArt(j) {
+  const r = 70, cx = 110, cy = 90, s = site(j);
+  const dot = j.arrival ? `<circle cx="${cx + 18}" cy="${cy - 10}" r="12" fill="var(--violet)" opacity=".18"/><circle cx="${cx + 18}" cy="${cy - 10}" r="5" fill="var(--violet)"/>` : '';
+  return `<svg viewBox="0 0 220 180" role="img" aria-label="Geofence ${s.radius} metres"><rect width="220" height="180" fill="var(--sunk)"/>
+  <path d="M0 132 L220 98" stroke="var(--line)" stroke-width="10"/><path d="M60 0 L96 180" stroke="var(--line)" stroke-width="7"/>
+  <circle cx="${cx}" cy="${cy}" r="${r}" fill="var(--magenta)" fill-opacity=".08" stroke="var(--magenta)" stroke-dasharray="4 4"/>
+  <rect x="${cx - 16}" y="${cy - 12}" width="32" height="24" rx="2" fill="var(--muted)" opacity=".55"/>${dot}
+  <text x="${cx}" y="${cy + r + 14}" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="10" fill="var(--muted)">radius ${s.radius} m</text></svg>`;
+}
+
+/* ============ RENDER ============ */
+function render() {
+  const a = document.activeElement, fid = a && a.id, sel = a && a.selectionStart;
+  const app = document.getElementById('app');
+  const sx = window.scrollX, sy = window.scrollY;
+  const scrollers = [...document.querySelectorAll('[data-keep-scroll]')].map(e => [e.dataset.keepScroll, e.scrollTop]);
+  app.innerHTML = topbar() + `<main class="wrap">${S.view === 'trucker' ? truckerView() : S.view === 'command' ? commandView() : specView()}</main>` + (S.view === 'command' && S.sel ? drawer() : '');
+  scrollers.forEach(([k, t]) => { const e = document.querySelector(`[data-keep-scroll="${k}"]`); if (e) e.scrollTop = t; });
+  window.scrollTo(sx, sy);
+  if (fid) { const e = document.getElementById(fid); if (e) { e.focus(); try { if (sel != null) e.setSelectionRange(sel, sel); } catch (_) {} } }
+  lastSig = S.jobs.map(evaluate).join() + phoneSig();
+}
+function topbar() {
+  const t = (v, l) => `<button class="tab" role="tab" aria-selected="${S.view === v}" data-act="view" data-arg="${v}">${l}</button>`;
+  return `<header class="top"><div class="top-in">
+    <div class="brand"><span class="mark" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><path d="m9 10 2 2 4-4"/></svg></span>
+      <span><b>Trucker Visibility Platform</b><small>Version 1 prototype · container pick-up and delivery</small></span></div>
+    <nav class="tabs" role="tablist">${t('trucker','Trucker app')}${t('command','Command Center')}${t('spec','How it works')}</nav>
+    <div class="clock"><span class="sample">Sample data</span><span class="live-dot" aria-hidden="true"></span><span class="muted">${dateLabel(S.now)}</span><span class="mono" data-clock>${hms(S.now)}</span></div>
+  </div></header>`;
+}
+
+/* ---------- TRUCKER VIEW ---------- */
+function truckerView() {
+  const P = S.phone;
+  const qn = P.queue.length;
+  return `<div class="trucker">
+    <div class="phone" aria-label="Trucker smartphone"><div class="screen">
+      <div class="sbar"><span data-dclock>${hm(S.now + P.skew * MIN)}</span><span class="ic">${P.mock ? '<span class="pchip pc-miss">Fake GPS</span>' : ''}<span>${P.online ? '4G ▂▄▆█' : 'No signal'}</span><span>82%</span></span></div>
+      ${!P.online ? `<div class="offline-bar">● Offline. <b>${qn} event${qn === 1 ? '' : 's'} saved on phone</b>, will send automatically.</div>` : ''}
+      ${phoneScreen()}
+      ${P.toast ? `<div class="toast" role="status">${esc(P.toast)}</div>` : ''}
+    </div></div>
+    <div class="rail">${demoPanel()}${logPanel()}</div>
+  </div>`;
+}
+function phoneScreen() {
+  const P = S.phone;
+  if (P.screen === 'list' || !P.jobId) return phoneList();
+  const j = job(P.jobId);
+  if (P.screen === 'job') return phoneJob(j);
+  if (P.screen === 'capture') return phoneCapture(j);
+  if (P.screen === 'result') return phoneResult(j);
+  if (P.screen === 'exception') return phoneReasonForm(j, 'exception');
+  if (P.screen === 'delay') return phoneReasonForm(j, 'delay');
+  return phoneList();
+}
+function pResultChip(j) {
+  const L = S.phone.local[j.id];
+  if (L.confirmed) { const hit = L.entry <= j.agreed + S.config.grace * MIN; return `<span class="pchip ${hit ? 'pc-hit' : 'pc-miss'}">${hit ? 'Hit' : 'Miss'}</span>`; }
+  if (L.entry) return '<span class="pchip pc-info">At site · confirm now</span>';
+  if (L.tripStart) return '<span class="pchip pc-info">En route</span>';
+  return '<span class="pchip pc-n">Assigned</span>';
+}
+function phoneList() {
+  const mine = S.jobs.filter(j => j.demo);
+  return `<div class="appbar"><div><div class="pk">Magandang umaga</div><h2>Ramon · ${TRUCKERS.T01.plate}</h2></div></div>
+  <div class="pbody" data-keep-scroll="plist">
+    <div class="pk" style="font-weight:600">TODAY · ${dateLabel(S.now).toUpperCase()}</div>
+    ${mine.map(j => `<button class="pcard" data-act="openjob" data-arg="${j.id}">
+      <div class="row"><span class="pk">Agreed arrival</span>${pResultChip(j)}</div>
+      <div class="row"><span class="big-time">${hm(j.agreed)}</span><span class="pk" data-cd="${j.agreed}">${countdown(j.agreed)}</span></div>
+      <div class="pv">${esc(site(j).customer)}</div>
+      <div class="pk">${esc(site(j).city)} · <span class="mono">${fmtCntr(j.container)}</span> · ${j.size}</div>
+    </button>`).join('')}
+    <p class="note">ⓘ Jobs come from TMD-Haulage. To change a time, call TMD dispatch.</p>
+  </div>`;
+}
+function phoneChecks(j) {
+  const L = S.phone.local[j.id], P = S.phone, d = distanceKm(j) * 1000, inside = d <= site(j).radius;
+  const items = [
+    [inside ? 'y' : 'p', inside ? '✓' : '…', `Inside customer site area`, inside ? `${P.mock ? 'Reported by GPS' : 'Within ' + site(j).radius + ' m of gate'}` : `${(d / 1000).toFixed(1)} km away. Unlocks within ${site(j).radius} m.`],
+    ['y', '✓', 'GPS accuracy 12 m', `Limit ${S.config.acc} m`],
+    [P.mock ? 'n' : 'y', P.mock ? '✕' : '✓', P.mock ? 'Fake GPS app is on' : 'No fake GPS app', P.mock ? 'Turn off the fake location app to continue. TMD has been notified.' : 'Location comes from the phone GPS'],
+    [P.skew ? 'w' : 'y', P.skew ? '!' : '✓', P.online ? 'Time from server' : 'Time secured offline', P.skew ? `Your phone clock is ${Math.abs(P.skew)} min off. Server time is used.` : P.online ? 'Phone clock is not used' : 'Uses the phone\'s internal timer since last sync'],
+  ];
+  return { ok: inside && !P.mock, html: `<ul class="checks">${items.map(([c, i, t, s]) => `<li><span class="ck ${c}">${i}</span><span><b>${t}</b><small>${s}</small></span></li>`).join('')}</ul>` };
+}
+function phoneJob(j) {
+  const L = S.phone.local[j.id], s = site(j);
+  const info = `<div class="pcard"><div class="row"><span class="pk">Agreed arrival</span>${pResultChip(j)}</div>
+      <div class="row"><span class="big-time">${hm(j.agreed)}</span><span class="pk" data-cd="${j.agreed}">${countdown(j.agreed)}</span></div>
+      <dl class="kv"><dt>Customer</dt><dd>${esc(s.customer)}</dd><dt>Address</dt><dd>${esc(s.addr)}</dd><dt>Gate notes</dt><dd>${esc(s.gate)}</dd>
+      <dt>Container</dt><dd class="mono">${fmtCntr(j.container)} · ${j.size}</dd><dt>Booking</dt><dd class="mono">${j.booking}</dd><dt>Pick-up</dt><dd>${PICKUPS[j.pickup]}</dd></dl></div>`;
+  let action;
+  if (L.confirmed) action = `<button class="pbtn" data-act="pscreen" data-arg="result">View result</button>`;
+  else if (!L.tripStart) action = `<button class="pbtn" data-act="starttrip">Start trip<small>Simulan ang biyahe</small></button>
+      <p class="note">📍 Location is tracked only while this job is active, then it stops.</p>`;
+  else {
+    const c = phoneChecks(j);
+    const d = distanceKm(j);
+    const prog = L.entry ? '' : `<div class="pcard"><div class="row"><span class="pk">Distance to site</span><span class="pk">ETA ${hm(S.now + d / speedKmMin() * MIN)}</span></div>
+        <div class="dist" data-dist="${j.id}">${d.toFixed(1)} km</div><div class="track"><i data-prog="${j.id}" style="width:${Math.min(100, (1 - d / j.d0) * 100)}%"></i></div>
+        <p class="note">Arrival time is recorded automatically when you enter the site area. You don't need to tap anything.</p></div>`;
+    const entry = L.entry ? `<div class="pcard"><div class="row"><span class="pk">Arrival time recorded</span><span class="mono pv">${hm(L.entry)}</span></div><p class="note">This is when you entered the site area. Confirming later doesn't change it.</p></div>` : '';
+    action = `${prog}${entry}<div class="pcard"><span class="pk" style="font-weight:600">ARRIVAL CHECKS</span>${c.html}</div>
+      <button class="pbtn go" data-act="pscreen" data-arg="capture" ${c.ok ? '' : 'disabled'}>Confirm arrival<small>${c.ok ? 'Photo + container scan' : 'Unlocks at the customer gate'}</small></button>
+      ${!L.entry ? `<button class="pbtn alt" data-act="pscreen" data-arg="delay">Report delay<small>Tell TMD early if you will be late</small></button>` : ''}`;
+  }
+  return `<div class="appbar"><button class="back" data-act="pscreen" data-arg="list" aria-label="Back">‹</button><div><div class="pk mono">${j.id}</div><h2>${esc(s.customer)}</h2></div></div>
+  <div class="pbody" data-keep-scroll="pjob">${action}${info}</div>`;
+}
+function phoneCapture(j) {
+  const L = S.phone.local[j.id], P = S.phone;
+  const steps = `<div class="steps"><span class="on"></span><span class="${L.photo ? 'on' : ''}"></span></div>`;
+  let body;
+  if (!L.photo) body = `<div class="pk" style="font-weight:600">STEP 1 OF 2 · PHOTO OF CONTAINER AT GATE</div>
+    <div class="finder">${containerArt(j)}</div>
+    <button class="shutter" data-act="photo" aria-label="Take photo"></button>
+    <p class="note">📷 Camera only. Photos from the gallery can't be used.</p>`;
+  else body = `<div class="pk" style="font-weight:600">STEP 2 OF 2 · SCAN CONTAINER CODE</div>
+    <div class="row" style="display:flex;gap:10px;align-items:center"><div style="width:84px;border-radius:8px;overflow:hidden;flex:none">${containerArt(j)}</div><span class="note">✓ Photo taken ${hm(L.photo)}, stamped with time, GPS and job number</span></div>
+    ${L.scan ? `<div class="pcard"><span class="pk">Container</span><span class="mono pv" style="font-size:18px">${fmtCntr(j.container)}</span><span class="note" style="color:var(--p-hit)">✓ Matches this job${L.scan === 'Manual' ? ' · typed by you (TMD will see this)' : ''}</span></div>
+      <button class="pbtn go" data-act="submitarrival">Submit arrival<small>Ipadala</small></button>`
+    : `<div class="finder">${containerArt(j)}<div class="qrframe"></div><div class="scanline"></div></div>
+      <button class="pbtn" data-act="scan">Scan code</button>
+      ${P.manual ? `<label class="pk" for="manualno">Container number (11 characters)</label><input class="pinput" id="manualno" data-draft="manualno" value="${esc(S.drafts.manualno || '')}" placeholder="TMDU2026451" maxlength="11" autocomplete="off">
+        ${P.scanErr ? `<div class="err">${esc(P.scanErr)}</div>` : ''}<button class="pbtn alt" data-act="manual">Use this number</button>`
+      : `<button class="pbtn alt" data-act="showmanual">Label damaged? Type number</button>`}`}`;
+  return `<div class="appbar"><button class="back" data-act="pscreen" data-arg="job" aria-label="Back">‹</button><div><div class="pk">Confirm arrival</div><h2>${esc(site(j).customer)}</h2></div></div>
+  <div class="pbody">${steps}${body}</div>`;
+}
+function phoneResult(j) {
+  const L = S.phone.local[j.id], hit = L.entry <= j.agreed + S.config.grace * MIN;
+  const { m, txt } = relMin(L.entry - j.agreed);
+  const exc = j.exception || L.excQueued;
+  const queued = S.phone.queue.length;
+  return `<div class="appbar"><button class="back" data-act="pscreen" data-arg="list" aria-label="Back">‹</button><div><div class="pk mono">${j.id}</div><h2>Arrival result</h2></div></div>
+  <div class="pbody">
+    <div class="result ${hit ? 'hit' : 'miss'}"><span style="font-weight:600;opacity:.9">${hit ? 'On time' : 'Late'}</span><h3>${hit ? 'HIT' : 'MISS'}</h3>
+      <span>${m === 0 ? 'Right on the agreed time' : m < 0 ? `${txt} before agreed time` : `${txt} after agreed time`}</span></div>
+    <div class="pcard"><dl class="kv"><dt>Agreed</dt><dd class="mono">${hm(j.agreed)}</dd><dt>Arrived</dt><dd class="mono">${hm(L.entry)}</dd><dt>Confirmed</dt><dd class="mono">${hm(L.confirmed)}</dd></dl>
+      <p class="note">Arrived = when you entered the site area, measured by the server, not your phone clock.</p></div>
+    ${queued ? `<p class="note">📶 No signal. Saved on phone and will send automatically.</p>` : `<p class="note">✓ Sent to TMD and the customer.</p>`}
+    ${!hit && !exc ? `<div class="pcard" style="border-color:var(--p-miss)"><b style="color:var(--p-miss)">Exception required</b><span class="pk">Tell TMD why you were late. The job closes only after this.</span></div>
+      <button class="pbtn" data-act="pscreen" data-arg="exception">File exception<small>Ilagay ang dahilan</small></button>` : ''}
+    ${exc ? `<div class="pcard"><span class="pk">Exception filed</span><span class="pv">${exc.code} · ${esc(reason(exc.code).label)}</span><span class="pchip pc-risk" style="align-self:flex-start">Waiting for TMD review</span></div>` : ''}
+    ${hit || exc ? `<button class="pbtn alt" data-act="pscreen" data-arg="list">Back to jobs</button>` : ''}
+  </div>`;
+}
+function phoneReasonForm(j, kind) {
+  const P = S.phone, isExc = kind === 'exception';
+  const list = REASONS.map(r => `<button class="opt" aria-pressed="${P.sel === r.code}" data-act="pickreason" data-arg="${r.code}"><span class="code">${r.code}</span><span>${esc(r.label)}</span></button>`).join('');
+  const etaSel = isExc ? '' : `<span class="pk" style="font-weight:600">How late will you be?</span>
+    <div class="seg" style="gap:6px">${[15, 30, 60, 90].map(n => `<button class="opt" style="width:auto;flex:1;justify-content:center" aria-pressed="${(S.drafts.delaymin || 30) == n}" data-act="delaymin" data-arg="${n}">+${n} min</button>`).join('')}</div>`;
+  const needRemarks = P.sel === 'OTH-99';
+  return `<div class="appbar"><button class="back" data-act="pscreen" data-arg="${isExc ? 'result' : 'job'}" aria-label="Back">‹</button><div><div class="pk mono">${j.id}</div><h2>${isExc ? 'File exception' : 'Report delay'}</h2></div></div>
+  <div class="pbody" data-keep-scroll="preason">
+    <span class="pk">${isExc ? 'Your arrival was after the agreed time. Choose the main reason.' : 'TMD and Sales Support will be told right away. This doesn\'t change the Hit/Miss result.'}</span>
+    ${etaSel}<div style="display:flex;flex-direction:column;gap:6px">${list}</div>
+    <label class="pk" for="remarks" style="font-weight:600">Remarks ${needRemarks ? '(required)' : '(optional)'}</label>
+    <textarea class="ptxt" id="remarks" data-draft="remarks" placeholder="What happened? Where?">${esc(S.drafts.remarks || '')}</textarea>
+    ${isExc ? `<button class="pbtn alt" data-act="excphoto">${S.drafts.excphoto ? '✓ Evidence photo attached' : 'Add evidence photo (camera)'}</button>` : ''}
+    ${P.scanErr ? `<div class="err">${esc(P.scanErr)}</div>` : ''}
+    <button class="pbtn" data-act="${isExc ? 'fileexc' : 'filedelay'}" ${P.sel ? '' : 'disabled'}>${isExc ? 'Submit exception' : 'Send delay alert'}</button>
+  </div>`;
+}
+function demoPanel() {
+  const P = S.phone, pr = (on) => `aria-pressed="${on}"`;
+  return `<section class="panel"><div class="head" style="align-items:center"><div><span class="eyebrow">Demo controls</span><h3>Play the trucker, then try to cheat</h3></div>
+      <button class="btn sm" data-act="reset">Reset demo</button></div>
+    <ol class="guide">
+      <li>On the phone, open the <b>10:30 Sta. Rosa Food Packers</b> job and tap <b>Start trip</b>.</li>
+      <li>Fast-forward the clock until the truck enters the site area. Turn on heavy traffic first to make it late.</li>
+      <li>Confirm arrival with photo and container scan, then open the <b>Command Center</b> to see it live.</li>
+    </ol>
+    <div class="ctrls">
+      <div class="ctrl"><span class="lbl">Clock</span><div class="seg"><button data-act="ff" data-arg="5">+5 min</button><button data-act="ff" data-arg="15">+15 min</button><button data-act="ff" data-arg="60">+1 hour</button></div><p>Simulated time runs live. Skip ahead to drive faster.</p></div>
+      <div class="ctrl"><span class="lbl">Road</span><div class="seg"><button data-act="traffic" data-arg="0" ${pr(!P.traffic)}>Normal 30 km/h</button><button data-act="traffic" data-arg="1" ${pr(P.traffic)}>Heavy traffic 10 km/h</button></div><p>6.2 km to Sta. Rosa. Heavy traffic makes the 10:30 slot a Miss.</p></div>
+      <div class="ctrl"><span class="lbl">Mobile signal</span><div class="seg"><button data-act="online" data-arg="1" ${pr(P.online)}>Online</button><button data-act="online" data-arg="0" ${pr(!P.online)}>No signal</button></div><p>Offline events keep their true time and sync later.</p></div>
+      <div class="ctrl"><span class="lbl">Cheat attempts</span><div class="seg"><button class="cheat" data-act="mock" ${pr(P.mock)}>Fake GPS app</button><button class="cheat" data-act="skew" ${pr(!!P.skew)}>Set phone clock back 30 min</button></div><p>Both are detected and flagged to TMD. Neither changes the arrival time.</p></div>
+    </div></section>`;
+}
+function logPanel() {
+  const L = S.phone.log;
+  return `<section class="panel"><div><span class="eyebrow">What the phone sent</span><h3>Events to the platform</h3></div>
+    ${L.length ? `<ul class="evlog" data-keep-scroll="evlog">${L.map(e => `<li><span class="mono muted">${hm(e.at)}</span><span><code>${e.type}</code>${e.detail ? ` <span class="muted">· ${esc(e.detail)}</span>` : ''}</span>${e.queued ? '<span class="chip c-risk">Queued</span>' : '<span class="chip c-hit">Sent</span>'}</li>`).join('')}</ul>`
+      : `<p class="muted" style="margin:0">Nothing yet. Events appear here as you use the phone: trip start, geofence entry, confirmation, exceptions and integrity flags.</p>`}
+  </section>`;
+}
+
+/* ---------- COMMAND CENTER ---------- */
+const ROLES = { TMD:'TMD Team', SALES:'Sales Support', ADMIN:'System Admin' };
+const ROLE_NOTE = {
+  TMD:'Monitors all trips, reviews exceptions and clears integrity flags.',
+  SALES:'Read-only view for customer updates. Driver mobile numbers are hidden.',
+  ADMIN:'Sets rules, geofences, reason codes, devices and reviews the audit trail.',
+};
+function pagesFor(role) {
+  const p = [['board','Live board'], ['exceptions','Exceptions'], ['analytics','Analytics']];
+  if (role === 'ADMIN') p.push(['rules','Rules'], ['users','Users & devices'], ['sites','Sites & geofences'], ['codes','Reason codes']);
+  if (role !== 'SALES') p.push(['audit','Audit trail']);
+  return p;
+}
+function commandView() {
+  const k = kpis();
+  const pages = pagesFor(S.role);
+  if (!pages.some(p => p[0] === S.page)) S.page = 'board';
+  const count = { exceptions: k.pend };
+  const nav = pages.map(([id, l], i) => `${i === 3 ? '<span class="navgroup eyebrow">Administration</span>' : ''}<button data-act="page" data-arg="${id}" ${S.page === id ? 'aria-current="page"' : ''}>${l}${count[id] ? `<span class="n">${count[id]}</span>` : ''}</button>`).join('');
+  const body = { board, exceptions: exceptionsPage, analytics, rules, users, sites, codes, audit: auditPage }[S.page]();
+  return `<div class="cc"><aside class="nav">
+      <div class="role"><label class="eyebrow" for="role">Viewing as</label><select id="role" data-act="role">${Object.entries(ROLES).map(([v, l]) => `<option value="${v}" ${S.role === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+      <div class="navlist">${nav}</div><p class="perm">${ROLE_NOTE[S.role]}</p></aside>
+    <div class="main">${body}</div></div>`;
+}
+function filteredJobs() {
+  let js = [...S.jobs].sort((a, b) => a.agreed - b.agreed);
+  const f = S.filter;
+  if (f === 'risk') js = js.filter(j => evaluate(j) === 'AT_RISK');
+  if (f === 'miss') js = js.filter(j => ['MISS', 'MISS_NA'].includes(evaluate(j)));
+  if (f === 'hit') js = js.filter(j => evaluate(j) === 'HIT');
+  if (f === 'flags') js = js.filter(j => j.flags.some(x => x.status === 'Open'));
+  if (f === 'exc') js = js.filter(j => j.exception && j.exception.status === 'Pending');
+  if (f === 'arrived') js = js.filter(j => j.arrival);
+  if (S.customer) js = js.filter(j => j.site === S.customer);
+  return js;
+}
+function board() {
+  const k = kpis();
+  const tile = (f, cls, v, l, s) => f ? `<button class="kpi ${cls}" data-act="filter" data-arg="${f}" aria-pressed="${S.filter === f}"><span class="l">${l}</span><span class="v">${v}</span><span class="s">${s}</span></button>` : `<div class="kpi ${cls}"><span class="l">${l}</span><span class="v">${v}</span><span class="s">${s}</span></div>`;
+  const fb = (f, l) => `<button data-act="filter" data-arg="${f}" aria-pressed="${S.filter === f}">${l}</button>`;
+  const rows = filteredJobs().map(j => {
+    const v = j.arrival ? relMin(j.arrival.at - j.agreed) : null;
+    const open = j.flags.filter(f => f.status === 'Open').length;
+    const icons = [
+      open ? `<span class="chip c-miss" title="Open integrity flags">⚑ ${open}</span>` : '',
+      j.exception ? `<span class="chip ${j.exception.status === 'Pending' ? 'c-risk' : 'c-neutral'}" title="Exception">${j.exception.code}</span>` : '',
+      j.prealert && !j.exception ? `<span class="chip c-info" title="Delay pre-alert">Pre-alert</span>` : '',
+      j.arrival && j.arrival.offline ? `<span class="chip c-neutral" title="Captured offline">Offline</span>` : '',
+    ].join('');
+    return `<tr class="click ${S.sel === j.id ? 'sel' : ''}" data-act="sel" data-arg="${j.id}" tabindex="0">
+      <td class="mono"><b>${hm(j.agreed)}</b></td>
+      <td><b>${esc(site(j).customer)}</b><div class="sub mono">${j.id} · ${esc(site(j).city)}</div></td>
+      <td class="mono nw">${fmtCntr(j.container)}<div class="sub">${j.size} · ${j.move}</div></td>
+      <td class="nw">${esc(trk(j).name)}<div class="sub mono">${trk(j).plate}</div></td>
+      <td class="mono">${j.arrival ? hm(j.arrival.at) : '—'}</td>
+      <td class="mono ${v ? (v.m > 0 ? 'var-pos' : 'var-neg') : ''}">${v ? (v.m > 0 ? '+' : v.m < 0 ? '−' : '') + Math.abs(v.m) : '—'}</td>
+      <td class="nw">${resultChip(j)}</td><td class="nw">${statusText(j)}</td><td><div class="icons">${icons}</div></td></tr>`;
+  }).join('');
+  const custOpts = Object.entries(SITES).map(([id, s]) => `<option value="${id}" ${S.customer === id ? 'selected' : ''}>${esc(s.customer)}</option>`).join('');
+  return `<div class="head"><div><span class="eyebrow">Live board · ${dateLabel(S.now)}</span><h2>Customer arrivals today</h2></div>
+      <span class="muted" style="font-size:13px">Hit = arrived at or before agreed time${S.config.grace ? ` + ${S.config.grace} min grace` : ''}</span></div>
+    <div class="kpis">
+      ${tile('all', '', k.total, 'Due today', `${k.arrived} arrived`)}
+      ${tile('hit', 'k-hit', k.raw == null ? '—' : k.raw + '%', 'Hit rate (raw)', `${k.hits} hit of ${k.decided} decided`)}
+      ${tile('miss', 'k-miss', k.misses, 'Miss', [k.notArrived ? `${k.notArrived} not arrived` : '', k.noExc ? `${k.noExc} need exception` : ''].filter(Boolean).join(' · ') || 'all have exceptions')}
+      ${tile('risk', 'k-risk', k.risk, 'At risk', `due in ${S.config.atRisk} min, not arrived`)}
+      ${tile('exc', '', k.pend, 'Exceptions to review', 'TMD queue')}
+      ${tile('flags', k.flags ? 'k-miss' : '', k.flags, 'Integrity flags', 'open')}
+      ${tile(null, '', k.adj == null ? '—' : k.adj + '%', 'Hit rate (adjusted)', 'excl. validated uncontrollable')}
+    </div>
+    <div class="boardgrid"><section style="display:flex;flex-direction:column;gap:10px;min-width:0">
+      <div class="filters">${fb('all','All')}${fb('risk','At risk')}${fb('miss','Miss')}${fb('arrived','Arrived')}${fb('flags','Flagged')}${fb('exc','Exception pending')}
+        <label class="muted" for="cust" style="font-size:13px;margin-left:6px">Customer</label><select id="cust" data-act="customer"><option value="">All customers</option>${custOpts}</select></div>
+      <div class="tablebox"><table class="board-table"><thead><tr><th>Agreed</th><th>Customer / job</th><th>Container</th><th>Trucker</th><th>Arrived</th><th>Var min</th><th>Result</th><th>Status</th><th>Signals</th></tr></thead>
+        <tbody>${rows || `<tr><td colspan="9" class="muted" style="padding:24px">No jobs match this filter.</td></tr>`}</tbody></table></div>
+    </section>
+    <section class="panel"><div><span class="eyebrow">Notifications</span><h3>Live feed</h3></div>
+      <ul class="feed" data-keep-scroll="feed">${[...S.feed].sort((a, b) => b.at - a.at).slice(0, 30).map(f => `<li class="k-${f.kind}"><span class="t">${hm(f.at)}</span><span>${f.text} ${f.job ? `<button class="linkish" data-act="sel" data-arg="${f.job}">View</button>` : ''}</span></li>`).join('')}</ul></section>
+    </div>`;
+}
+function statusText(j) {
+  const m = { 'Assigned':'c-neutral', 'En route':'c-info', 'At site':'c-info', 'Confirmed':'c-neutral' };
+  let s = j.status;
+  if (s === 'Confirmed' && evaluate(j) === 'MISS' && !j.exception) s = 'Needs exception';
+  return `<span class="chip ${s === 'Needs exception' ? 'c-risk' : m[s] || 'c-neutral'}">${s}</span>`;
+}
+function drawer() {
+  const j = job(S.sel); if (!j) return '';
+  const s = site(j), t = trk(j), e = evaluate(j), canAct = S.role === 'TMD';
+  const v = j.arrival ? relMin(j.arrival.at - j.agreed) : null;
+  const ex = j.exception;
+  const flags = j.flags.map((f, i) => `<div class="flag ${f.status === 'Cleared' ? 'cleared' : ''}"><div class="row"><b>⚑ ${FLAGS[f.type]}</b><span class="chip ${f.status === 'Open' ? 'c-miss' : 'c-neutral'}">${f.status}</span></div>
+      <span class="muted" style="font-size:13px">${esc(f.detail)} · ${hm(f.at)}</span>${f.clearedBy ? `<span style="font-size:13px">Cleared by ${esc(f.clearedBy)}: ${esc(f.note)}</span>` : ''}
+      ${f.status === 'Open' && canAct ? `<div class="actions"><input class="in" id="fnote-${i}" data-draft="fnote-${i}" placeholder="Note (what you checked)" value="${esc(S.drafts['fnote-' + i] || '')}" style="flex:1;min-width:160px"><button class="btn sm" data-act="clearflag" data-arg="${i}">Clear flag</button></div>` : ''}</div>`).join('');
+  const excHtml = ex ? `<section class="panel"><div class="head"><h3>Exception · ${ex.code}</h3><span class="chip ${ex.status === 'Pending' ? 'c-risk' : ex.status === 'Validated' ? 'c-hit' : 'c-miss'}">${ex.status}${ex.cls ? ' · ' + ex.cls : ''}</span></div>
+      <div><b>${esc(reason(ex.code).label)}</b><div class="muted" style="font-size:13px">Filed ${hm(ex.filedAt)} by ${esc(t.name)}${ex.photo ? ' · evidence photo attached' : ''} · default class ${reason(ex.code).cls}</div></div>
+      ${ex.remarks ? `<p style="margin:0">“${esc(ex.remarks)}”</p>` : ''}
+      ${ex.reviewer ? `<p class="muted" style="margin:0;font-size:13px">Reviewed by ${esc(ex.reviewer)} at ${hm(ex.reviewedAt)}: ${esc(ex.reviewNote)}</p>` : ''}
+      ${ex.status === 'Pending' && canAct ? `<textarea class="in" id="revnote" data-draft="revnote" placeholder="Review note (required to reject)">${esc(S.drafts.revnote || '')}</textarea>
+        <div class="actions"><button class="btn ok" data-act="review" data-arg="Uncontrollable">Validate · Uncontrollable</button><button class="btn" data-act="review" data-arg="Controllable">Validate · Controllable</button><button class="btn bad" data-act="review" data-arg="Reject">Reject</button></div>
+        <p class="muted" style="font-size:12px;margin:0">Validation never changes the raw Miss. Uncontrollable misses are left out of the adjusted Hit rate only.</p>` : ''}
+      ${ex.status === 'Pending' && !canAct ? `<p class="muted" style="font-size:13px;margin:0">Waiting for TMD review.</p>` : ''}</section>` : '';
+  const update = `${s.customer}: container ${fmtCntr(j.container)} (${j.booking}) ${j.arrival ? `arrived at your site at ${hm(j.arrival.at)}, ${dateLabel(j.arrival.at)}. Agreed time was ${hm(j.agreed)}.` : j.prealert ? `is delayed. New estimated arrival ${hm(j.prealert.eta)}. Agreed time was ${hm(j.agreed)}.` : `is scheduled to arrive at ${hm(j.agreed)} today. Truck ${t.plate}.`}`;
+  return `<div class="drawer-bg" data-act="close"></div><aside class="drawer" role="dialog" aria-label="Job ${j.id}">
+    <div class="dhead"><div><span class="eyebrow mono">${j.id} · ${j.booking}</span><h2>${esc(s.customer)}</h2><div style="margin-top:6px">${resultChip(j)} ${statusText(j)}</div></div><button class="btn sm" data-act="close" aria-label="Close">Close ✕</button></div>
+    <section class="panel"><div class="facts">
+      <div><span class="k">Agreed arrival</span><span class="v mono">${hm(j.agreed)} · ${dateLabel(j.agreed)}</span></div>
+      <div><span class="k">Arrival (geofence entry)</span><span class="v mono">${j.arrival ? hm(j.arrival.at) + ':' + pad(local(j.arrival.at).getUTCSeconds()) : '—'}${v ? ` <span class="${v.m > 0 ? 'var-pos' : 'var-neg'}">(${variance(j)})</span>` : ''}</span></div>
+      <div><span class="k">Container</span><span class="v mono">${fmtCntr(j.container)} · ${j.size}</span></div>
+      <div><span class="k">Move</span><span class="v">${j.move} · from ${PICKUPS[j.pickup]}</span></div>
+      <div><span class="k">Trucker</span><span class="v">${esc(t.name)} · ${t.plate}</span></div>
+      <div><span class="k">${S.role === 'SALES' ? 'Haulier' : 'Mobile'}</span><span class="v mono">${S.role === 'SALES' ? esc(t.haulier) : t.mobile}</span></div>
+      <div><span class="k">Site</span><span class="v">${esc(s.addr)}</span></div>
+      <div><span class="k">Confirmation</span><span class="v">${j.confirmedAt ? `${hm(j.confirmedAt)} · photo + ${j.scan === 'QR' ? 'QR scan' : 'typed number'}` : '—'}</span></div>
+    </div>${j.prealert ? `<div class="flag" style="border-left-color:var(--info)"><b>Delay pre-alert ${j.prealert.code} at ${hm(j.prealert.at)}</b><span class="muted" style="font-size:13px">${esc(reason(j.prealert.code).label)}. New ETA ${hm(j.prealert.eta)}.${j.prealert.remarks ? ' “' + esc(j.prealert.remarks) + '”' : ''}</span></div>` : ''}</section>
+    <div class="split"><figure class="figure" style="margin:0" title="Evidence photo">${j.photo ? containerArt(j, { watermark:[`${j.id} · ${hm(j.confirmedAt)} 21-10-2026`, `${s.lat.toFixed(4)}, ${s.lng.toFixed(4)} ±${j.arrival.acc}m`] }) : '<span class="muted" style="font-size:13px;padding:12px;text-align:center">No photo yet. Captured at arrival confirmation.</span>'}</figure>
+      <figure class="figure" style="margin:0">${geofenceArt(j)}</figure></div>
+    ${excHtml}
+    ${j.flags.length ? `<section class="panel"><h3>Integrity checks</h3>${flags}</section>` : `<section class="panel"><h3>Integrity checks</h3><p class="muted" style="margin:0;font-size:14px">${j.arrival ? 'All passed: inside geofence, GPS accuracy within limit, no fake GPS, server time.' : 'Checks run at arrival.'}</p></section>`}
+    <section class="panel"><h3>Timeline</h3><ul class="timeline">${[...j.events].sort((a, b) => a.at - b.at).map(ev => `<li><span class="mono muted">${hm(ev.at)}</span><span class="dot ${ev.offline ? 'off' : ''} ${ev.bad ? 'bad' : ''}"></span><span>${esc(ev.label)}<small class="mono">${ev.type}</small></span></li>`).join('')}</ul></section>
+    ${S.role !== 'ADMIN' ? `<section class="panel"><h3>Customer update</h3><div class="copybox" id="copytext">${esc(update)}</div><div class="actions"><button class="btn sm" data-act="copy">Copy text</button><span class="muted" id="copied" style="font-size:13px"></span></div></section>` : ''}
+  </aside>`;
+}
+function exceptionsPage() {
+  const list = S.jobs.filter(j => j.exception).sort((a, b) => (a.exception.status === 'Pending' ? 0 : 1) - (b.exception.status === 'Pending' ? 0 : 1) || a.exception.filedAt - b.exception.filedAt);
+  const missing = S.jobs.filter(j => evaluate(j) === 'MISS' && !j.exception);
+  return `<div class="head"><div><span class="eyebrow">TMD review queue</span><h2>Exceptions</h2></div><span class="muted" style="font-size:13px">Review target: within 24 h of filing</span></div>
+    ${missing.length ? `<section class="panel" style="border-color:var(--risk)"><b>Late arrivals with no exception yet</b>${missing.map(j => `<div class="muted" style="font-size:14px">${j.id} · ${esc(site(j).customer)} · ${esc(trk(j).name)} · arrived ${hm(j.arrival.at)} <button class="linkish" data-act="sel" data-arg="${j.id}">Open</button></div>`).join('')}</section>` : ''}
+    <div class="tablebox"><table><thead><tr><th>Filed</th><th>Job</th><th>Reason</th><th>Late by</th><th>Trucker</th><th>Status</th><th></th></tr></thead><tbody>
+    ${list.map(j => `<tr class="click" data-act="sel" data-arg="${j.id}"><td class="mono">${hm(j.exception.filedAt)}</td><td><b>${esc(site(j).customer)}</b><div class="sub mono">${j.id}</div></td>
+      <td><span class="mono">${j.exception.code}</span> ${esc(reason(j.exception.code).label)}<div class="sub">${esc(j.exception.remarks || '')}</div></td>
+      <td class="mono var-pos">${j.arrival ? '+' + Math.round((j.arrival.at - j.agreed) / MIN) : '—'}</td><td>${esc(trk(j).name)}</td>
+      <td><span class="chip ${j.exception.status === 'Pending' ? 'c-risk' : j.exception.status === 'Validated' ? 'c-hit' : 'c-miss'}">${j.exception.status}${j.exception.cls ? ' · ' + j.exception.cls : ''}</span></td>
+      <td><span class="btn sm">${S.role === 'TMD' && j.exception.status === 'Pending' ? 'Review' : 'View'}</span></td></tr>`).join('') || `<tr><td colspan="7" class="muted" style="padding:24px">No exceptions filed today.</td></tr>`}
+    </tbody></table></div>`;
+}
+/* sample history for analytics: 8–20 Oct, plus today live */
+const HIST = [[88,91],[85,90],[90,93],[79,88],[86,90],[92,94],[84,89],[87,92],[81,90],[89,92],[93,95],[86,91],[88,93]];
+function analytics() {
+  const k = kpis();
+  const pts = HIST.map(x => x.slice());
+  const W = 560, H = 230, L = 36, R = 12, Tp = 14, B = 30, y0 = 60, y1 = 100;
+  const x = i => L + i * (W - L - R) / (pts.length - 1), y = v => Tp + (y1 - Math.max(y0, v)) / (y1 - y0) * (H - Tp - B);
+  const line = idx => pts.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)} ${y(p[idx]).toFixed(1)}`).join(' ');
+  const area = `${line(0)} L${x(pts.length - 1)} ${H - B} L${x(0)} ${H - B} Z`;
+  const grid = [60, 70, 80, 90, 100].map(v => `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${L - 6}" y="${y(v) + 4}" text-anchor="end" font-size="11" fill="var(--muted)" font-family="IBM Plex Mono,monospace">${v}%</text>`).join('');
+  const xl = pts.map((_, i) => i % 3 === 0 ? `<text x="${x(i)}" y="${H - 10}" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="IBM Plex Mono,monospace">${8 + i} Oct</text>` : '').join('');
+  const target = `<line x1="${L}" x2="${W - R}" y1="${y(95)}" y2="${y(95)}" stroke="var(--hit)" stroke-dasharray="5 4"/><text x="${W - R}" y="${y(95) - 5}" text-anchor="end" font-size="11" fill="var(--hit)">Target 95%</text>`;
+  const last = pts.length - 1;
+  const trend = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Hit rate trend">${grid}${target}<path d="${area}" fill="var(--magenta)" opacity=".08"/>
+    <path d="${line(1)}" fill="none" stroke="var(--violet)" stroke-width="2" stroke-dasharray="1 0"/><path d="${line(0)}" fill="none" stroke="var(--magenta)" stroke-width="2.5"/>
+    <circle cx="${x(last)}" cy="${y(pts[last][0])}" r="4.5" fill="var(--magenta)"/><circle cx="${x(last)}" cy="${y(pts[last][1])}" r="4" fill="var(--violet)"/>${xl}</svg>`;
+  const mtd = { 'TRF-01':34, 'PRT-01':21, 'CUS-01':14, 'TRK-02':11, 'TRK-01':8, 'TRF-02':7, 'WTH-01':5, 'CUS-02':4, 'DOC-01':3 };
+  for (const j of S.jobs) if (j.exception) mtd[j.exception.code] = (mtd[j.exception.code] || 0) + 1;
+  const ord = Object.entries(mtd).sort((a, b) => b[1] - a[1]); const max = ord[0][1];
+  const pareto = ord.map(([c, n]) => { const r = reason(c); const ctl = r.cls === 'Controllable'; return `<div class="r"><span title="${esc(r.label)}"><span class="mono">${c}</span> <span class="muted" style="font-size:12px">${ctl ? 'controllable' : ''}</span></span><span class="bar"><i style="width:${n / max * 100}%;background:${ctl ? 'var(--miss)' : 'var(--violet)'}"></i></span><span class="mono" style="text-align:right">${n}</span></div>`; }).join('');
+  const sc = [['T01',212,93,2,100,0],['T02',198,95,0,100,0],['T03',176,86,4,96,1],['T04',184,90,2,100,3],['T05',205,88,5,92,0],['T06',61,79,2,85,2]];
+  const isSales = S.role === 'SALES';
+  const custSc = [['TAG',96,212,1],['STR',92,148,3],['LIP',90,96,2],['MEY',88,120,4],['GTR',86,104,5],['CAL',83,88,6],['VAL',80,132,9]];
+  const scoreTable = isSales
+    ? `<table><thead><tr><th>Customer</th><th>Deliveries MTD</th><th>Hit %</th><th>Customer-caused misses</th></tr></thead><tbody>${custSc.map(([s, h, n, c]) => `<tr><td>${esc(SITES[s].customer)}</td><td class="mono">${n}</td><td class="mono ${h < 90 ? 'var-pos' : ''}">${h}%</td><td class="mono">${c}</td></tr>`).join('')}</tbody></table>`
+    : `<table><thead><tr><th>Trucker</th><th>Jobs MTD</th><th>Hit %</th><th>Controllable misses</th><th>Exception filed on time</th><th>Integrity flags</th></tr></thead><tbody>${sc.map(([id, n, h, c, f, fl]) => `<tr><td>${esc(TRUCKERS[id].name)}<div class="sub mono">${TRUCKERS[id].plate} · ${esc(TRUCKERS[id].haulier)}</div></td><td class="mono">${n}</td><td class="mono ${h < 90 ? 'var-pos' : ''}">${h}%</td><td class="mono">${c}</td><td class="mono">${f}%</td><td>${fl ? `<span class="chip c-miss">⚑ ${fl}</span>` : '<span class="muted">0</span>'}</td></tr>`).join('')}</tbody></table>`;
+  return `<div class="head"><div><span class="eyebrow">Performance · October 2026 to date</span><h2>Analytics</h2></div><span class="muted" style="font-size:13px">Earlier days are sample history. Today is live.</span></div>
+    <div class="cards2">
+      <section class="panel chart"><div><h3>On-time Hit rate, 8–20 Oct</h3><p class="muted" style="margin:0;font-size:13px">Raw counts every late arrival. Adjusted leaves out misses TMD validated as uncontrollable.</p></div>
+        <div class="legend"><span><i style="background:var(--magenta)"></i>Raw</span><span><i style="background:var(--violet)"></i>Adjusted</span><span>Today so far: raw ${k.raw ?? '—'}%, adjusted ${k.adj ?? '—'}% (${k.decided} of ${k.total} jobs decided)</span></div>${trend}</section>
+      <section class="panel"><div><h3>Why trucks were late</h3><p class="muted" style="margin:0;font-size:13px">Misses by exception reason, month to date. Red = controllable by haulier.</p></div><div class="pareto">${pareto}</div></section>
+    </div>
+    <section class="panel"><h3>${isSales ? 'Customer scorecard' : 'Trucker scorecard'}</h3><div class="tablebox" style="border:0">${scoreTable}</div></section>`;
+}
+function rules() {
+  const c = S.config;
+  const f = (id, label, unit, help, min, max) => `<div class="field"><label for="cfg-${id}">${label}</label><div class="inrow"><input class="in mono" type="number" id="cfg-${id}" data-cfg="${id}" value="${c[id]}" min="${min}" max="${max}"><span class="muted">${unit}</span></div><small>${help}</small></div>`;
+  const tg = (id, label, help) => `<div class="field"><label>${label}</label><div class="seg"><button data-act="cfgtoggle" data-arg="${id}" aria-pressed="${c[id]}">On</button><button data-act="cfgtoggle" data-arg="${id}" aria-pressed="${!c[id]}">Off</button></div><small>${help}</small></div>`;
+  return `<div class="head"><div><span class="eyebrow">System Admin</span><h2>Rules</h2></div><span class="muted" style="font-size:13px">Every change is written to the audit trail and applies immediately.</span></div>
+    <section class="panel"><h3>Hit / Miss</h3><div class="formgrid">
+      ${f('grace','Grace period','min','Arrival up to this long after the agreed time still counts as Hit. Default 0.',0,60)}
+      ${f('atRisk','At-risk window','min','Flag jobs not yet arrived this long before the agreed time.',5,120)}</div></section>
+    <section class="panel"><h3>Anti-cheat</h3><div class="formgrid">
+      ${f('radius','Default geofence radius','m','Used for new sites. Each site can override it.',50,500)}
+      ${f('acc','GPS accuracy limit','m','Confirmation is blocked if the GPS reading is less precise than this.',10,200)}
+      ${f('drift','Phone clock tolerance','min','Flag if the phone clock differs from server time by more than this.',1,30)}
+      ${f('lateSync','Late sync limit','min','Flag offline events that reach the server later than this.',30,1440)}
+      ${tg('scanRequired','Require container scan','Photo alone is not enough. Typed numbers are flagged.')}
+      ${tg('otp','Customer OTP','Customer receives an SMS code on geofence entry. Use for high-risk sites.')}</div></section>`;
+}
+function users() {
+  return `<div class="head"><div><span class="eyebrow">System Admin</span><h2>Users and devices</h2></div><span class="muted" style="font-size:13px">One active phone per trucker. Login by SMS one-time PIN.</span></div>
+    <div class="tablebox"><table><thead><tr><th>Trucker</th><th>Haulier</th><th>Bound phone</th><th>App</th><th>Integrity</th><th>Bound since</th><th></th></tr></thead><tbody>
+    ${Object.entries(TRUCKERS).map(([id, t]) => `<tr><td><b>${esc(t.name)}</b><div class="sub mono">${t.plate} · ${t.mobile}</div></td><td>${esc(t.haulier)}</td><td>${esc(t.device)}</td><td class="mono">${t.app}${t.app !== '1.0.3' ? ' <span class="chip c-risk">Update</span>' : ''}</td>
+      <td><span class="chip ${t.integrity === 'Pass' ? 'c-hit' : 'c-risk'}">${t.integrity}</span></td><td class="mono">${t.bound}</td><td><button class="btn sm" data-act="resetdev" data-arg="${id}">Reset device</button></td></tr>`).join('')}
+    </tbody></table></div><p class="muted" id="devmsg" style="margin:0;font-size:13px"></p>
+    <section class="panel"><h3>Command Center users</h3><div class="tablebox" style="border:0"><table><thead><tr><th>Name</th><th>Role</th><th>Branch</th></tr></thead><tbody>
+      <tr><td>L. Ramos</td><td>TMD Team</td><td>Manila</td></tr><tr><td>J. Cruz</td><td>TMD Team</td><td>Manila</td></tr><tr><td>A. Torres</td><td>Sales Support</td><td>Manila</td></tr><tr><td>K. Uy</td><td>System Admin</td><td>IT</td></tr></tbody></table></div></section>`;
+}
+function sites() {
+  return `<div class="head"><div><span class="eyebrow">System Admin</span><h2>Sites and geofences</h2></div><span class="muted" style="font-size:13px">Radius is per site. Large yards need a wider area.</span></div>
+    <div class="tablebox"><table><thead><tr><th>Customer site</th><th>Address</th><th>Coordinates</th><th>Radius</th><th>Gate notes</th></tr></thead><tbody>
+    ${Object.entries(SITES).map(([id, s]) => `<tr><td><b>${esc(s.customer)}</b></td><td>${esc(s.addr)}</td><td class="mono">${s.lat.toFixed(4)}, ${s.lng.toFixed(4)}</td>
+      <td><div class="inrow" style="display:flex;gap:6px;align-items:center"><input class="in mono" type="number" id="rad-${id}" data-rad="${id}" value="${s.radius}" min="50" max="500" style="width:80px"><span class="muted">m</span></div></td><td class="sub">${esc(s.gate)}</td></tr>`).join('')}
+    </tbody></table></div>`;
+}
+function codes() {
+  return `<div class="head"><div><span class="eyebrow">System Admin</span><h2>Exception reason codes</h2></div><span class="muted" style="font-size:13px">Default class guides TMD review. TMD makes the final call.</span></div>
+    <div class="tablebox"><table><thead><tr><th>Code</th><th>Reason shown to trucker</th><th>Default class</th></tr></thead><tbody>
+    ${REASONS.map(r => `<tr><td class="mono"><b>${r.code}</b></td><td>${esc(r.label)}</td><td><span class="chip ${r.cls === 'Controllable' ? 'c-miss' : r.cls === 'Uncontrollable' ? 'c-info' : 'c-neutral'}">${r.cls}</span></td></tr>`).join('')}
+    </tbody></table></div>`;
+}
+function auditPage() {
+  return `<div class="head"><div><span class="eyebrow">Governance · BPA and DPO</span><h2>Audit trail</h2></div><span class="muted" style="font-size:13px">Records can't be edited or deleted.</span></div>
+    <div class="tablebox"><table><thead><tr><th>When</th><th>Who</th><th>Action</th><th>Detail</th></tr></thead><tbody>
+    ${S.audit.map(a => `<tr><td class="mono">${a.at < BASE ? dateLabel(a.at).slice(4, 10) + ' ' : ''}${hm(a.at)}</td><td>${esc(a.who)}<div class="sub">${esc(a.role)}</div></td><td>${esc(a.action)}</td><td>${esc(a.detail)}</td></tr>`).join('')}
+    </tbody></table></div>`;
+}
+
+/* ---------- HOW IT WORKS ---------- */
+function specView() {
+  const p = S.lastPayload || payload(job('HJ-2610-0411'), false);
+  const anti = [
+    ['Tap "arrived" before reaching the customer','Confirm button only unlocks inside the site geofence','Blocked'],
+    ['Use a fake GPS app','Mock-location detection and Play Integrity check. Confirmation blocked','MOCK_LOCATION'],
+    ['Change the phone clock','Server time is used. Offline events use the phone\'s internal timer since last sync','CLOCK_DRIFT'],
+    ['Tap late to hide a late arrival, or tap early','Arrival time = geofence entry, recorded automatically','No effect'],
+    ['Upload an old photo','Camera only, photo stamped and hashed','PHOTO_REUSED'],
+    ['Scan a QR photo sent by another driver','Scan must match this job\'s container and only counts inside the geofence','CONTAINER_MISMATCH'],
+    ['Type the container number','Allowed for damaged labels, always flagged','MANUAL_ENTRY'],
+    ['Stay offline to hide the time','Arrival still recorded offline with true time. Late sync flagged','LATE_SYNC'],
+    ['Lend phone or login to another driver','One phone per trucker, SMS PIN login, Admin-only reset','DEVICE_CHANGE'],
+  ];
+  return `<div class="spec">
+    <div><span class="eyebrow">Version 1 design</span><h2 style="font-size:34px">How it works</h2></div>
+    <p class="lede">The trucker's phone records the arrival automatically when the truck enters the customer's site area, using server time. The trucker then proves it with a live photo and a container scan. The Command Center compares that time with the time agreed at booking and marks the job Hit or Miss.</p>
+    <div class="fw">
+      <div class="step"><span class="num">1</span><h3>Capture</h3><ul><li>Live photo, camera only</li><li>Container QR scan, ISO 6346 check digit</li><li>GPS with accuracy</li><li>Server-trusted time</li><li>Works offline</li></ul><span class="who">Trucker · own smartphone</span></div>
+      <div class="step"><span class="num">2</span><h3>Arrival confirmation</h3><ul><li>Location: geofence per customer site</li><li>Time: compared with agreed time → Hit / Miss</li><li>Notifications to TMD, Sales Support and customer</li><li>Exception required on every Miss</li></ul><span class="who">System · Branch Ops · Customer</span></div>
+      <div class="step"><span class="num">3</span><h3>Integrate</h3><ul><li>Jobs imported from TMD-Haulage</li><li>Arrival events sent back by API webhook</li><li>No re-encoding by dispatch or sales</li></ul><span class="who">IT</span></div>
+      <div class="step"><span class="num">4</span><h3>Govern</h3><ul><li>KPIs: raw and adjusted Hit rate</li><li>Exceptions and integrity flags reviewed by TMD</li><li>Audit trail of every change</li><li>Data privacy: tracking only during active jobs</li></ul><span class="who">BPA · DPO</span></div>
+    </div>
+    <section class="rule"><div><span class="eyebrow">The rule</span><h3 style="font-size:22px">Hit or Miss</h3></div>
+      <div class="formula">HIT  if arrival ≤ agreed + grace (${S.config.grace} min)<br>MISS if arrival &gt; agreed + grace<br>MISS if not arrived and agreed time has passed</div>
+      <div style="font-size:14px">Arrival = first entry into the site geofence, timed by the server. Exceptions explain a Miss. They never turn it into a Hit. Validated uncontrollable misses are left out of the <b>adjusted</b> rate only.</div></section>
+    <section class="panel"><div><span class="eyebrow">Integrity</span><h3>How each workaround is stopped</h3></div><div class="tablebox" style="border:0"><table><thead><tr><th>If a trucker tries to…</th><th>The platform…</th><th>TMD sees</th></tr></thead><tbody>
+      ${anti.map(([a, b, c]) => `<tr><td>${a}</td><td>${b}</td><td>${c.includes('_') ? `<span class="chip c-miss">${c}</span>` : `<span class="chip c-neutral">${c}</span>`}</td></tr>`).join('')}</tbody></table></div></section>
+    <section class="panel"><div><span class="eyebrow">Integrate</span><h3>Event sent to TMD-Haulage and customers</h3><p class="muted" style="margin:4px 0 0;font-size:13px">${S.lastPayload ? 'This is the payload from your demo confirmation.' : 'Sample from job HJ-2610-0411. Confirm an arrival in the Trucker app to see your own.'}</p></div>
+      <pre class="payload">${esc(JSON.stringify(p, null, 2))}</pre></section>
+  </div>`;
+}
+
+/* ============ ACTIONS ============ */
+const ACT = {
+  view: v => { S.view = v; try { history.replaceState(null, '', '#' + v); } catch (_) {} window.scrollTo(0, 0); },
+  openjob: id => { S.phone.jobId = id; S.phone.screen = job(id).demo && S.phone.local[id].confirmed ? 'result' : 'job'; },
+  pscreen: s => { S.phone.screen = s; S.phone.scanErr = ''; if (s === 'exception' || s === 'delay') { S.phone.sel = null; S.drafts.remarks = ''; S.drafts.excphoto = false; } if (s === 'capture') { S.phone.manual = false; } },
+  starttrip: () => { const j = job(S.phone.jobId), L = S.phone.local[j.id]; L.tripStart = S.now; emit({ type:'trip.started', job:j.id, at:S.now, detail:'Location tracking on for this job' }); if (S.phone.mock) mockFlag(j); },
+  photo: () => { const L = S.phone.local[S.phone.jobId]; L.photo = S.now; plog('photo.captured', S.now, 'Camera, stamped with time and GPS'); },
+  scan: () => { const L = S.phone.local[S.phone.jobId]; L.scan = 'QR'; },
+  showmanual: () => { S.phone.manual = true; },
+  manual: () => {
+    const j = job(S.phone.jobId), v = (S.drafts.manualno || '').toUpperCase().replace(/\s/g, '');
+    if (!validCntr(v)) { S.phone.scanErr = 'This is not a valid container number. Check the 4 letters, 6 digits and the last check digit.'; return; }
+    if (v !== j.container) { S.phone.scanErr = 'This container is not on this job. Check the number on the door.'; return; }
+    S.phone.scanErr = ''; S.phone.local[j.id].scan = 'Manual';
+  },
+  submitarrival: () => {
+    const j = job(S.phone.jobId), L = S.phone.local[j.id];
+    L.confirmed = S.now;
+    emit({ type:'arrival.confirmed', job:j.id, at:S.now, scan:L.scan, detail:`Photo + ${L.scan === 'QR' ? 'QR scan' : 'typed number'}` });
+    S.phone.screen = 'result';
+  },
+  pickreason: c => { S.phone.sel = c; S.phone.scanErr = ''; },
+  delaymin: n => { S.drafts.delaymin = +n; },
+  excphoto: () => { S.drafts.excphoto = !S.drafts.excphoto; },
+  fileexc: () => {
+    const j = job(S.phone.jobId);
+    if (S.phone.sel === 'OTH-99' && !(S.drafts.remarks || '').trim()) { S.phone.scanErr = 'Add remarks for "Other".'; return; }
+    S.phone.local[j.id].excQueued = { code:S.phone.sel };
+    emit({ type:'exception.filed', job:j.id, at:S.now, code:S.phone.sel, remarks:(S.drafts.remarks || '').trim(), photo:!!S.drafts.excphoto, detail:S.phone.sel });
+    S.phone.screen = 'result'; toast('Exception sent to TMD for review.');
+  },
+  filedelay: () => {
+    const j = job(S.phone.jobId);
+    if (S.phone.sel === 'OTH-99' && !(S.drafts.remarks || '').trim()) { S.phone.scanErr = 'Add remarks for "Other".'; return; }
+    const mins = S.drafts.delaymin || 30;
+    emit({ type:'delay.prealert', job:j.id, at:S.now, code:S.phone.sel, eta:j.agreed + mins * MIN, remarks:(S.drafts.remarks || '').trim(), detail:`${S.phone.sel}, +${mins} min` });
+    S.phone.screen = 'job'; toast('Delay alert sent. TMD and Sales Support have been told.');
+  },
+  ff: m => advance(+m * MIN),
+  traffic: v => { S.phone.traffic = v === '1'; },
+  online: v => { S.phone.online = v === '1'; if (S.phone.online) syncQueue(); },
+  mock: () => { S.phone.mock = !S.phone.mock; if (S.phone.mock) for (const j of S.jobs) { const L = S.phone.local[j.id]; if (L && L.tripStart && !L.confirmed) mockFlag(j); } },
+  skew: () => { S.phone.skew = S.phone.skew ? 0 : -30; },
+  reset: () => { const keep = { view:S.view }; seed(); Object.assign(S, keep); },
+  role: v => { S.role = v; S.sel = null; },
+  page: p => { S.page = p; S.sel = null; window.scrollTo(0, 0); },
+  filter: f => { S.filter = f; },
+  customer: v => { S.customer = v; },
+  sel: id => { S.sel = id; S.drafts.revnote = ''; },
+  close: () => { S.sel = null; },
+  review: kind => {
+    const j = job(S.sel), note = (S.drafts.revnote || '').trim();
+    if (kind === 'Reject' && !note) { const e = document.getElementById('revnote'); e.placeholder = 'Add a note to explain the rejection'; e.focus(); return 'noop'; }
+    Object.assign(j.exception, { status: kind === 'Reject' ? 'Rejected' : 'Validated', cls: kind === 'Reject' ? 'Controllable' : kind, reviewer:'TMD · L. Ramos', reviewNote: note || 'No note.', reviewedAt:S.now });
+    j.events.push({ type:'exception.reviewed', at:S.now, label:`${j.exception.status} · ${j.exception.cls} by L. Ramos` });
+    S.audit.unshift({ at:S.now, who:'L. Ramos', role:'TMD Team', action:`${j.exception.status} exception`, detail:`${j.id} · ${j.exception.code} → ${j.exception.cls}${note ? ' · ' + note : ''}` });
+    feed('info', `<b>Exception ${j.exception.status.toLowerCase()}</b> · ${j.id} ${j.exception.code} → ${j.exception.cls}`, j.id);
+    S.drafts.revnote = '';
+  },
+  clearflag: i => {
+    const j = job(S.sel), f = j.flags[+i], note = (S.drafts['fnote-' + i] || '').trim();
+    if (!note) { const e = document.getElementById('fnote-' + i); e.placeholder = 'Add a note first'; e.focus(); return 'noop'; }
+    Object.assign(f, { status:'Cleared', clearedBy:'L. Ramos', note });
+    S.audit.unshift({ at:S.now, who:'L. Ramos', role:'TMD Team', action:'Cleared integrity flag', detail:`${j.id} · ${f.type} · ${note}` });
+    S.drafts['fnote-' + i] = '';
+  },
+  copy: () => {
+    const txt = document.getElementById('copytext').textContent, out = document.getElementById('copied');
+    const done = m => { out.textContent = m; };
+    const sel = () => { const r = document.createRange(); r.selectNodeContents(document.getElementById('copytext')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); done('Text selected. Press Ctrl+C to copy.'); };
+    try { navigator.clipboard.writeText(txt).then(() => done('Copied.'), sel); } catch (_) { sel(); }
+    return 'noop';
+  },
+  cfgtoggle: id => { S.config[id] = !S.config[id]; S.audit.unshift({ at:S.now, who:'K. Uy', role:'System Admin', action:'Changed rule', detail:`${id} → ${S.config[id] ? 'On' : 'Off'}` }); },
+  resetdev: id => { S.audit.unshift({ at:S.now, who:'K. Uy', role:'System Admin', action:'Reset device binding', detail:`${TRUCKERS[id].name} · next login binds a new phone` }); TRUCKERS[id].device = 'Not bound · waiting for login'; TRUCKERS[id].bound = '—'; },
+};
+function mockFlag(j) {
+  const L = S.phone.local[j.id]; if (L.mockFlagged) return; L.mockFlagged = true;
+  emit({ type:'integrity.flagged', job:j.id, at:S.now, flag:'MOCK_LOCATION', detail:'Fake location app active on trucker phone (com.lexa.fakegps). Confirmation blocked.' });
+}
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]'); if (!el || el.tagName === 'SELECT') return;
+  const fn = ACT[el.dataset.act]; if (!fn) return;
+  if (fn(el.dataset.arg) !== 'noop') render();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && S.sel) { S.sel = null; render(); } if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('tr[data-act]')) { e.preventDefault(); e.target.click(); } });
+document.addEventListener('change', e => {
+  const el = e.target;
+  if (el.dataset.act === 'role' || el.dataset.act === 'customer') { ACT[el.dataset.act](el.value); render(); }
+  if (el.dataset.cfg) {
+    const k = el.dataset.cfg, old = S.config[k], v = Math.max(+el.min, Math.min(+el.max, Math.round(+el.value || 0)));
+    if (v !== old) { S.config[k] = v; S.audit.unshift({ at:S.now, who:'K. Uy', role:'System Admin', action:'Changed rule', detail:`${k}: ${old} → ${v}` }); }
+    render();
+  }
+  if (el.dataset.rad) {
+    const s = SITES[el.dataset.rad], old = s.radius, v = Math.max(50, Math.min(500, Math.round(+el.value || old)));
+    if (v !== old) { s.radius = v; S.audit.unshift({ at:S.now, who:'K. Uy', role:'System Admin', action:'Changed geofence', detail:`${s.customer}: ${old} m → ${v} m` }); }
+    render();
+  }
+});
+document.addEventListener('input', e => { const d = e.target.dataset.draft; if (d) S.drafts[d] = e.target.value; });
+
+const h = (location.hash || '').slice(1);
+if (['trucker', 'command', 'spec'].includes(h)) S.view = h;
+render();
+setInterval(tick, 1000);
+</script>

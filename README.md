@@ -100,3 +100,13 @@ src/
 - **Not a substitute for professional judgment:** Clarity suggestions and
   cross-reference matches are decision support for the auditor, not an
   automated compliance determination.
+
+---
+
+## Also in this repository: Trucker Visibility Platform (V1 design)
+
+`trucker-visibility/` holds the Version 1 design for container pick-up and
+delivery arrival confirmation: a spec ([`DESIGN.md`](trucker-visibility/DESIGN.md))
+and a self-contained clickable prototype of the trucker mobile app and the web
+Command Center ([`prototype.html`](trucker-visibility/prototype.html)). It is
+independent of the audit checker app above and needs no build step.
