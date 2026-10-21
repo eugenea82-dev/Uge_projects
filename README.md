@@ -103,10 +103,10 @@ src/
 
 ---
 
-## Also in this repository: Trucker Visibility Platform (V2 design)
+## Also in this repository: Trucker Visibility Platform (V3 design)
 
-`trucker-visibility/` holds the Version 2 design for container pick-up and
+`trucker-visibility/` holds the Version 3 design for container pick-up and
 delivery arrival confirmation: a spec ([`DESIGN.md`](trucker-visibility/DESIGN.md))
-and a self-contained clickable prototype of the trucker mobile app and the web
+and a self-contained clickable prototype of TAS (the trucker mobile app) and the web
 Command Center ([`prototype.html`](trucker-visibility/prototype.html)). It is
 independent of the audit checker app above and needs no build step.

@@ -1,7 +1,7 @@
-# Trucker Visibility Platform — Design (Version 2)
+# Trucker Visibility Platform — Design (Version 3)
 
 Container pick-up and delivery visibility and compliance platform. It has two
-parts: a **Trucker mobile app** that drivers use on their own smartphones to
+parts: **TAS (Trucker Application System)**, the mobile app that drivers use on their own smartphones to
 confirm arrival, and a **web Command Center** for the TMD Team, Sales Support
 and System Admin.
 
@@ -12,6 +12,7 @@ It runs on its own in a browser, with simulated data and a demo control panel.
 |---|---|
 | 1 | Trucker arrival app, Command Center, Hit/Miss rules, anti-cheat controls, exceptions, integration |
 | 2 | Splash screen and credential sign-in for both apps (section 12) |
+| 3 | Live map in the Command Center (section 13). Analytics: global filters, plain-language on-time rates, late reasons spelled out (section 14). "Hit rate (adjusted)" tile removed from the live board. Trucker app named **TAS** |
 
 ---
 
@@ -23,7 +24,7 @@ It runs on its own in a browser, with simulated data and a demo control panel.
 | **Result per job** | **Hit** if the trusted arrival time is at or before the agreed time (plus grace, default 0 min). **Miss** if it is later, or if the truck has not arrived when the agreed time passes. |
 | **Integrity requirement** | The trucker cannot fake the arrival time or location. |
 | **Accountability** | When a job is a Miss, the trucker must file an exception (reason and evidence). TMD reviews it. |
-| **Primary KPI** | On-Time Delivery (OTD) Hit rate, raw and adjusted |
+| **Primary KPI** | On-time rate (share of deliveries that were a Hit) |
 
 ### What "arrival" means (the key design decision)
 
@@ -81,7 +82,7 @@ common workarounds:
 | BR-05 | Not arrived and `now > agreed_time + grace` → **Miss (not arrived)**. When the truck arrives later, the record keeps the Miss and the real arrival time is added. |
 | BR-06 | **At risk** = not arrived and the agreed time is within 30 min (configurable). Shown to TMD for proactive action. |
 | BR-07 | Every Miss requires an exception from the trucker within 30 min of arrival. The app will not close the job without one. |
-| BR-08 | Exceptions **never change the raw Hit/Miss**. TMD classifies a validated exception as *Controllable* or *Uncontrollable*. **Adjusted OTD** leaves out validated Uncontrollable misses. Both numbers are always reported. |
+| BR-08 | Exceptions **never change the raw Hit/Miss**. TMD classifies a validated exception as *Controllable* or *Uncontrollable*. The analytics figure **"On-time rate, excluding outside delays"** leaves out validated Uncontrollable misses. It is always shown next to the plain on-time rate, never instead of it. |
 | BR-09 | Trucker may send a **delay pre-alert** before arrival (same reason codes). It notifies TMD and Sales Support early. It does not excuse the Miss. |
 | BR-10 | Pick-up leg (port/depot) is captured the same way for visibility. V1 KPI is measured on the customer stop only. |
 
@@ -134,7 +135,7 @@ jobs against gate logs or CCTV at key customers.
 
 ---
 
-## 5. Trucker mobile app
+## 5. TAS: Trucker Application System (mobile app)
 
 ### Recommendation: native Android first, not a web app
 
@@ -186,10 +187,11 @@ Minimum device: Android 9+, GPS, rear camera, 2 GB RAM. App size target < 25 MB
 
 | View | Purpose | Main elements |
 |---|---|---|
-| **Live board** | What is happening now | KPI strip (Due today, Arrived, Hit %, Miss, At risk, Exceptions to review, Flags), job table with status chips, filters (At risk, Miss, Flags, Customer), job detail panel |
+| **Live board** | What is happening now | KPI strip (Due today, On-time rate, Miss, At risk, Exceptions to review, Flags), job table with status chips, filters (At risk, Miss, Flags, Customer), job detail panel |
 | **Job detail** | Proof for one job | Timeline (assigned → trip start → geofence entry → confirmation → sync), evidence photo, GPS and accuracy, integrity checks, exception and review actions |
 | **Exceptions** | TMD review queue | Pending exceptions oldest first, validate as Controllable/Uncontrollable or reject with comment |
-| **Analytics** | Performance | OTD trend (raw vs adjusted), Miss reasons Pareto, per-trucker and per-customer scorecards |
+| **Live map** | Where every truck is now | Map of trucks, customer sites and ports, status colours, route still to drive, truck list grouped by urgency (section 13) |
+| **Analytics** | Performance | Global filters, on-time rate by day, why trucks were late, trucker and customer scorecards (section 14) |
 | **Admin: Rules** | Settings | Grace min, geofence radius, GPS accuracy limit, clock-drift tolerance, at-risk window, late-sync limit, customer OTP toggle |
 | **Admin: Users and devices** | Access control | Trucker list, bound device, app version, integrity status, reset device |
 | **Admin: Sites** | Geofences | Customer site, coordinates, radius |
@@ -203,8 +205,8 @@ and the customer contact on arrival confirmed and on Miss.
 ## 7. Integration (no re-encoding)
 
 ```
-TMD-Haulage ──(job.assigned)──▶ Platform API ──▶ Trucker app
-Trucker app ──(events, offline queue)──▶ Platform API
+TMD-Haulage ──(job.assigned)──▶ Platform API ──▶ TAS
+TAS ──(events, offline queue)──▶ Platform API
 Platform API ──(webhook: arrival.confirmed / job.missed / exception.*)──▶ TMD-Haulage, customer systems
 ```
 
@@ -257,7 +259,7 @@ Delivery: HTTPS webhook with HMAC signature, retries with backoff for 24 h,
 
 ## 9. Governance and data privacy
 
-- **KPIs**: OTD raw, OTD adjusted, Miss count by reason, exception filing
+- **KPIs**: on-time rate, on-time rate excluding outside delays, Miss count by reason, exception filing
   compliance (% of Misses with an exception within 30 min), TMD review time,
   integrity flags per 100 jobs.
 - **Data Privacy Act of 2012 (RA 10173)**: the app runs on personal phones, so the
@@ -308,7 +310,7 @@ Both apps open on a branded splash screen, then ask for credentials. Sign-in
 is part of the anti-cheat design. It stops a trucker from confirming
 arrivals on someone else's account or phone, and every access is traceable.
 
-| | Trucker app | Command Center |
+| | TAS | Command Center |
 |---|---|---|
 | **Splash** | Brand screen (about 1.5 s) while the app checks phone security: rooted phone, fake-GPS apps, app version | Brand screen while the session loads |
 | **Credentials** | Mobile number + 6-digit PIN (numeric keypad, works with gloves) | Work email + password |
@@ -336,8 +338,67 @@ arrivals on someone else's account or phone, and every access is traceable.
 
 | App | Account | Credentials |
 |---|---|---|
-| Trucker app | Ramon Dela Cruz (owns the demo phone) | 0917 555 0142 · PIN 482100 |
-| Trucker app | Mark Villanueva (blocked on Ramon's phone) | 0927 555 0218 · PIN 104512 |
+| TAS | Ramon Dela Cruz (owns the demo phone) | 0917 555 0142 · PIN 482100 |
+| TAS | Mark Villanueva (blocked on Ramon's phone) | 0927 555 0218 · PIN 104512 |
 | Command Center | TMD Team | l.ramos@tmd.example · Tmd@2026 |
 | Command Center | Sales Support | a.torres@tmd.example · Sales@2026 |
 | Command Center | System Admin | k.uy@tmd.example · Admin@2026 · code 246810 |
+
+---
+
+## 13. Version 3: live map (Command Center)
+
+A new **Live map** page, next to the Live board, for TMD Team, Sales Support
+and System Admin.
+
+| Element | What it shows |
+|---|---|
+| Truck dot | One per truck. Position comes from TAS while a trip is active. Colour: violet on schedule, amber at risk, red late, green arrived on time, grey waiting to start |
+| Dashed line | The part of the route the truck still has to drive |
+| Rings | Dashed grey = no signal (shows last known position and time). Red = fake-GPS flag open |
+| Customer site | Square with its geofence ring |
+| Port / yard | Diamond (MICT, North Harbor, Valenzuela empty yard, Batangas Container Terminal) |
+| Count tiles | Trucks today, on the road, late or at risk, at customer site. Each tile filters the map |
+| Truck list | Grouped as Late or at risk, On the road, At customer site, Waiting to start, with km to go and ETA. Click opens the job panel |
+| Views | Whole area, Metro Manila, Cavite · Laguna · Batangas |
+
+Build notes:
+
+- TAS sends a position every 30 s during an active trip only, which
+  matches the privacy rule in section 9.
+- The prototype draws a simplified map from real coordinates, because the
+  prototype page can't load outside map images. Production should use a map
+  service (Google Maps Platform or Mapbox) for streets, live traffic and
+  better ETAs.
+- One dot per truck: the truck's current job (en route), or its last
+  delivery for 45 min after arrival, otherwise its next job.
+
+## 14. Version 3: analytics changes
+
+**Global filters.** One filter bar at the top applies to every number, chart
+and table on the page: Period (Today, Last 7 days, Last 14 days, Month to
+date), Customer, Haulier, Trucker, Move type. Clicking a row in a scorecard
+filters the page to that trucker or customer.
+
+**Plain names for the two rates.**
+
+| Old name | New name | Meaning |
+|---|---|---|
+| Hit rate (raw) | **On-time rate** | Deliveries that arrived on or before the agreed time, out of all deliveries |
+| Hit rate (adjusted) | **On-time rate, excluding outside delays** | The same, but late trips that TMD confirmed were caused by the customer, port, weather or road closures are not counted |
+
+The live board shows only **On-time rate**. The "Hit rate (adjusted)" tile was
+removed. The second rate appears only in Analytics, next to the first.
+
+**Why trucks were late.** Each reason is written out in full, as the trucker
+chose it in the exception, for example "Road closure, accident or heavy
+traffic" and not only "TRF-01". Each row shows the count, its share of late
+deliveries, whether it is within or outside our control, and an example
+remark. Late deliveries with no exception yet are shown as their own row, so
+they can't hide.
+
+**Trend.** The day-by-day chart covers finished days only. Today's figure is
+shown below the chart, because a half-finished day is misleading.
+
+Prototype note: 1–20 October is generated sample history so the filters have
+data to work on. Today comes from the live demo.
