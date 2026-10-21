@@ -1,4 +1,4 @@
-# Trucker Visibility Platform — Version 1 Design
+# Trucker Visibility Platform — Design (Version 2)
 
 Container pick-up and delivery visibility and compliance platform. It has two
 parts: a **Trucker mobile app** that drivers use on their own smartphones to
@@ -7,6 +7,11 @@ and System Admin.
 
 An interactive prototype of both parts is in [`prototype.html`](./prototype.html).
 It runs on its own in a browser, with simulated data and a demo control panel.
+
+| Version | Change |
+|---|---|
+| 1 | Trucker arrival app, Command Center, Hit/Miss rules, anti-cheat controls, exceptions, integration |
+| 2 | Splash screen and credential sign-in for both apps (section 12) |
 
 ---
 
@@ -294,3 +299,45 @@ self-service portal.
 | 4 | Who pays for truckers' mobile data (estimated < 50 MB/month per driver) | Open question |
 | 5 | Whether a Miss affects trucker or haulier payment. This changes how strict exception review needs to be | Open question |
 | 6 | Customer site coordinates are not yet captured. They need a one-time site survey or a first-visit capture approved by TMD | Dependency |
+
+---
+
+## 12. Version 2: splash screen and sign-in
+
+Both apps open on a branded splash screen, then ask for credentials. Sign-in
+is part of the anti-cheat design. It stops a trucker from confirming
+arrivals on someone else's account or phone, and every access is traceable.
+
+| | Trucker app | Command Center |
+|---|---|---|
+| **Splash** | Brand screen (about 1.5 s) while the app checks phone security: rooted phone, fake-GPS apps, app version | Brand screen while the session loads |
+| **Credentials** | Mobile number + 6-digit PIN (numeric keypad, works with gloves) | Work email + password |
+| **Second check** | The phone must be the driver's registered phone (device binding). A correct PIN on another driver's phone is **blocked**, logged and shown in the TMD feed | System Admin also enters a 6-digit authenticator code, because admins can change rules, geofences and devices |
+| **Wrong tries** | 5 wrong PINs lock sign-in for 15 min | 5 wrong passwords lock the account for 15 min |
+| **First sign-in** | One-time privacy consent: location only during active jobs, camera, data use (RA 10173). Acceptance is logged | Password set by a reset link from System Admin |
+| **Role** | Trucker sees only own jobs | Role comes from the account (TMD Team, Sales Support or System Admin). Users can't pick a role at sign-in |
+| **Sign out** | Sign out button on Today's jobs | Sign out in the side panel |
+| **Forgot credentials** | TMD dispatcher resets the PIN | System Admin sends a password reset link |
+| **Audit trail** | Signed in, signed out, blocked sign-in, sign-in locked, privacy consent | Signed in (with or without 2-step code), failed sign-in, failed 2-step code, locked, signed out |
+
+### Build notes
+
+- Store PINs and passwords as salted hashes (Argon2 or bcrypt). The
+  prototype keeps demo credentials in the page only so the demo can run.
+- Trucker sessions stay signed in for the shift (proposed 12 h) so drivers
+  don't re-enter the PIN at every gate. Offline unlock checks the PIN against
+  a hash cached on the phone.
+- Command Center sessions sign out after 30 min of no activity (proposed).
+- For production, connect the Command Center to the company's single sign-on
+  if one exists (for example Microsoft Entra ID). Then password policy and
+  2-step verification come from IT, not from this platform.
+
+### Demo credentials (prototype only)
+
+| App | Account | Credentials |
+|---|---|---|
+| Trucker app | Ramon Dela Cruz (owns the demo phone) | 0917 555 0142 · PIN 482100 |
+| Trucker app | Mark Villanueva (blocked on Ramon's phone) | 0927 555 0218 · PIN 104512 |
+| Command Center | TMD Team | l.ramos@tmd.example · Tmd@2026 |
+| Command Center | Sales Support | a.torres@tmd.example · Sales@2026 |
+| Command Center | System Admin | k.uy@tmd.example · Admin@2026 · code 246810 |

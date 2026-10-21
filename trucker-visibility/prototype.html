@@ -72,7 +72,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 
 /* ============ TRUCKER VIEW ============ */
 .trucker{display:grid;grid-template-columns:auto minmax(0,1fr);gap:28px;align-items:start}
-.phone{width:min(372px,100%);background:var(--bezel);border-radius:44px;padding:12px;box-shadow:0 30px 60px -20px rgba(20,10,40,.45)}
+.phone{width:372px;max-width:100%;background:var(--bezel);border-radius:44px;padding:12px;box-shadow:0 30px 60px -20px rgba(20,10,40,.45)}
 .screen{background:#F4F3F7;color:#16131E;border-radius:34px;overflow:hidden;height:760px;max-height:calc(100vh - 140px);min-height:600px;display:flex;flex-direction:column;position:relative;
   --p-ink:#16131E;--p-muted:#5E5870;--p-line:#DDD9E5;--p-card:#FFFFFF;--p-accent:#B8005F;--p-hit:#0B6E49;--p-miss:#B3141B;--p-risk:#8A4F00}
 .sbar{display:flex;justify-content:space-between;align-items:center;padding:10px 22px 6px;font-size:13px;font-weight:600;background:#FFFFFF}
@@ -249,6 +249,44 @@ textarea.in,input.in,select.in{width:100%;border:1px solid var(--line);border-ra
 .rule .formula{font-family:var(--f-mono);font-size:14px;background:var(--sunk);padding:10px 12px;border-radius:8px}
 pre.payload{margin:0;font-family:var(--f-mono);font-size:12px;background:var(--sunk);border-radius:10px;padding:14px;overflow-x:auto;line-height:1.5}
 
+/* ---- Sign-in (V2) ---- */
+.psplash{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:#FFFFFF;background:linear-gradient(160deg,#B8005F 0%,#4B1FA8 100%);text-align:center;padding:24px}
+.psplash .logo{width:84px;height:84px;border-radius:24px;background:rgba(255,255,255,.16);display:grid;place-items:center;border:1px solid rgba(255,255,255,.3)}
+.psplash h2{font-size:34px;color:#FFFFFF}
+.psplash p{margin:0;opacity:.85;font-size:14px}
+.loadbar{width:140px;height:4px;border-radius:99px;background:rgba(255,255,255,.25);overflow:hidden}
+.loadbar i{display:block;height:100%;width:40%;background:#FFFFFF;border-radius:99px;animation:load 1.4s ease-in-out infinite}
+@keyframes load{from{transform:translateX(-100%)}to{transform:translateX(260%)}}
+@media (prefers-reduced-motion:reduce){.loadbar i{animation:none;width:100%}}
+.plogin-hero{background:linear-gradient(160deg,#B8005F,#4B1FA8);color:#FFFFFF;padding:26px 20px 22px;display:flex;flex-direction:column;gap:4px}
+.plogin-hero h2{color:#FFFFFF;font-size:30px}
+.plabel{font-size:13px;font-weight:600;color:var(--p-ink)}
+.pfield{display:flex;flex-direction:column;gap:6px}
+.perr{background:#FCE6E7;color:var(--p-miss);border-radius:12px;padding:10px 12px;font-size:13px;font-weight:600}
+.pinput.pin{letter-spacing:.5em}
+.plink{border:1px solid var(--p-line);background:#FFFFFF;color:var(--p-ink);border-radius:10px;padding:6px 10px;font-size:13px;font-weight:600;margin-left:auto;flex:none}
+.auth{min-height:calc(100vh - 140px);display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);border-radius:18px;overflow:hidden;border:1px solid var(--line);background:var(--surface)}
+.auth-brand{background:linear-gradient(150deg,#B8005F,#4B1FA8);color:#FFFFFF;padding:40px;display:flex;flex-direction:column;gap:22px;justify-content:space-between}
+.auth-brand h2{color:#FFFFFF;font-size:46px;line-height:1}
+.auth-brand ol{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.auth-brand li{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);border-radius:12px;padding:12px;font-size:14px}
+.auth-brand li b{display:block;font-family:var(--f-display);font-size:18px}
+.auth-form{padding:40px;display:flex;flex-direction:column;gap:18px;justify-content:center;max-width:460px;width:100%;margin:0 auto}
+.auth-form h3{font-size:30px}
+.auth-form form{display:flex;flex-direction:column;gap:14px}
+.pw{display:flex;gap:6px} .pw input{flex:1;min-width:0}
+.demo-acc{display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--line);padding-top:14px}
+.demo-acc button{display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px 8px;text-align:left;border:1px solid var(--line);background:var(--sunk);border-radius:9px;padding:8px 10px;font-size:13px}
+.demo-acc button:hover{border-color:var(--muted)}
+.alert{border-radius:9px;padding:10px 12px;font-size:14px;font-weight:600}
+.alert.bad{background:var(--miss-bg);color:var(--miss)}
+.cc-splash{min-height:calc(100vh - 140px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;border-radius:18px;background:linear-gradient(150deg,#B8005F,#4B1FA8);color:#FFFFFF;text-align:center;padding:24px}
+.cc-splash h2{color:#FFFFFF;font-size:42px}
+.usercard{display:flex;flex-direction:column;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.usercard b{font-size:15px}
+.usercard .btn{margin-top:6px}
+@media (max-width:860px){.auth{grid-template-columns:minmax(0,1fr)}.auth-brand{padding:24px}.auth-brand h2{font-size:34px}.auth-form{padding:24px 18px}}
+
 @media (max-width:1100px){.fw{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:860px){
   .trucker{grid-template-columns:minmax(0,1fr);justify-items:center}.rail{width:100%}
@@ -331,6 +369,24 @@ const TRUCKERS = {
 };
 const PICKUPS = { MICT:'MICT, Tondo (laden)', NH:'North Harbor, Tondo (laden)', VEY:'Valenzuela empty yard', BCT:'Batangas Container Terminal (laden)' };
 
+/* ---------- sign-in accounts (demo credentials, sample only) ---------- */
+const PINS = { T01:'482100', T02:'220913', T03:'771405', T04:'104512', T05:'663201', T06:'330819' };
+const PHONE_OWNER = 'T01'; // the demo phone is registered to Ramon Dela Cruz
+const CC_USERS = [
+  { email:'l.ramos@tmd.example', name:'L. Ramos', role:'TMD', pw:'Tmd@2026' },
+  { email:'a.torres@tmd.example', name:'A. Torres', role:'SALES', pw:'Sales@2026' },
+  { email:'k.uy@tmd.example', name:'K. Uy', role:'ADMIN', pw:'Admin@2026', mfa:'246810' },
+];
+const MAX_FAILS = 5, LOCK_MIN = 15;
+const digits = v => String(v || '').replace(/\D/g, '');
+const newAuth = () => ({
+  phone:{ stage:'splash', user:null, fails:0, lockUntil:0, err:'', consented:false },
+  cc:{ stage:'splash', user:null, fails:0, lockUntil:0, err:'', pending:null },
+});
+const me = () => S.auth.cc.user || { name:'—', email:'', role:S.role };
+const logAudit = (who, role, action, detail) => S.audit.unshift({ at:S.now, who, role, action, detail });
+const pinSvg = n => `<svg width="${n}" height="${n}" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><path d="m9 10 2 2 4-4"/></svg>`;
+
 /* ---------- state ---------- */
 let S;
 function seed() {
@@ -386,6 +442,7 @@ function seed() {
     { at:BASE - 3 * 24 * 60 * MIN, who:'K. Uy', role:'System Admin', action:'Changed rule', detail:'Geofence radius for Taguig Consumer Goods DC 150 m → 250 m (large yard)' },
   ];
   S = {
+    auth: S && S.auth ? S.auth : newAuth(),
     now: T(10,5), view: 'trucker', role: 'TMD', page: 'board', filter: 'all', customer: '', sel: null,
     config: { grace:0, radius:150, acc:50, drift:2, atRisk:30, lateSync:240, otp:false, scanRequired:true },
     jobs, feed, audit, drafts: {}, lastPayload: null,
@@ -572,12 +629,20 @@ function render() {
   window.scrollTo(sx, sy);
   if (fid) { const e = document.getElementById(fid); if (e) { e.focus(); try { if (sel != null) e.setSelectionRange(sel, sel); } catch (_) {} } }
   lastSig = S.jobs.map(evaluate).join() + phoneSig();
+  armSplash();
+}
+const SPLASH = {};
+function armSplash() {
+  for (const k of ['phone', 'cc']) {
+    const A = S.auth[k], shown = k === 'phone' ? S.view === 'trucker' : S.view === 'command';
+    if (A.stage === 'splash' && shown && !SPLASH[k]) SPLASH[k] = setTimeout(() => { SPLASH[k] = null; if (A.stage === 'splash') { A.stage = 'login'; render(); } }, 1600);
+  }
 }
 function topbar() {
   const t = (v, l) => `<button class="tab" role="tab" aria-selected="${S.view === v}" data-act="view" data-arg="${v}">${l}</button>`;
   return `<header class="top"><div class="top-in">
-    <div class="brand"><span class="mark" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><path d="m9 10 2 2 4-4"/></svg></span>
-      <span><b>Trucker Visibility Platform</b><small>Version 1 prototype · container pick-up and delivery</small></span></div>
+    <div class="brand"><span class="mark" aria-hidden="true">${pinSvg(18)}</span>
+      <span><b>Trucker Visibility Platform</b><small>Version 2 prototype · container pick-up and delivery</small></span></div>
     <nav class="tabs" role="tablist">${t('trucker','Trucker app')}${t('command','Command Center')}${t('spec','How it works')}</nav>
     <div class="clock"><span class="sample">Sample data</span><span class="live-dot" aria-hidden="true"></span><span class="muted">${dateLabel(S.now)}</span><span class="mono" data-clock>${hms(S.now)}</span></div>
   </div></header>`;
@@ -597,8 +662,31 @@ function truckerView() {
     <div class="rail">${demoPanel()}${logPanel()}</div>
   </div>`;
 }
+function phoneAuthScreen() {
+  const A = S.auth.phone;
+  if (A.stage === 'splash') return `<div class="psplash"><div class="logo">${pinSvg(44)}</div><h2>TMD Driver</h2><p>Container arrival confirmation</p><div class="loadbar"><i></i></div><p style="font-size:12px">Version 2.0 · Checking phone security</p></div>`;
+  if (A.stage === 'consent') return `<div class="appbar"><div><div class="pk">First sign-in on this phone</div><h2>Before you start</h2></div></div>
+    <div class="pbody">
+      <span class="pk">Hi ${esc(TRUCKERS[A.user].name.split(' ')[0])}. The app needs your OK to use these. You only see this once.</span>
+      <div class="pcard"><b>Location</b><span class="pk">Used only from Start trip until the job closes. Never outside active jobs.</span></div>
+      <div class="pcard"><b>Camera</b><span class="pk">Used for arrival photos and container scans. Gallery photos are not used.</span></div>
+      <div class="pcard"><b>Your data</b><span class="pk">Used only to confirm deliveries. Seen by TMD, Sales Support and System Admin. Kept under the company privacy policy (Data Privacy Act, RA 10173).</span></div>
+      <button class="pbtn" data-act="pconsent">I agree<small>Sumasang-ayon ako</small></button>
+      <button class="pbtn alt" data-act="plogout">Not now</button>
+    </div>`;
+  return `<div class="plogin-hero"><span style="font-size:13px;opacity:.85">TMD Driver</span><h2>Sign in</h2><span style="font-size:14px;opacity:.9">Mag-sign in para makita ang mga trabaho ngayon.</span></div>
+  <form class="pbody" data-form="plogin" novalidate>
+    <div class="pfield"><label class="plabel" for="pmobile">Mobile number</label><input class="pinput" id="pmobile" data-draft="pmobile" inputmode="numeric" autocomplete="username" placeholder="09XX XXX XXXX" value="${esc(S.drafts.pmobile || '')}"></div>
+    <div class="pfield"><label class="plabel" for="ppin">6-digit PIN</label><input class="pinput pin" id="ppin" data-draft="ppin" type="password" inputmode="numeric" maxlength="6" autocomplete="current-password" placeholder="••••••" value="${esc(S.drafts.ppin || '')}"></div>
+    ${A.err ? `<div class="perr" role="alert">${esc(A.err)}</div>` : ''}
+    <button class="pbtn" type="submit">Sign in<small>Pumasok</small></button>
+    <p class="note">This phone is registered to one driver. Forgot your PIN? Ask your TMD dispatcher to reset it.</p>
+    <p class="note">${esc(TRUCKERS[PHONE_OWNER].device)} · App 2.0.0 · Phone security check passed</p>
+  </form>`;
+}
 function phoneScreen() {
   const P = S.phone;
+  if (S.auth.phone.stage !== 'in') return phoneAuthScreen();
   if (P.screen === 'list' || !P.jobId) return phoneList();
   const j = job(P.jobId);
   if (P.screen === 'job') return phoneJob(j);
@@ -617,7 +705,7 @@ function pResultChip(j) {
 }
 function phoneList() {
   const mine = S.jobs.filter(j => j.demo);
-  return `<div class="appbar"><div><div class="pk">Magandang umaga</div><h2>Ramon · ${TRUCKERS.T01.plate}</h2></div></div>
+  return `<div class="appbar"><div><div class="pk">Magandang umaga</div><h2>Ramon · ${TRUCKERS.T01.plate}</h2></div><button class="plink" data-act="plogout">Sign out</button></div>
   <div class="pbody" data-keep-scroll="plist">
     <div class="pk" style="font-weight:600">TODAY · ${dateLabel(S.now).toUpperCase()}</div>
     ${mine.map(j => `<button class="pcard" data-act="openjob" data-arg="${j.id}">
@@ -723,11 +811,13 @@ function demoPanel() {
   return `<section class="panel"><div class="head" style="align-items:center"><div><span class="eyebrow">Demo controls</span><h3>Play the trucker, then try to cheat</h3></div>
       <button class="btn sm" data-act="reset">Reset demo</button></div>
     <ol class="guide">
-      <li>On the phone, open the <b>10:30 Sta. Rosa Food Packers</b> job and tap <b>Start trip</b>.</li>
+      <li>Sign in as Ramon. Use <b>Fill Ramon's login</b> below, then tap <b>Sign in</b>.</li>
+      <li>Open the <b>10:30 Sta. Rosa Food Packers</b> job and tap <b>Start trip</b>.</li>
       <li>Fast-forward the clock until the truck enters the site area. Turn on heavy traffic first to make it late.</li>
       <li>Confirm arrival with photo and container scan, then open the <b>Command Center</b> to see it live.</li>
     </ol>
     <div class="ctrls">
+      <div class="ctrl"><span class="lbl">Sign-in</span><div class="seg"><button data-act="pfill" data-arg="own">Fill Ramon's login</button><button data-act="pfill" data-arg="wrong">Wrong PIN</button><button class="cheat" data-act="pfill" data-arg="other">Another driver on this phone</button></div><p>Ramon: <span class="mono">0917 555 0142</span> · PIN <span class="mono">482100</span>. 5 wrong PINs lock sign-in for 15 min. Other drivers are blocked on Ramon's phone.</p></div>
       <div class="ctrl"><span class="lbl">Clock</span><div class="seg"><button data-act="ff" data-arg="5">+5 min</button><button data-act="ff" data-arg="15">+15 min</button><button data-act="ff" data-arg="60">+1 hour</button></div><p>Simulated time runs live. Skip ahead to drive faster.</p></div>
       <div class="ctrl"><span class="lbl">Road</span><div class="seg"><button data-act="traffic" data-arg="0" ${pr(!P.traffic)}>Normal 30 km/h</button><button data-act="traffic" data-arg="1" ${pr(P.traffic)}>Heavy traffic 10 km/h</button></div><p>6.2 km to Sta. Rosa. Heavy traffic makes the 10:30 slot a Miss.</p></div>
       <div class="ctrl"><span class="lbl">Mobile signal</span><div class="seg"><button data-act="online" data-arg="1" ${pr(P.online)}>Online</button><button data-act="online" data-arg="0" ${pr(!P.online)}>No signal</button></div><p>Offline events keep their true time and sync later.</p></div>
@@ -755,7 +845,38 @@ function pagesFor(role) {
   if (role !== 'SALES') p.push(['audit','Audit trail']);
   return p;
 }
+function ccAuth() {
+  const A = S.auth.cc;
+  if (A.stage === 'splash') return `<div class="cc-splash"><span class="mark" style="width:68px;height:68px;border-radius:20px;background:rgba(255,255,255,.16)">${pinSvg(36)}</span><h2>Command Center</h2><p style="margin:0;opacity:.88">Trucker Visibility Platform · Version 2</p><div class="loadbar"><i></i></div></div>`;
+  const err = A.err ? `<div class="alert bad" role="alert">${esc(A.err)}</div>` : '';
+  const form = A.stage === 'mfa'
+    ? `<div><span class="eyebrow">Step 2 of 2 · System Admin</span><h3>Enter your 6-digit code</h3><p class="muted" style="margin:6px 0 0;font-size:14px">Open your authenticator app. Admin accounts need this second step because they can change rules, geofences and devices.</p></div>
+      <form data-form="ccmfa" novalidate><div class="field"><label for="ccotp">Code for ${esc(A.pending.email)}</label><input class="in mono" id="ccotp" data-draft="ccotp" inputmode="numeric" maxlength="6" autocomplete="one-time-code" value="${esc(S.drafts.ccotp || '')}" style="font-size:22px;letter-spacing:.3em"></div>${err}
+        <button class="btn primary" type="submit" style="padding:11px">Verify and sign in</button><button type="button" class="btn" data-act="cclogout">Cancel</button></form>
+      <p class="muted" style="font-size:12px;margin:0">Demo code: <span class="mono">${A.pending.mfa}</span></p>`
+    : `<div><span class="eyebrow">Sign in</span><h3>Welcome back</h3></div>
+      <form data-form="cclogin" novalidate>
+        <div class="field"><label for="ccemail">Work email</label><input class="in" id="ccemail" data-draft="ccemail" type="email" autocomplete="username" placeholder="name@tmd.example" value="${esc(S.drafts.ccemail || '')}"></div>
+        <div class="field"><label for="ccpw">Password</label><div class="pw"><input class="in" id="ccpw" data-draft="ccpw" type="${S.drafts.showpw ? 'text' : 'password'}" autocomplete="current-password" value="${esc(S.drafts.ccpw || '')}"><button type="button" class="btn sm" data-act="showpw" aria-label="${S.drafts.showpw ? 'Hide' : 'Show'} password">${S.drafts.showpw ? 'Hide' : 'Show'}</button></div></div>
+        ${err}<button class="btn primary" type="submit" style="padding:11px">Sign in</button>
+        <p class="muted" style="font-size:13px;margin:0">Forgot your password? Ask System Admin to send you a reset link.</p>
+      </form>
+      <div class="demo-acc"><span class="eyebrow">Demo accounts · click to fill</span>${CC_USERS.map(u => `<button data-act="ccfill" data-arg="${u.email}"><span><b>${ROLES[u.role]}</b> · ${u.email}</span><span class="mono muted">${u.pw}</span></button>`).join('')}
+        <span class="muted" style="font-size:12px">5 wrong passwords lock the account for 15 min. Every sign-in is written to the audit trail.</span></div>`;
+  return `<div class="auth"><div class="auth-brand"><div><span class="eyebrow" style="color:#FFFFFF;opacity:.8">TMD Team · Sales Support · System Admin</span><h2 style="margin-top:8px">Command Center</h2>
+      <p style="max-width:44ch;opacity:.9;margin:12px 0 0">Live arrival visibility from truckers' phones. Every arrival is checked against the date and time agreed at booking.</p></div>
+      <ol><li><b>1 Capture</b>Photo, QR, GPS, time</li><li><b>2 Confirm</b>Hit or Miss on arrival</li><li><b>3 Integrate</b>Events to TMD-Haulage</li><li><b>4 Govern</b>KPIs, exceptions, audit</li></ol>
+      <p style="font-size:12px;opacity:.8;margin:0">Authorized users only. Your role is set by your account.</p></div>
+    <div class="auth-form">${form}</div></div>`;
+}
+function ccEnter(u) {
+  const A = S.auth.cc;
+  A.user = u; A.stage = 'in'; A.err = ''; A.fails = 0; A.pending = null;
+  S.role = u.role; S.page = 'board'; S.sel = null; S.drafts.ccpw = ''; S.drafts.ccotp = '';
+  logAudit(u.name, ROLES[u.role], 'Signed in', `Command Center${u.mfa ? ' · with 2-step code' : ''}`);
+}
 function commandView() {
+  if (S.auth.cc.stage !== 'in') return ccAuth();
   const k = kpis();
   const pages = pagesFor(S.role);
   if (!pages.some(p => p[0] === S.page)) S.page = 'board';
@@ -763,7 +884,7 @@ function commandView() {
   const nav = pages.map(([id, l], i) => `${i === 3 ? '<span class="navgroup eyebrow">Administration</span>' : ''}<button data-act="page" data-arg="${id}" ${S.page === id ? 'aria-current="page"' : ''}>${l}${count[id] ? `<span class="n">${count[id]}</span>` : ''}</button>`).join('');
   const body = { board, exceptions: exceptionsPage, analytics, rules, users, sites, codes, audit: auditPage }[S.page]();
   return `<div class="cc"><aside class="nav">
-      <div class="role"><label class="eyebrow" for="role">Viewing as</label><select id="role" data-act="role">${Object.entries(ROLES).map(([v, l]) => `<option value="${v}" ${S.role === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+      <div class="usercard"><span class="eyebrow">Signed in</span><b>${esc(me().name)}</b><span class="muted" style="font-size:13px;overflow-wrap:anywhere">${ROLES[S.role]} · ${esc(me().email)}</span><button class="btn sm" data-act="cclogout">Sign out</button></div>
       <div class="navlist">${nav}</div><p class="perm">${ROLE_NOTE[S.role]}</p></aside>
     <div class="main">${body}</div></div>`;
 }
@@ -935,8 +1056,8 @@ function users() {
     ${Object.entries(TRUCKERS).map(([id, t]) => `<tr><td><b>${esc(t.name)}</b><div class="sub mono">${t.plate} · ${t.mobile}</div></td><td>${esc(t.haulier)}</td><td>${esc(t.device)}</td><td class="mono">${t.app}${t.app !== '1.0.3' ? ' <span class="chip c-risk">Update</span>' : ''}</td>
       <td><span class="chip ${t.integrity === 'Pass' ? 'c-hit' : 'c-risk'}">${t.integrity}</span></td><td class="mono">${t.bound}</td><td><button class="btn sm" data-act="resetdev" data-arg="${id}">Reset device</button></td></tr>`).join('')}
     </tbody></table></div><p class="muted" id="devmsg" style="margin:0;font-size:13px"></p>
-    <section class="panel"><h3>Command Center users</h3><div class="tablebox" style="border:0"><table><thead><tr><th>Name</th><th>Role</th><th>Branch</th></tr></thead><tbody>
-      <tr><td>L. Ramos</td><td>TMD Team</td><td>Manila</td></tr><tr><td>J. Cruz</td><td>TMD Team</td><td>Manila</td></tr><tr><td>A. Torres</td><td>Sales Support</td><td>Manila</td></tr><tr><td>K. Uy</td><td>System Admin</td><td>IT</td></tr></tbody></table></div></section>`;
+    <section class="panel"><h3>Command Center users</h3><div class="tablebox" style="border:0"><table><thead><tr><th>Name</th><th>Work email</th><th>Role</th><th>Sign-in</th></tr></thead><tbody>
+      ${CC_USERS.map(u => `<tr><td>${esc(u.name)}</td><td class="mono">${u.email}</td><td>${ROLES[u.role]}</td><td>${u.mfa ? '<span class="chip c-info">Password + 2-step code</span>' : '<span class="chip c-neutral">Password</span>'}</td></tr>`).join('')}</tbody></table></div></section>`;
 }
 function sites() {
   return `<div class="head"><div><span class="eyebrow">System Admin</span><h2>Sites and geofences</h2></div><span class="muted" style="font-size:13px">Radius is per site. Large yards need a wider area.</span></div>
@@ -973,7 +1094,7 @@ function specView() {
     ['Lend phone or login to another driver','One phone per trucker, SMS PIN login, Admin-only reset','DEVICE_CHANGE'],
   ];
   return `<div class="spec">
-    <div><span class="eyebrow">Version 1 design</span><h2 style="font-size:34px">How it works</h2></div>
+    <div><span class="eyebrow">Version 2 design</span><h2 style="font-size:34px">How it works</h2></div>
     <p class="lede">The trucker's phone records the arrival automatically when the truck enters the customer's site area, using server time. The trucker then proves it with a live photo and a container scan. The Command Center compares that time with the time agreed at booking and marks the job Hit or Miss.</p>
     <div class="fw">
       <div class="step"><span class="num">1</span><h3>Capture</h3><ul><li>Live photo, camera only</li><li>Container QR scan, ISO 6346 check digit</li><li>GPS with accuracy</li><li>Server-trusted time</li><li>Works offline</li></ul><span class="who">Trucker · own smartphone</span></div>
@@ -986,6 +1107,14 @@ function specView() {
       <div style="font-size:14px">Arrival = first entry into the site geofence, timed by the server. Exceptions explain a Miss. They never turn it into a Hit. Validated uncontrollable misses are left out of the <b>adjusted</b> rate only.</div></section>
     <section class="panel"><div><span class="eyebrow">Integrity</span><h3>How each workaround is stopped</h3></div><div class="tablebox" style="border:0"><table><thead><tr><th>If a trucker tries to…</th><th>The platform…</th><th>TMD sees</th></tr></thead><tbody>
       ${anti.map(([a, b, c]) => `<tr><td>${a}</td><td>${b}</td><td>${c.includes('_') ? `<span class="chip c-miss">${c}</span>` : `<span class="chip c-neutral">${c}</span>`}</td></tr>`).join('')}</tbody></table></div></section>
+    <section class="panel"><div><span class="eyebrow">Access</span><h3>Sign-in for both apps</h3></div><div class="tablebox" style="border:0"><table><thead><tr><th></th><th>Trucker app</th><th>Command Center</th></tr></thead><tbody>
+      <tr><td><b>Splash</b></td><td>Brand screen while the app checks phone security (rooted phone, fake GPS, app version)</td><td>Brand screen while the session loads</td></tr>
+      <tr><td><b>Credentials</b></td><td>Mobile number + 6-digit PIN</td><td>Work email + password</td></tr>
+      <tr><td><b>Extra check</b></td><td>Phone must be the driver's registered phone. Other drivers are blocked and flagged</td><td>System Admin also enters a 6-digit authenticator code</td></tr>
+      <tr><td><b>Wrong tries</b></td><td colspan="2">5 wrong tries lock sign-in for 15 min. Logged in the audit trail</td></tr>
+      <tr><td><b>Role</b></td><td>Trucker sees only own jobs</td><td>Role comes from the account (TMD Team, Sales Support or System Admin), not chosen at sign-in</td></tr>
+      <tr><td><b>First sign-in</b></td><td>Privacy consent for location, camera and data use (RA 10173)</td><td>Password reset link from System Admin</td></tr>
+    </tbody></table></div></section>
     <section class="panel"><div><span class="eyebrow">Integrate</span><h3>Event sent to TMD-Haulage and customers</h3><p class="muted" style="margin:4px 0 0;font-size:13px">${S.lastPayload ? 'This is the payload from your demo confirmation.' : 'Sample from job HJ-2610-0411. Confirm an arrival in the Trucker app to see your own.'}</p></div>
       <pre class="payload">${esc(JSON.stringify(p, null, 2))}</pre></section>
   </div>`;
@@ -1035,7 +1164,84 @@ const ACT = {
   mock: () => { S.phone.mock = !S.phone.mock; if (S.phone.mock) for (const j of S.jobs) { const L = S.phone.local[j.id]; if (L && L.tripStart && !L.confirmed) mockFlag(j); } },
   skew: () => { S.phone.skew = S.phone.skew ? 0 : -30; },
   reset: () => { const keep = { view:S.view }; seed(); Object.assign(S, keep); },
-  role: v => { S.role = v; S.sel = null; },
+  pfill: k => {
+    const A = S.auth.phone;
+    if (A.stage === 'in' || A.stage === 'consent') ACT.plogout();
+    A.stage = 'login'; A.err = '';
+    const own = TRUCKERS[PHONE_OWNER].mobile;
+    if (k === 'own') { S.drafts.pmobile = own; S.drafts.ppin = PINS[PHONE_OWNER]; }
+    if (k === 'wrong') { S.drafts.pmobile = own; S.drafts.ppin = '111111'; }
+    if (k === 'other') { S.drafts.pmobile = TRUCKERS.T04.mobile; S.drafts.ppin = PINS.T04; }
+  },
+  plogin: () => {
+    const A = S.auth.phone, owner = TRUCKERS[PHONE_OWNER];
+    if (A.lockUntil > S.now) { A.err = `Sign-in is locked until ${hm(A.lockUntil)} after too many wrong PINs. Call TMD dispatch if you need help now.`; return; }
+    const m = digits(S.drafts.pmobile), pin = digits(S.drafts.ppin);
+    if (!m || pin.length !== 6) { A.err = 'Enter your mobile number and your 6-digit PIN.'; return; }
+    const id = Object.keys(TRUCKERS).find(t => digits(TRUCKERS[t].mobile) === m);
+    S.drafts.ppin = '';
+    if (!id || PINS[id] !== pin) {
+      A.fails++;
+      if (A.fails >= MAX_FAILS) {
+        A.lockUntil = S.now + LOCK_MIN * MIN; A.fails = 0;
+        A.err = `Too many wrong tries. Sign-in is locked until ${hm(A.lockUntil)}.`;
+        logAudit(id ? TRUCKERS[id].name : 'Unknown number', 'Trucker app', 'Sign-in locked', `${MAX_FAILS} wrong PINs on ${owner.name}'s registered phone`);
+        feed('risk', `<b>Trucker sign-in locked</b> · ${MAX_FAILS} wrong PINs on ${owner.name}'s phone`);
+      } else A.err = `Mobile number or PIN is wrong. ${MAX_FAILS - A.fails} ${MAX_FAILS - A.fails === 1 ? 'try' : 'tries'} left.`;
+      return;
+    }
+    if (id !== PHONE_OWNER) {
+      A.err = 'This phone is registered to another driver. Sign in on your own phone, or ask System Admin to move your account.';
+      logAudit(TRUCKERS[id].name, 'Trucker app', 'Blocked sign-in', `Correct PIN, but on ${owner.name}'s registered phone (${owner.device})`);
+      feed('risk', `<b>Blocked sign-in</b> · ${TRUCKERS[id].name} tried to use ${owner.name}'s phone`);
+      return;
+    }
+    A.fails = 0; A.err = ''; A.user = id; A.stage = A.consented ? 'in' : 'consent';
+    logAudit(owner.name, 'Trucker app', 'Signed in', `${owner.device} · registered phone`);
+  },
+  pconsent: () => { const A = S.auth.phone; A.consented = true; A.stage = 'in'; logAudit(TRUCKERS[A.user].name, 'Trucker app', 'Accepted privacy notice', 'Location during active jobs, camera, data use'); },
+  plogout: () => {
+    const A = S.auth.phone;
+    if (A.user) logAudit(TRUCKERS[A.user].name, 'Trucker app', 'Signed out', TRUCKERS[A.user].device);
+    A.user = null; A.stage = 'login'; A.err = ''; S.phone.screen = 'list'; S.phone.jobId = null;
+  },
+  cclogin: () => {
+    const A = S.auth.cc;
+    if (A.lockUntil > S.now) { A.err = `This sign-in is locked until ${hm(A.lockUntil)} after too many wrong tries. Ask System Admin if you need access now.`; return; }
+    const email = (S.drafts.ccemail || '').trim().toLowerCase(), pw = S.drafts.ccpw || '';
+    if (!email || !pw) { A.err = 'Enter your work email and password.'; return; }
+    const u = CC_USERS.find(x => x.email === email);
+    S.drafts.ccpw = '';
+    if (!u || u.pw !== pw) {
+      A.fails++;
+      logAudit(u ? u.name : email, 'Command Center', 'Failed sign-in', `Wrong email or password (${A.fails} of ${MAX_FAILS})`);
+      if (A.fails >= MAX_FAILS) {
+        A.lockUntil = S.now + LOCK_MIN * MIN; A.fails = 0;
+        A.err = `Too many wrong tries. Sign-in is locked until ${hm(A.lockUntil)}.`;
+        logAudit(u ? u.name : email, 'Command Center', 'Sign-in locked', `${MAX_FAILS} wrong tries, locked ${LOCK_MIN} min`);
+      } else A.err = `Email or password is wrong. ${MAX_FAILS - A.fails} ${MAX_FAILS - A.fails === 1 ? 'try' : 'tries'} left.`;
+      return;
+    }
+    A.err = '';
+    if (u.mfa) { A.pending = u; A.stage = 'mfa'; S.drafts.ccotp = ''; return; }
+    ccEnter(u);
+  },
+  ccmfa: () => {
+    const A = S.auth.cc;
+    if (digits(S.drafts.ccotp) !== A.pending.mfa) {
+      A.err = 'That code is wrong or expired. Enter the current code from your authenticator app.'; S.drafts.ccotp = '';
+      logAudit(A.pending.name, ROLES[A.pending.role], 'Failed 2-step code', 'Command Center');
+      return;
+    }
+    ccEnter(A.pending);
+  },
+  cclogout: () => {
+    const A = S.auth.cc;
+    if (A.user) logAudit(A.user.name, ROLES[A.user.role], 'Signed out', 'Command Center');
+    A.user = null; A.pending = null; A.err = ''; A.stage = 'login'; S.sel = null; S.page = 'board'; S.drafts.ccotp = '';
+  },
+  ccfill: email => { const u = CC_USERS.find(x => x.email === email); S.drafts.ccemail = u.email; S.drafts.ccpw = u.pw; S.auth.cc.err = ''; },
+  showpw: () => { S.drafts.showpw = !S.drafts.showpw; },
   page: p => { S.page = p; S.sel = null; window.scrollTo(0, 0); },
   filter: f => { S.filter = f; },
   customer: v => { S.customer = v; },
@@ -1044,17 +1250,17 @@ const ACT = {
   review: kind => {
     const j = job(S.sel), note = (S.drafts.revnote || '').trim();
     if (kind === 'Reject' && !note) { const e = document.getElementById('revnote'); e.placeholder = 'Add a note to explain the rejection'; e.focus(); return 'noop'; }
-    Object.assign(j.exception, { status: kind === 'Reject' ? 'Rejected' : 'Validated', cls: kind === 'Reject' ? 'Controllable' : kind, reviewer:'TMD · L. Ramos', reviewNote: note || 'No note.', reviewedAt:S.now });
-    j.events.push({ type:'exception.reviewed', at:S.now, label:`${j.exception.status} · ${j.exception.cls} by L. Ramos` });
-    S.audit.unshift({ at:S.now, who:'L. Ramos', role:'TMD Team', action:`${j.exception.status} exception`, detail:`${j.id} · ${j.exception.code} → ${j.exception.cls}${note ? ' · ' + note : ''}` });
+    Object.assign(j.exception, { status: kind === 'Reject' ? 'Rejected' : 'Validated', cls: kind === 'Reject' ? 'Controllable' : kind, reviewer:'TMD · ' + me().name, reviewNote: note || 'No note.', reviewedAt:S.now });
+    j.events.push({ type:'exception.reviewed', at:S.now, label:`${j.exception.status} · ${j.exception.cls} by ${me().name}` });
+    S.audit.unshift({ at:S.now, who:me().name, role:ROLES[S.role], action:`${j.exception.status} exception`, detail:`${j.id} · ${j.exception.code} → ${j.exception.cls}${note ? ' · ' + note : ''}` });
     feed('info', `<b>Exception ${j.exception.status.toLowerCase()}</b> · ${j.id} ${j.exception.code} → ${j.exception.cls}`, j.id);
     S.drafts.revnote = '';
   },
   clearflag: i => {
     const j = job(S.sel), f = j.flags[+i], note = (S.drafts['fnote-' + i] || '').trim();
     if (!note) { const e = document.getElementById('fnote-' + i); e.placeholder = 'Add a note first'; e.focus(); return 'noop'; }
-    Object.assign(f, { status:'Cleared', clearedBy:'L. Ramos', note });
-    S.audit.unshift({ at:S.now, who:'L. Ramos', role:'TMD Team', action:'Cleared integrity flag', detail:`${j.id} · ${f.type} · ${note}` });
+    Object.assign(f, { status:'Cleared', clearedBy:me().name, note });
+    S.audit.unshift({ at:S.now, who:me().name, role:ROLES[S.role], action:'Cleared integrity flag', detail:`${j.id} · ${f.type} · ${note}` });
     S.drafts['fnote-' + i] = '';
   },
   copy: () => {
@@ -1064,8 +1270,8 @@ const ACT = {
     try { navigator.clipboard.writeText(txt).then(() => done('Copied.'), sel); } catch (_) { sel(); }
     return 'noop';
   },
-  cfgtoggle: id => { S.config[id] = !S.config[id]; S.audit.unshift({ at:S.now, who:'K. Uy', role:'System Admin', action:'Changed rule', detail:`${id} → ${S.config[id] ? 'On' : 'Off'}` }); },
-  resetdev: id => { S.audit.unshift({ at:S.now, who:'K. Uy', role:'System Admin', action:'Reset device binding', detail:`${TRUCKERS[id].name} · next login binds a new phone` }); TRUCKERS[id].device = 'Not bound · waiting for login'; TRUCKERS[id].bound = '—'; },
+  cfgtoggle: id => { S.config[id] = !S.config[id]; S.audit.unshift({ at:S.now, who:me().name, role:ROLES[S.role], action:'Changed rule', detail:`${id} → ${S.config[id] ? 'On' : 'Off'}` }); },
+  resetdev: id => { S.audit.unshift({ at:S.now, who:me().name, role:ROLES[S.role], action:'Reset device binding', detail:`${TRUCKERS[id].name} · next login binds a new phone` }); TRUCKERS[id].device = 'Not bound · waiting for login'; TRUCKERS[id].bound = '—'; },
 };
 function mockFlag(j) {
   const L = S.phone.local[j.id]; if (L.mockFlagged) return; L.mockFlagged = true;
@@ -1079,18 +1285,19 @@ document.addEventListener('click', e => {
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && S.sel) { S.sel = null; render(); } if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('tr[data-act]')) { e.preventDefault(); e.target.click(); } });
 document.addEventListener('change', e => {
   const el = e.target;
-  if (el.dataset.act === 'role' || el.dataset.act === 'customer') { ACT[el.dataset.act](el.value); render(); }
+  if (el.dataset.act === 'customer') { ACT[el.dataset.act](el.value); render(); }
   if (el.dataset.cfg) {
     const k = el.dataset.cfg, old = S.config[k], v = Math.max(+el.min, Math.min(+el.max, Math.round(+el.value || 0)));
-    if (v !== old) { S.config[k] = v; S.audit.unshift({ at:S.now, who:'K. Uy', role:'System Admin', action:'Changed rule', detail:`${k}: ${old} → ${v}` }); }
+    if (v !== old) { S.config[k] = v; S.audit.unshift({ at:S.now, who:me().name, role:ROLES[S.role], action:'Changed rule', detail:`${k}: ${old} → ${v}` }); }
     render();
   }
   if (el.dataset.rad) {
     const s = SITES[el.dataset.rad], old = s.radius, v = Math.max(50, Math.min(500, Math.round(+el.value || old)));
-    if (v !== old) { s.radius = v; S.audit.unshift({ at:S.now, who:'K. Uy', role:'System Admin', action:'Changed geofence', detail:`${s.customer}: ${old} m → ${v} m` }); }
+    if (v !== old) { s.radius = v; S.audit.unshift({ at:S.now, who:me().name, role:ROLES[S.role], action:'Changed geofence', detail:`${s.customer}: ${old} m → ${v} m` }); }
     render();
   }
 });
+document.addEventListener('submit', e => { const f = e.target.dataset.form; if (!f) return; e.preventDefault(); ACT[f](); render(); });
 document.addEventListener('input', e => { const d = e.target.dataset.draft; if (d) S.drafts[d] = e.target.value; });
 
 const h = (location.hash || '').slice(1);
