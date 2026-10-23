@@ -2,294 +2,329 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
-/* Layout: top bar switches three views. Trucker = phone + demo rail. Command Center = role nav + board/drawer. How it works = rules reference. */
+/* Layout: Apple look. Page = desktop backdrop. TAS = iPhone + demo utility windows. Command Center = macOS window with a source-list sidebar. */
 :root{
-  --bg:#F5F4F8; --surface:#FFFFFF; --sunk:#EEECF3; --ink:#1C1827; --muted:#665F75; --line:#E0DCE8;
-  --magenta:#C1006C; --violet:#5A2BC2; --on-accent:#FFFFFF;
-  --hit:#0D7650; --hit-bg:#E1F4EA; --miss:#BC2329; --miss-bg:#FBE6E6; --risk:#965800; --risk-bg:#FFF0D2;
-  --info:#2E58CC; --info-bg:#E5EBFB; --neutral-bg:#ECEAF1;
-  --bezel:#17141E; --view:#0E0C12; --land:#F1EEF5; --water:#D3E0F2; --road:#CFC7DB; --halo:#F1EEF5;
-  --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
-  --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
-  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
-  --shadow:0 1px 2px rgba(28,24,39,.06),0 8px 24px rgba(28,24,39,.06);
+  --bg:#F2F2F7; --surface:#FFFFFF; --sunk:#F5F5F7; --fill:#E9E9EE; --ink:#1D1D1F; --muted:#6E6E73; --line:#D8D8DD;
+  --magenta:#007AFF; --violet:#5856D6; --on-accent:#FFFFFF; /* --magenta is the accent token used across the markup: iOS system blue */
+  --hit:#248A3D; --hit-bg:#E2F6E7; --miss:#D70015; --miss-bg:#FFE6E8; --risk:#B25000; --risk-bg:#FFF0DC;
+  --info:#0A7AA8; --info-bg:#E1F2FA; --neutral-bg:#ECECF0;
+  --desk:linear-gradient(160deg,#E4EAF4 0%,#ECE7F2 55%,#F3EDE8 100%);
+  --side:rgba(232,232,238,.78); --bar:rgba(248,248,250,.86);
+  --bezel:#1D1D1F; --land:#F3F0EA; --water:#AFD4F0; --road:#F3C56A; --halo:#F3F0EA;
+  --f-body:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",system-ui,sans-serif;
+  --f-display:-apple-system,BlinkMacSystemFont,"SF Pro Display","Inter","Segoe UI",system-ui,sans-serif;
+  --f-mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,"IBM Plex Mono",monospace;
+  --shadow:0 1px 2px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.05);
+  --win-shadow:0 0 0 .5px rgba(0,0,0,.16),0 24px 60px -14px rgba(30,30,60,.32);
+  /* TAS on iPhone */
+  --p-bg:#F2F2F7; --p-card:#FFFFFF; --p-ink:#000000; --p-muted:#6C6C70; --p-sep:rgba(60,60,67,.2); --p-fill:#E3E3E8; --p-tint:#007AFF;
+  --p-green:#34C759; --p-orange:#FF9500; --p-red:#FF3B30; --p-glass:rgba(255,255,255,.92);
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#110F16; --surface:#1A1722; --sunk:#14121B; --ink:#ECE9F3; --muted:#A49DB3; --line:#2D2938;
-  --magenta:#FF55AA; --violet:#A887FF; --on-accent:#14111B;
-  --hit:#4AD49E; --hit-bg:#0F2A20; --miss:#FF7C7C; --miss-bg:#36171A; --risk:#F3B64A; --risk-bg:#30250F;
-  --info:#86A6FF; --info-bg:#182143; --neutral-bg:#26222F;
-  --bezel:#000000; --view:#08070B; --land:#1C1925; --water:#12213A; --road:#3B3549; --halo:#1C1925; --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.3); color-scheme:dark}}
+  --bg:#161618; --surface:#1E1E20; --sunk:#252527; --fill:#3A3A3C; --ink:#F5F5F7; --muted:#98989D; --line:#38383B;
+  --magenta:#0A84FF; --violet:#5E5CE6; --on-accent:#FFFFFF;
+  --hit:#30D158; --hit-bg:#0F2E1A; --miss:#FF453A; --miss-bg:#3B1412; --risk:#FF9F0A; --risk-bg:#3A2608;
+  --info:#64D2FF; --info-bg:#0D2B3A; --neutral-bg:#2C2C2E;
+  --desk:linear-gradient(160deg,#12141C 0%,#19151F 55%,#1E1916 100%);
+  --side:rgba(44,44,48,.78); --bar:rgba(34,34,36,.86);
+  --bezel:#0B0B0C; --land:#2A2A2C; --water:#1B3654; --road:#6E5A2E; --halo:#2A2A2C;
+  --shadow:0 1px 2px rgba(0,0,0,.5),0 4px 14px rgba(0,0,0,.3); --win-shadow:0 0 0 .5px rgba(255,255,255,.12),0 24px 60px -14px rgba(0,0,0,.75);
+  --p-bg:#000000; --p-card:#1C1C1E; --p-ink:#FFFFFF; --p-muted:#98989F; --p-sep:rgba(84,84,88,.65); --p-fill:#2C2C2E; --p-tint:#0A84FF;
+  --p-green:#30D158; --p-orange:#FF9F0A; --p-red:#FF453A; --p-glass:rgba(44,44,46,.92); color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#110F16; --surface:#1A1722; --sunk:#14121B; --ink:#ECE9F3; --muted:#A49DB3; --line:#2D2938;
-  --magenta:#FF55AA; --violet:#A887FF; --on-accent:#14111B;
-  --hit:#4AD49E; --hit-bg:#0F2A20; --miss:#FF7C7C; --miss-bg:#36171A; --risk:#F3B64A; --risk-bg:#30250F;
-  --info:#86A6FF; --info-bg:#182143; --neutral-bg:#26222F;
-  --bezel:#000000; --view:#08070B; --land:#1C1925; --water:#12213A; --road:#3B3549; --halo:#1C1925; --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.3); color-scheme:dark}
+  --bg:#161618; --surface:#1E1E20; --sunk:#252527; --fill:#3A3A3C; --ink:#F5F5F7; --muted:#98989D; --line:#38383B;
+  --magenta:#0A84FF; --violet:#5E5CE6; --on-accent:#FFFFFF;
+  --hit:#30D158; --hit-bg:#0F2E1A; --miss:#FF453A; --miss-bg:#3B1412; --risk:#FF9F0A; --risk-bg:#3A2608;
+  --info:#64D2FF; --info-bg:#0D2B3A; --neutral-bg:#2C2C2E;
+  --desk:linear-gradient(160deg,#12141C 0%,#19151F 55%,#1E1916 100%);
+  --side:rgba(44,44,48,.78); --bar:rgba(34,34,36,.86);
+  --bezel:#0B0B0C; --land:#2A2A2C; --water:#1B3654; --road:#6E5A2E; --halo:#2A2A2C;
+  --shadow:0 1px 2px rgba(0,0,0,.5),0 4px 14px rgba(0,0,0,.3); --win-shadow:0 0 0 .5px rgba(255,255,255,.12),0 24px 60px -14px rgba(0,0,0,.75);
+  --p-bg:#000000; --p-card:#1C1C1E; --p-ink:#FFFFFF; --p-muted:#98989F; --p-sep:rgba(84,84,88,.65); --p-fill:#2C2C2E; --p-tint:#0A84FF;
+  --p-green:#30D158; --p-orange:#FF9F0A; --p-red:#FF453A; --p-glass:rgba(44,44,46,.92); color-scheme:dark}
 
 *{box-sizing:border-box}
-body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45}
+body{background-color:var(--bg);background-image:var(--desk);background-attachment:fixed;color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.42;-webkit-font-smoothing:antialiased}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
-:focus-visible{outline:2px solid var(--magenta);outline-offset:2px}
+:focus-visible{outline:3px solid color-mix(in srgb,var(--magenta) 55%,transparent);outline-offset:1px;border-radius:6px}
 .mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
 .muted{color:var(--muted)}
-h1,h2,h3{font-family:var(--f-display);font-weight:700;letter-spacing:.01em;text-wrap:balance;margin:0}
-.eyebrow{font-family:var(--f-display);font-weight:600;text-transform:uppercase;letter-spacing:.08em;font-size:12px;color:var(--muted)}
+h1,h2,h3{font-family:var(--f-display);font-weight:700;letter-spacing:-.015em;text-wrap:balance;margin:0}
+.eyebrow{font-weight:600;text-transform:uppercase;letter-spacing:.04em;font-size:11px;color:var(--muted)}
+.ic{display:block;flex:none}
 
-/* Top bar */
-body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
-.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--surface);border-bottom:1px solid var(--line)}
-.top-in{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+/* App icon (brand) */
+.appicon{border-radius:22%;background:linear-gradient(160deg,#C2006B 0%,#4B1FA8 100%);display:grid;place-items:center;flex:none;box-shadow:0 1px 0 rgba(255,255,255,.25) inset,0 6px 16px rgba(75,31,168,.28)}
+.spinner{width:22px;height:22px;border-radius:50%;border:2.5px solid var(--fill);border-top-color:var(--muted);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spinner{animation:none}}
+
+/* Top shell bar */
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bar)}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bar);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-bottom:.5px solid var(--line)}
+.top-in{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;padding-block:9px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .brand{display:flex;align-items:center;gap:10px;min-width:0}
-.mark{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--magenta),var(--violet));display:grid;place-items:center;flex:none}
-.brand b{font-family:var(--f-display);font-size:20px;line-height:1;display:block}
+.brand b{font-family:var(--f-display);font-size:15px;line-height:1.1;display:block;font-weight:700}
 .brand small{font-size:12px;color:var(--muted)}
-.tabs{display:flex;gap:4px;background:var(--sunk);padding:4px;border-radius:10px;overflow-x:auto;max-width:100%}
-.tab{border:0;background:none;padding:7px 14px;border-radius:7px;font-weight:600;white-space:nowrap;color:var(--muted)}
-.tab[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
-.clock{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:13px}
-.clock .mono{font-size:15px;font-weight:600}
-.live-dot{width:8px;height:8px;border-radius:50%;background:var(--hit);box-shadow:0 0 0 3px var(--hit-bg)}
-.sample{font-size:12px;background:var(--risk-bg);color:var(--risk);padding:2px 8px;border-radius:99px;font-weight:600}
+.tabs{display:flex;gap:2px;background:var(--fill);padding:2px;border-radius:9px;overflow-x:auto;max-width:100%}
+.tab{border:0;background:none;padding:5px 14px;border-radius:7px;font-weight:500;font-size:13px;white-space:nowrap;color:var(--ink)}
+.tab[aria-selected="true"]{background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.14),0 0 0 .5px rgba(0,0,0,.06)}
+.clock{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:12px}
+.clock .mono{font-size:13px;font-weight:600}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--hit)}
+.sample{font-size:11px;background:var(--risk-bg);color:var(--risk);padding:2px 8px;border-radius:99px;font-weight:600}
+.wrap{padding-block:22px 44px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));max-width:1480px;margin:0 auto}
 
-.wrap{padding-block:20px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));max-width:1440px;margin:0 auto}
-
-/* Chips */
-.chip{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:700;letter-spacing:.02em;white-space:nowrap;font-family:var(--f-display);text-transform:uppercase}
+/* Shared controls (macOS) */
+.chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:99px;font-size:12px;font-weight:600;white-space:nowrap}
 .c-hit{background:var(--hit-bg);color:var(--hit)} .c-miss{background:var(--miss-bg);color:var(--miss)}
 .c-risk{background:var(--risk-bg);color:var(--risk)} .c-info{background:var(--info-bg);color:var(--info)}
 .c-neutral{background:var(--neutral-bg);color:var(--muted)}
-.btn{border:1px solid var(--line);background:var(--surface);padding:8px 14px;border-radius:8px;font-weight:600;display:inline-flex;align-items:center;gap:6px;justify-content:center}
-.btn:hover{border-color:var(--muted)}
-.btn.primary{background:var(--magenta);border-color:var(--magenta);color:var(--on-accent)}
-.btn.ok{background:var(--hit);border-color:var(--hit);color:var(--on-accent)}
-.btn.bad{color:var(--miss);border-color:var(--miss)}
-.btn.sm{padding:5px 10px;font-size:13px}
+.btn{border:.5px solid var(--line);background:var(--surface);padding:5px 12px;border-radius:6px;font-weight:500;font-size:13px;display:inline-flex;align-items:center;gap:6px;justify-content:center;box-shadow:0 .5px 1.5px rgba(0,0,0,.12)}
+.btn:hover{background:var(--sunk)}
+.btn.primary{background:var(--magenta);border-color:transparent;color:var(--on-accent)}
+.btn.ok{background:var(--hit);border-color:transparent;color:#FFFFFF}
+.btn.bad{color:var(--miss)}
+.btn.sm{padding:3px 10px;font-size:12px}
 .btn:disabled{opacity:.45;cursor:not-allowed}
+textarea.in,input.in,select.in{width:100%;border:.5px solid var(--line);border-radius:6px;padding:6px 9px;background:var(--surface);font-size:13px;box-shadow:inset 0 .5px 1px rgba(0,0,0,.06)}
+.seg{display:inline-flex;flex-wrap:wrap;gap:2px;background:var(--fill);border-radius:8px;padding:2px}
+.seg button{border:0;background:none;padding:4px 11px;border-radius:6px;font-size:12px;font-weight:500}
+.seg button[aria-pressed="true"]{background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.cheat[aria-pressed="true"]{background:var(--miss)!important;color:#FFFFFF!important}
 
-/* ============ TRUCKER VIEW ============ */
-.trucker{display:grid;grid-template-columns:auto minmax(0,1fr);gap:28px;align-items:start}
-.phone{width:372px;max-width:100%;background:var(--bezel);border-radius:44px;padding:12px;box-shadow:0 30px 60px -20px rgba(20,10,40,.45)}
-.screen{background:#F4F3F7;color:#16131E;border-radius:34px;overflow:hidden;height:760px;max-height:calc(100vh - 140px);min-height:600px;display:flex;flex-direction:column;position:relative;
-  --p-ink:#16131E;--p-muted:#5E5870;--p-line:#DDD9E5;--p-card:#FFFFFF;--p-accent:#B8005F;--p-hit:#0B6E49;--p-miss:#B3141B;--p-risk:#8A4F00}
-.sbar{display:flex;justify-content:space-between;align-items:center;padding:10px 22px 6px;font-size:13px;font-weight:600;background:#FFFFFF}
-.sbar .ic{display:flex;gap:6px;align-items:center}
-.appbar{background:#FFFFFF;padding:6px 16px 12px;border-bottom:1px solid var(--p-line);display:flex;align-items:center;gap:10px}
-.appbar h2{font-size:22px;color:var(--p-ink)}
-.appbar .back{border:0;background:#EEEBF3;width:36px;height:36px;border-radius:50%;font-size:18px;color:var(--p-ink);flex:none}
-.pbody{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px}
-.offline-bar{background:#2A2533;color:#FFFFFF;font-size:13px;padding:7px 14px}
-.offline-bar b{color:#FFC94D}
-.pcard{background:var(--p-card);border-radius:16px;padding:14px;border:1px solid var(--p-line);display:flex;flex-direction:column;gap:8px;text-align:left;width:100%}
-button.pcard:hover{border-color:var(--p-accent)}
-.pcard .row{display:flex;justify-content:space-between;gap:8px;align-items:center}
-.big-time{font-family:var(--f-mono);font-size:26px;font-weight:600;color:var(--p-ink);line-height:1}
-.pk{font-size:12px;color:var(--p-muted)}
-.pv{font-weight:600;color:var(--p-ink)}
-.kv{display:grid;grid-template-columns:110px 1fr;gap:6px 10px;font-size:14px}
-.kv dt{color:var(--p-muted)} .kv dd{margin:0;font-weight:600;color:var(--p-ink);min-width:0;overflow-wrap:anywhere}
-.pbtn{width:100%;min-height:56px;border-radius:14px;border:0;font-family:var(--f-display);font-size:20px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;background:var(--p-accent);color:#FFFFFF}
-.pbtn.alt{background:#FFFFFF;color:var(--p-ink);border:2px solid var(--p-line)}
-.pbtn.go{background:var(--p-hit)}
-.pbtn:disabled{background:#CFCBD8;color:#7A748A}
-.pbtn small{display:block;font-family:var(--f-body);text-transform:none;font-size:12px;font-weight:500;letter-spacing:0;opacity:.85}
-.checks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
-.checks li{display:flex;gap:10px;align-items:flex-start;font-size:14px}
-.ck{width:24px;height:24px;border-radius:50%;flex:none;display:grid;place-items:center;font-weight:700;font-size:14px;color:#FFFFFF}
-.ck.y{background:var(--p-hit)} .ck.n{background:var(--p-miss)} .ck.w{background:var(--p-risk)} .ck.p{background:#B9B4C4}
-.checks small{display:block;color:var(--p-muted);font-size:12px}
-.dist{font-family:var(--f-mono);font-size:34px;font-weight:600;line-height:1;color:var(--p-ink)}
-.track{height:8px;border-radius:99px;background:#E6E2EC;overflow:hidden}
-.track i{display:block;height:100%;background:var(--p-accent);border-radius:99px}
-.note{font-size:12px;color:var(--p-muted);display:flex;gap:6px;align-items:flex-start}
-.finder{background:#0C0B10;border-radius:16px;aspect-ratio:4/3;position:relative;overflow:hidden;display:grid;place-items:center;max-width:100%}
+/* macOS window */
+.mac-window{background:var(--surface);border-radius:12px;box-shadow:var(--win-shadow);overflow:hidden;min-width:0}
+.mac-titlebar{height:40px;display:flex;align-items:center;gap:10px;padding:0 14px;background:var(--bar);border-bottom:.5px solid var(--line);position:relative}
+.lights{display:flex;gap:8px;flex:none}
+.lights i{width:12px;height:12px;border-radius:50%;background:#FF5F57;box-shadow:inset 0 0 0 .5px rgba(0,0,0,.18)}
+.lights i:nth-child(2){background:#FEBC2E} .lights i:nth-child(3){background:#28C840}
+.mac-title{position:absolute;left:50%;transform:translateX(-50%);font-size:13px;font-weight:600;white-space:nowrap;max-width:56%;overflow:hidden;text-overflow:ellipsis}
+.mac-tb-right{margin-left:auto;display:flex;gap:8px;align-items:center;font-size:12px;color:var(--muted)}
+
+/* ============ TAS (iPhone) ============ */
+.trucker{display:grid;grid-template-columns:auto minmax(0,1fr);gap:32px;align-items:start}
+.phone{width:384px;max-width:100%;flex:none;border-radius:60px;padding:12px;background:var(--bezel);box-shadow:0 0 0 2px #8E8E93,0 0 0 3px #3A3A3C,0 40px 80px -24px rgba(0,0,0,.5);position:relative}
+.screen{background:var(--p-bg);color:var(--p-ink);border-radius:48px;overflow:hidden;height:790px;max-height:calc(100vh - 110px);min-height:640px;display:flex;flex-direction:column;position:relative;font-size:17px;line-height:1.3;transition:background .25s}
+.screen.cam-on{background:#000000;color:#FFFFFF}
+.screen.res-ok{background:var(--p-green);color:#FFFFFF}
+.screen.res-bad{background:var(--p-red);color:#FFFFFF}
+.island{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:120px;height:35px;border-radius:20px;background:#000000;z-index:8}
+.sbar{height:54px;flex:none;display:flex;justify-content:space-between;align-items:center;padding:16px 30px 0 36px;font-size:16px;font-weight:600;position:relative;z-index:7}
+.sbi{display:flex;gap:6px;align-items:center}
+.homebar{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:136px;height:5px;border-radius:3px;background:currentColor;opacity:.9;z-index:8}
+.pview{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:16px;padding-bottom:18px;min-height:0}
+.pform{flex:1;display:flex;flex-direction:column;min-height:0}
+.pnav{display:flex;justify-content:space-between;align-items:center;padding:2px 12px 0 8px;min-height:40px}
+.pnav button{border:0;background:none;color:var(--p-tint);font-size:17px;display:flex;align-items:center;gap:2px;padding:6px 6px}
+.ptitle{font-family:var(--f-display);font-size:32px;line-height:1.12;font-weight:700;letter-spacing:-.02em;padding:0 20px;margin:0}
+.pinstr{font-size:17px;line-height:1.35;color:var(--p-muted);padding:0 20px;margin:0}
+.pinstr b{color:var(--p-ink);font-weight:600}
+.psec{font-size:13px;color:var(--p-muted);text-transform:uppercase;letter-spacing:.02em;padding:6px 36px 0;margin-bottom:-10px}
+.pgroup{margin:0 16px;background:var(--p-card);border-radius:14px;overflow:hidden}
+.prow{display:flex;align-items:center;gap:12px;padding:11px 16px;min-height:52px;position:relative;font-size:17px;width:100%;border:0;background:none;text-align:left;color:var(--p-ink)}
+.prow + .prow::before,.pdetails[open] .prow ~ .prow::before{content:"";position:absolute;top:0;left:58px;right:0;border-top:.5px solid var(--p-sep)}
+.prow .sub,.sub{display:block;font-size:15px;color:var(--p-muted);font-weight:400}
+.prow b{font-weight:600}
+.grow{flex:1;min-width:0}
+.picon{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;color:#FFFFFF;flex:none}
+.ptime{font-weight:600;font-variant-numeric:tabular-nums;min-width:86px}
+.plbl{color:var(--p-muted);min-width:90px}
+.pdetails summary{list-style:none;cursor:pointer}
+.pdetails summary::-webkit-details-marker{display:none}
+.pdetails[open] summary .ic:last-child{transform:rotate(90deg)}
+.pdetails .prow:not(summary){padding-left:58px}
+.pact{flex:none;padding:10px 16px 30px;display:flex;flex-direction:column;gap:10px}
+.pbtn{min-height:58px;border-radius:16px;border:0;font-size:19px;font-weight:600;background:var(--p-tint);color:#FFFFFF;display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:0 16px}
+.pbtn:active{filter:brightness(.92)}
+.pbtn.green{background:var(--p-green)} .pbtn.orange{background:var(--p-orange)}
+.pbtn.plain{background:var(--p-fill);color:var(--p-tint)}
+.pbtn.white{background:#FFFFFF;color:#000000}
+.pbtn:disabled{background:var(--p-fill);color:var(--p-muted)}
+.phero{margin:0 16px;background:var(--p-card);border-radius:22px;padding:18px;display:flex;flex-direction:column;gap:14px}
+.hrow{display:flex;gap:12px;align-items:center}
+.hname{font-size:20px;font-weight:600;display:block;line-height:1.2}
+.pbig{font-family:var(--f-display);font-size:46px;line-height:1;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.ppill{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:99px;font-size:15px;font-weight:600}
+.pp-ok{background:color-mix(in srgb,var(--p-green) 18%,transparent);color:var(--hit)}
+.pp-warn{background:color-mix(in srgb,var(--p-orange) 20%,transparent);color:var(--risk)}
+.pp-bad{background:color-mix(in srgb,var(--p-red) 16%,transparent);color:var(--miss)}
+.pp-info{background:color-mix(in srgb,var(--p-tint) 15%,transparent);color:var(--p-tint)}
+.proute{margin:0 16px;background:var(--p-card);border-radius:22px;padding:20px 18px;display:flex;flex-direction:column;gap:16px}
+.road{position:relative;height:46px}
+.road .line{position:absolute;left:22px;right:22px;top:21px;height:4px;border-radius:2px;background:var(--p-fill)}
+.road .done{position:absolute;left:22px;top:21px;height:4px;border-radius:2px;background:var(--p-tint)}
+.road .truckdot{position:absolute;top:0;width:46px;height:46px;border-radius:50%;background:var(--p-tint);color:#FFFFFF;display:grid;place-items:center;transform:translateX(-50%);box-shadow:0 4px 12px color-mix(in srgb,var(--p-tint) 40%,transparent);transition:left 1s linear}
+.road .flag{position:absolute;right:0;top:5px;width:36px;height:36px;border-radius:50%;background:var(--p-green);color:#FFFFFF;display:grid;place-items:center}
+.road-txt{display:flex;justify-content:space-between;align-items:flex-end;gap:10px}
+.eta{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+.palert{margin:0 16px;background:var(--p-red);color:#FFFFFF;border-radius:16px;padding:14px;display:flex;gap:10px;align-items:flex-start;font-size:16px}
+.parrive{display:flex;flex-direction:column;align-items:center;gap:12px;padding:10px 20px 0;text-align:center}
+.bigcheck{width:128px;height:128px;border-radius:50%;background:var(--p-green);color:#FFFFFF;display:grid;place-items:center;box-shadow:0 10px 30px color-mix(in srgb,var(--p-green) 45%,transparent)}
+.offline-bar{margin:0 16px 8px;background:var(--p-orange);color:#FFFFFF;border-radius:12px;padding:9px 12px;font-size:15px;font-weight:600;display:flex;gap:8px;align-items:center;flex:none}
+.toast{position:absolute;top:58px;left:10px;right:10px;background:var(--p-glass);color:var(--p-ink);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border-radius:20px;padding:12px 14px;font-size:15px;z-index:9;display:flex;gap:10px;align-items:center;box-shadow:0 8px 30px rgba(0,0,0,.2)}
+.toast b{display:block;font-size:13px;color:var(--p-muted);font-weight:600}
+.psplash{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center}
+.psplash-name{font-family:var(--f-display);font-size:34px;font-weight:700;letter-spacing:.04em}
+.psplash-sub{font-size:16px;color:var(--p-muted)}
+.plogo{display:flex;justify-content:center;padding-top:18px}
+.pfield-row input{border:0;background:none;font-size:17px;flex:1;min-width:0;outline:none;color:var(--p-ink)}
+.pfield-row + .pfield-row::before{left:16px!important}
+.perr{margin:0 16px;background:color-mix(in srgb,var(--p-red) 14%,transparent);color:var(--miss);border-radius:12px;padding:10px 14px;font-size:15px;font-weight:600}
+.cam{flex:1;display:flex;flex-direction:column;gap:14px;min-height:0}
+.camtop{display:flex;justify-content:space-between;align-items:center;padding:4px 16px 0}
+.camx{width:36px;height:36px;border-radius:50%;border:0;background:rgba(255,255,255,.18);color:#FFFFFF;display:grid;place-items:center}
+.campill{background:rgba(255,255,255,.18);border-radius:99px;padding:4px 12px;font-size:14px;font-weight:600}
+.camtxt{margin:0;padding:0 24px;text-align:center;font-size:22px;font-weight:600;line-height:1.25}
+.finder{margin:0 16px;border-radius:18px;aspect-ratio:4/3;position:relative;overflow:hidden;max-width:100%;background:#111111}
 .finder svg{width:100%;height:100%;display:block}
-.qrframe{position:absolute;inset:22% 28%;border:3px solid #FFFFFF;border-radius:10px;box-shadow:0 0 0 999px rgba(0,0,0,.45)}
-.scanline{position:absolute;left:28%;right:28%;height:2px;background:#FF4FA3;top:50%;animation:scan 1.6s ease-in-out infinite alternate}
-@keyframes scan{from{top:24%}to{top:76%}}
+.qrframe{position:absolute;inset:20% 27%;border:3px solid #FFD60A;border-radius:12px;box-shadow:0 0 0 999px rgba(0,0,0,.45)}
+.scanline{position:absolute;left:27%;right:27%;height:2px;background:#FFD60A;top:50%;animation:scanl 1.6s ease-in-out infinite alternate}
+@keyframes scanl{from{top:22%}to{top:78%}}
 @media (prefers-reduced-motion:reduce){.scanline{animation:none}}
-.shutter{width:68px;height:68px;border-radius:50%;border:5px solid #FFFFFF;background:var(--p-accent);margin:0 auto;display:block}
-.steps{display:flex;gap:6px}
-.steps span{flex:1;height:4px;border-radius:99px;background:#DDD9E5}
-.steps span.on{background:var(--p-accent)}
-.result{border-radius:20px;padding:22px 16px;text-align:center;color:#FFFFFF;display:flex;flex-direction:column;gap:6px;align-items:center}
-.result.hit{background:var(--p-hit)} .result.miss{background:var(--p-miss)}
-.result h3{font-size:52px;line-height:1}
-.opt{display:flex;gap:10px;align-items:center;padding:12px;border-radius:12px;border:2px solid var(--p-line);background:#FFFFFF;text-align:left;width:100%;color:var(--p-ink)}
-.opt[aria-pressed="true"]{border-color:var(--p-accent);background:#FFF0F7}
-.opt .code{font-family:var(--f-mono);font-size:12px;color:var(--p-muted);min-width:54px}
-.ptxt{width:100%;border:2px solid var(--p-line);border-radius:12px;padding:10px;background:#FFFFFF;color:var(--p-ink);min-height:70px}
-.pinput{width:100%;border:2px solid var(--p-line);border-radius:12px;padding:12px;background:#FFFFFF;color:var(--p-ink);font-family:var(--f-mono);font-size:16px;text-transform:uppercase}
-.err{color:var(--p-miss);font-size:13px;font-weight:600}
-.toast{position:absolute;left:12px;right:12px;bottom:14px;background:#1E1A27;color:#FFFFFF;border-radius:12px;padding:10px 14px;font-size:13px;z-index:5}
-.pchip{display:inline-block;padding:2px 9px;border-radius:99px;font-size:11px;font-weight:700;font-family:var(--f-display);letter-spacing:.04em;text-transform:uppercase}
-.pc-hit{background:#DDF3E8;color:var(--p-hit)} .pc-miss{background:#FBE3E4;color:var(--p-miss)} .pc-risk{background:#FFEFCF;color:var(--p-risk)} .pc-n{background:#ECE9F1;color:#5E5870} .pc-info{background:#E3E9FB;color:#2B50B8}
+.camfoot{margin-top:auto;padding:0 16px 34px;display:flex;flex-direction:column;gap:12px;align-items:center}
+.shutter{width:76px;height:76px;border-radius:50%;border:5px solid #FFFFFF;background:#FFFFFF;box-shadow:inset 0 0 0 3px #000000}
+.camlink{border:0;background:none;color:#FFD60A;font-size:16px;font-weight:600;padding:6px}
+.camerr{margin:0;color:#FF9F95;font-size:15px;font-weight:600;text-align:center}
+.manual{width:100%;display:flex;flex-direction:column;gap:10px}
+.pinput{width:100%;border:0;border-radius:14px;padding:14px;background:rgba(255,255,255,.14);color:#FFFFFF;font-family:var(--f-mono);font-size:19px;text-transform:uppercase;text-align:center;letter-spacing:.06em}
+.pres{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:12px;padding:20px 26px}
+.rescircle{width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.22);display:grid;place-items:center}
+.restitle{font-family:var(--f-display);font-size:42px;font-weight:800;letter-spacing:-.02em}
+.ressub{margin:0;font-size:19px;line-height:1.35;opacity:.95}
+.resnote{margin:0;display:flex;gap:6px;align-items:center;font-size:16px;font-weight:600;background:rgba(0,0,0,.14);padding:8px 14px;border-radius:99px}
+.resinstr{margin:0 0 2px;text-align:center;font-size:17px;font-weight:600;color:#FFFFFF}
+.rgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px}
+.rtile{background:var(--p-card);border:2px solid transparent;border-radius:18px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;text-align:center;font-size:16px;font-weight:600;line-height:1.2;color:var(--p-ink);min-height:112px}
+.rtile[aria-pressed="true"]{border-color:var(--p-tint);background:color-mix(in srgb,var(--p-tint) 10%,var(--p-card))}
+.ricon{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;color:#FFFFFF}
+.pseg{display:flex;background:var(--p-fill);border-radius:10px;padding:2px;margin:0 16px}
+.pseg button{flex:1;border:0;background:none;padding:10px 0;font-size:15px;font-weight:600;border-radius:8px;color:var(--p-ink)}
+.pseg button[aria-pressed="true"]{background:var(--p-card);box-shadow:0 1px 4px rgba(0,0,0,.15)}
+.ptxt{width:100%;border:0;padding:12px 16px;background:none;color:var(--p-ink);font-size:17px;min-height:84px;resize:none;outline:none}
+.plink2{border:0;background:none;color:var(--p-tint);font-size:17px;padding:0 20px;text-align:left}
 
-.rail{display:flex;flex-direction:column;gap:16px;min-width:0}
-.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
-.panel h3{font-size:19px}
-.ctrls{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
-.ctrl{display:flex;flex-direction:column;gap:6px;padding:12px;border-radius:10px;background:var(--sunk)}
-.ctrl .lbl{font-weight:600;font-size:14px}
+/* demo rail as macOS utility windows */
+.rail{display:flex;flex-direction:column;gap:18px;min-width:0}
+.util-body{padding:16px;display:flex;flex-direction:column;gap:14px}
+.util-body h3{font-size:17px}
+.ctrls{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.ctrl{display:flex;flex-direction:column;gap:7px;padding:12px;border-radius:10px;background:var(--sunk);border:.5px solid var(--line)}
+.ctrl .lbl{font-weight:600;font-size:13px}
 .ctrl p{margin:0;font-size:12px;color:var(--muted)}
-.seg{display:flex;gap:4px;flex-wrap:wrap}
-.seg button{border:1px solid var(--line);background:var(--surface);padding:5px 10px;border-radius:7px;font-size:13px;font-weight:600}
-.seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
-.cheat[aria-pressed="true"]{background:var(--miss)!important;border-color:var(--miss)!important;color:var(--on-accent)!important}
-.evlog{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:300px;overflow-y:auto}
-.evlog li{display:grid;grid-template-columns:62px minmax(0,1fr) auto;gap:10px;align-items:baseline;font-size:13px;padding:6px 0;border-bottom:1px dashed var(--line)}
-.evlog code{font-family:var(--f-mono);font-size:12px;color:var(--violet)}
 .guide{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:14px}
+.evlog{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;max-height:300px;overflow-y:auto}
+.evlog li{display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:10px;align-items:baseline;font-size:13px;padding:7px 0;border-bottom:.5px solid var(--line)}
+.evlog code{font-family:var(--f-mono);font-size:12px;color:var(--violet)}
 
-/* ============ COMMAND CENTER ============ */
-.cc{display:grid;grid-template-columns:220px minmax(0,1fr);gap:22px;align-items:start}
-.nav{position:sticky;top:calc(env(safe-area-inset-top,0px) + 76px);display:flex;flex-direction:column;gap:14px}
-.role{display:flex;flex-direction:column;gap:6px}
-.role select{padding:9px 10px;border-radius:9px;border:1px solid var(--line);background:var(--surface);font-weight:600}
-.navlist{display:flex;flex-direction:column;gap:2px}
-.navlist button{border:0;background:none;text-align:left;padding:9px 12px;border-radius:8px;font-weight:600;color:var(--muted);display:flex;justify-content:space-between;align-items:center;gap:8px}
-.navlist button[aria-current="page"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
-.navlist .n{font-family:var(--f-mono);font-size:12px;background:var(--miss-bg);color:var(--miss);border-radius:99px;padding:0 7px}
-.navgroup{font-size:11px;padding:8px 12px 2px}
-.perm{font-size:12px;color:var(--muted);background:var(--sunk);border-radius:9px;padding:10px;line-height:1.4}
-.main{display:flex;flex-direction:column;gap:16px;min-width:0}
+/* ============ COMMAND CENTER (macOS) ============ */
+.cc{display:grid;grid-template-columns:232px minmax(0,1fr);min-height:calc(100vh - 160px);background:linear-gradient(to right,var(--side) 232px,var(--bg) 232px)}
+.nav{position:sticky;top:calc(env(safe-area-inset-top,0px) + 62px);align-self:start;display:flex;flex-direction:column;gap:12px;padding:12px 10px 16px;border-right:.5px solid var(--line);min-height:calc(100vh - 220px)}
+.navlist{display:flex;flex-direction:column;gap:1px}
+.navlist button{border:0;background:none;text-align:left;padding:6px 10px;border-radius:7px;font-weight:500;font-size:13px;color:var(--ink);display:flex;align-items:center;gap:9px}
+.navlist button .ic{color:var(--magenta)}
+.navlist button:hover{background:color-mix(in srgb,var(--ink) 6%,transparent)}
+.navlist button[aria-current="page"]{background:var(--magenta);color:#FFFFFF}
+.navlist button[aria-current="page"] .ic{color:#FFFFFF}
+.navlist .n{margin-left:auto;font-size:11px;font-weight:600;background:var(--miss);color:#FFFFFF;border-radius:99px;padding:0 7px;line-height:18px}
+.navgroup{font-size:11px;padding:10px 10px 2px}
+.usercard{margin-top:auto;display:flex;gap:10px;align-items:center;padding:8px;border-radius:10px}
+.avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(160deg,#8E8E93,#636366);color:#FFFFFF;display:grid;place-items:center;font-size:12px;font-weight:700;flex:none}
+.usercard b{font-size:13px;display:block}
+.usercard small{font-size:11px;color:var(--muted);display:block;overflow-wrap:anywhere}
+.perm{font-size:11px;color:var(--muted);padding:0 10px;margin:0;line-height:1.4}
+.main{display:flex;flex-direction:column;gap:16px;min-width:0;padding:22px 24px 30px}
 .head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:10px}
-.head h2{font-size:30px;line-height:1.05}
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:10px}
-.kpi{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:2px;text-align:left;position:relative;overflow:hidden}
+.head h2{font-size:26px;line-height:1.1}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.kpi{background:var(--surface);border:.5px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:2px;text-align:left;box-shadow:var(--shadow)}
 button.kpi:hover{border-color:var(--muted)}
-.kpi[aria-pressed="true"]{border-color:var(--ink)}
-.kpi .v{font-family:var(--f-display);font-size:34px;font-weight:700;line-height:1.05;font-variant-numeric:tabular-nums}
-.kpi .l{font-size:12px;color:var(--muted);font-weight:600}
+.kpi[aria-pressed="true"]{box-shadow:0 0 0 2px var(--magenta)}
+.kpi .v{font-family:var(--f-display);font-size:30px;font-weight:700;line-height:1.1;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.kpi .l{font-size:12px;color:var(--muted);font-weight:500}
 .kpi .s{font-size:12px;color:var(--muted)}
 .kpi.k-hit .v{color:var(--hit)} .kpi.k-miss .v{color:var(--miss)} .kpi.k-risk .v{color:var(--risk)}
-.kpi.k-miss::before,.kpi.k-risk::before,.kpi.k-hit::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px}
-.kpi.k-miss::before{background:var(--miss)} .kpi.k-risk::before{background:var(--risk)} .kpi.k-hit::before{background:var(--hit)}
 .boardgrid{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;align-items:start}
 @media (min-width:1560px){.boardgrid{grid-template-columns:minmax(0,1fr) 300px}}
 .board-table{min-width:1000px}
 .board-table td.nw{white-space:nowrap}
 .filters{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
-.filters button{border:1px solid var(--line);background:var(--surface);padding:5px 11px;border-radius:99px;font-size:13px;font-weight:600}
-.filters button[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
-.filters select{padding:5px 8px;border-radius:99px;border:1px solid var(--line);background:var(--surface);font-size:13px}
-.tablebox{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow-x:auto}
-table{border-collapse:collapse;width:100%;font-size:14px}
-th{text-align:left;font-family:var(--f-display);font-weight:600;text-transform:uppercase;letter-spacing:.06em;font-size:12px;color:var(--muted);padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--surface)}
-td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
-tbody tr:last-child td{border-bottom:0}
-tr.click{cursor:pointer} tr.click:hover td{background:var(--sunk)}
-tr.sel td{background:var(--sunk)}
+.filters button{border:0;background:var(--fill);padding:4px 11px;border-radius:99px;font-size:12px;font-weight:500}
+.filters button[aria-pressed="true"]{background:var(--magenta);color:#FFFFFF}
+.filters select{padding:4px 8px;border-radius:6px;border:.5px solid var(--line);background:var(--surface);font-size:12px}
+.tablebox{background:var(--surface);border:.5px solid var(--line);border-radius:10px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{text-align:left;font-weight:600;font-size:11px;color:var(--muted);padding:8px 12px;border-bottom:.5px solid var(--line);white-space:nowrap;background:var(--surface)}
+td{padding:8px 12px;vertical-align:middle}
+tbody tr:nth-child(even) td{background:var(--sunk)}
+tr.click,tr.pick{cursor:pointer}
+tr.click:hover td,tr.pick:hover td{background:color-mix(in srgb,var(--magenta) 9%,var(--surface))}
+tr.sel td{background:var(--magenta)!important;color:#FFFFFF}
+tr.sel td .sub,tr.sel td .muted{color:rgba(255,255,255,.8)}
 td .sub{font-size:12px;color:var(--muted)}
 .var-pos{color:var(--miss);font-weight:600} .var-neg{color:var(--hit);font-weight:600}
+tr.sel .var-pos,tr.sel .var-neg{color:#FFFFFF}
 .icons{display:flex;gap:4px;flex-wrap:wrap}
+.panel{background:var(--surface);border:.5px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0;box-shadow:var(--shadow)}
+.panel h3{font-size:16px;font-weight:600}
 .feed{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;max-height:560px;overflow-y:auto}
-.feed li{display:grid;grid-template-columns:44px minmax(0,1fr);gap:8px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px}
+.feed li{display:grid;grid-template-columns:44px minmax(0,1fr);gap:8px;padding:9px 0;border-bottom:.5px solid var(--line);font-size:13px}
 .feed li:last-child{border-bottom:0}
 .feed .t{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
 .feed .k-hit b{color:var(--hit)} .feed .k-miss b{color:var(--miss)} .feed .k-risk b{color:var(--risk)} .feed .k-info b{color:var(--info)}
-button.linkish{border:0;background:none;padding:0;color:var(--violet);font-weight:600;font-size:inherit;text-decoration:underline;text-underline-offset:2px}
-
-.drawer-bg{position:fixed;inset:0;background:rgba(14,10,22,.35);z-index:40}
-.drawer{position:fixed;top:0;right:0;bottom:0;width:min(560px,100%);background:var(--bg);z-index:41;overflow-y:auto;border-left:1px solid var(--line);
+button.linkish{border:0;background:none;padding:0;color:var(--magenta);font-weight:500;font-size:inherit}
+.drawer-bg{position:fixed;inset:0;background:rgba(0,0,0,.18);z-index:40}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(560px,100%);background:var(--bg);z-index:41;overflow-y:auto;border-left:.5px solid var(--line);box-shadow:-24px 0 60px rgba(0,0,0,.18);
   padding:calc(env(safe-area-inset-top,0px) + 18px) max(18px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 24px) 18px;display:flex;flex-direction:column;gap:14px}
 .dhead{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
-.dhead h2{font-size:26px}
-.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 16px;font-size:14px}
+.dhead h2{font-size:22px}
+.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 16px;font-size:13px}
 .facts div{display:flex;flex-direction:column;min-width:0}
-.facts .k{font-size:12px;color:var(--muted)} .facts .v{font-weight:600;overflow-wrap:anywhere}
+.facts .k{font-size:11px;color:var(--muted)} .facts .v{font-weight:600;overflow-wrap:anywhere}
 .split{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .figure{border-radius:10px;overflow:hidden;background:var(--sunk);aspect-ratio:4/3;display:grid;place-items:center;max-width:100%}
 .figure svg{width:100%;height:100%;display:block}
-.timeline{list-style:none;margin:0;padding:0;position:relative}
-.timeline li{display:grid;grid-template-columns:52px 16px minmax(0,1fr);gap:8px;padding-bottom:12px;font-size:14px;position:relative}
-.timeline li::before{content:"";position:absolute;left:67px;top:14px;bottom:-2px;width:2px;background:var(--line)}
+.timeline{list-style:none;margin:0;padding:0}
+.timeline li{display:grid;grid-template-columns:48px 16px minmax(0,1fr);gap:8px;padding-bottom:12px;font-size:13px;position:relative}
+.timeline li::before{content:"";position:absolute;left:63px;top:14px;bottom:-2px;width:1.5px;background:var(--line)}
 .timeline li:last-child::before{display:none}
-.timeline .dot{width:12px;height:12px;border-radius:50%;margin-top:4px;background:var(--violet);border:2px solid var(--bg);box-shadow:0 0 0 1px var(--violet)}
-.timeline .dot.off{background:var(--risk);box-shadow:0 0 0 1px var(--risk)}
-.timeline .dot.bad{background:var(--miss);box-shadow:0 0 0 1px var(--miss)}
-.timeline small{display:block;color:var(--muted);font-size:12px}
-.flag{display:flex;flex-direction:column;gap:6px;border:1px solid var(--line);border-left:4px solid var(--miss);border-radius:8px;padding:10px 12px;background:var(--surface)}
-.flag.cleared{border-left-color:var(--muted);opacity:.75}
+.timeline .dot{width:11px;height:11px;border-radius:50%;margin-top:4px;background:var(--magenta)}
+.timeline .dot.off{background:var(--risk)} .timeline .dot.bad{background:var(--miss)}
+.timeline small{display:block;color:var(--muted);font-size:11px}
+.flag{display:flex;flex-direction:column;gap:6px;border:.5px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface);box-shadow:inset 3px 0 0 var(--miss)}
+.flag.cleared{box-shadow:inset 3px 0 0 var(--muted);opacity:.75}
 .flag .row{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}
-textarea.in,input.in,select.in{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--surface)}
 .actions{display:flex;flex-wrap:wrap;gap:8px}
 .copybox{font-family:var(--f-mono);font-size:12px;background:var(--sunk);border-radius:8px;padding:10px;white-space:pre-wrap;user-select:all}
-
 .cards2{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px}
 .chart svg{width:100%;height:auto;display:block}
 .chart .legend{display:flex;gap:14px;font-size:12px;color:var(--muted);flex-wrap:wrap}
 .chart .legend i{display:inline-block;width:12px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
-.pareto{display:flex;flex-direction:column;gap:8px}
-.pareto .r{display:grid;grid-template-columns:150px minmax(0,1fr) 34px;gap:10px;align-items:center;font-size:13px}
-.pareto .bar{height:14px;border-radius:4px;background:var(--sunk);overflow:hidden}
-.pareto .bar i{display:block;height:100%;border-radius:4px}
 .formgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
 .field{display:flex;flex-direction:column;gap:4px}
-.field label{font-weight:600;font-size:14px}
+.field label{font-weight:500;font-size:13px}
 .field small{color:var(--muted);font-size:12px}
 .field .inrow{display:flex;align-items:center;gap:8px}
 .field .inrow input{width:110px}
-
-/* ============ HOW IT WORKS ============ */
-.spec{display:flex;flex-direction:column;gap:22px}
-.lede{max-width:70ch;font-size:16px;margin:0}
-.fw{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
-.fw .step{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px;min-width:0}
-.fw .num{font-family:var(--f-display);font-weight:700;font-size:15px;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;color:var(--on-accent);background:var(--magenta)}
-.fw .step:nth-child(2) .num{background:var(--violet)}
-.fw .step:nth-child(3) .num{background:var(--info)}
-.fw .step:nth-child(4) .num{background:var(--violet)}
-.fw ul{margin:0;padding-left:18px;font-size:14px;display:flex;flex-direction:column;gap:4px}
-.fw .who{font-size:12px;color:var(--muted);margin-top:auto;padding-top:8px;border-top:1px solid var(--line)}
-.rule{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
-.rule .formula{font-family:var(--f-mono);font-size:14px;background:var(--sunk);padding:10px 12px;border-radius:8px}
-pre.payload{margin:0;font-family:var(--f-mono);font-size:12px;background:var(--sunk);border-radius:10px;padding:14px;overflow-x:auto;line-height:1.5}
-
-/* ---- Sign-in (V2) ---- */
-.psplash{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:#FFFFFF;background:linear-gradient(160deg,#B8005F 0%,#4B1FA8 100%);text-align:center;padding:24px}
-.psplash .logo{width:84px;height:84px;border-radius:24px;background:rgba(255,255,255,.16);display:grid;place-items:center;border:1px solid rgba(255,255,255,.3)}
-.psplash h2{font-size:34px;color:#FFFFFF}
-.psplash p{margin:0;opacity:.85;font-size:14px}
-.loadbar{width:140px;height:4px;border-radius:99px;background:rgba(255,255,255,.25);overflow:hidden}
-.loadbar i{display:block;height:100%;width:40%;background:#FFFFFF;border-radius:99px;animation:load 1.4s ease-in-out infinite}
-@keyframes load{from{transform:translateX(-100%)}to{transform:translateX(260%)}}
-@media (prefers-reduced-motion:reduce){.loadbar i{animation:none;width:100%}}
-.plogin-hero{background:linear-gradient(160deg,#B8005F,#4B1FA8);color:#FFFFFF;padding:26px 20px 22px;display:flex;flex-direction:column;gap:4px}
-.plogin-hero h2{color:#FFFFFF;font-size:30px}
-.plabel{font-size:13px;font-weight:600;color:var(--p-ink)}
-.pfield{display:flex;flex-direction:column;gap:6px}
-.perr{background:#FCE6E7;color:var(--p-miss);border-radius:12px;padding:10px 12px;font-size:13px;font-weight:600}
-.pinput.pin{letter-spacing:.5em}
-.plink{border:1px solid var(--p-line);background:#FFFFFF;color:var(--p-ink);border-radius:10px;padding:6px 10px;font-size:13px;font-weight:600;margin-left:auto;flex:none}
-.auth{min-height:calc(100vh - 140px);display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);border-radius:18px;overflow:hidden;border:1px solid var(--line);background:var(--surface)}
-.auth-brand{background:linear-gradient(150deg,#B8005F,#4B1FA8);color:#FFFFFF;padding:40px;display:flex;flex-direction:column;gap:22px;justify-content:space-between}
-.auth-brand h2{color:#FFFFFF;font-size:46px;line-height:1}
-.auth-brand ol{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-.auth-brand li{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);border-radius:12px;padding:12px;font-size:14px}
-.auth-brand li b{display:block;font-family:var(--f-display);font-size:18px}
-.auth-form{padding:40px;display:flex;flex-direction:column;gap:18px;justify-content:center;max-width:460px;width:100%;margin:0 auto}
-.auth-form h3{font-size:30px}
-.auth-form form{display:flex;flex-direction:column;gap:14px}
-.pw{display:flex;gap:6px} .pw input{flex:1;min-width:0}
-.demo-acc{display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--line);padding-top:14px}
-.demo-acc button{display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px 8px;text-align:left;border:1px solid var(--line);background:var(--sunk);border-radius:9px;padding:8px 10px;font-size:13px}
-.demo-acc button:hover{border-color:var(--muted)}
-.alert{border-radius:9px;padding:10px 12px;font-size:14px;font-weight:600}
+.alert{border-radius:8px;padding:9px 12px;font-size:13px;font-weight:500}
 .alert.bad{background:var(--miss-bg);color:var(--miss)}
-.cc-splash{min-height:calc(100vh - 140px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;border-radius:18px;background:linear-gradient(150deg,#B8005F,#4B1FA8);color:#FFFFFF;text-align:center;padding:24px}
-.cc-splash h2{color:#FFFFFF;font-size:42px}
-.usercard{display:flex;flex-direction:column;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
-.usercard b{font-size:15px}
-.usercard .btn{margin-top:6px}
-@media (max-width:860px){.auth{grid-template-columns:minmax(0,1fr)}.auth-brand{padding:24px}.auth-brand h2{font-size:34px}.auth-form{padding:24px 18px}}
-
-/* ---- Live map + analytics filters (V3) ---- */
+.auth{min-height:calc(100vh - 170px);display:grid;place-items:center;padding:40px 16px;background:var(--bg)}
+.auth-card{width:min(380px,100%);display:flex;flex-direction:column;gap:16px}
+.auth-card .center{text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px}
+.auth-card h3{font-size:22px}
+.auth-card form{display:flex;flex-direction:column;gap:12px}
+.pw{display:flex;gap:6px} .pw input{flex:1;min-width:0}
+.demo-acc{display:flex;flex-direction:column;gap:4px;border-top:.5px solid var(--line);padding-top:14px}
+.demo-acc button{display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px 8px;text-align:left;border:0;background:var(--surface);border-radius:8px;padding:8px 10px;font-size:12px;box-shadow:0 0 0 .5px var(--line)}
+.demo-acc button:hover{background:var(--sunk)}
+.cc-splash{min-height:calc(100vh - 170px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;background:var(--bg)}
+.cc-splash h2{font-size:24px}
+/* live map */
 .mapwrap{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:16px;align-items:start}
-.mapbox{background:var(--land);border:1px solid var(--line);border-radius:14px;overflow:hidden;position:relative}
+.mapbox{background:var(--land);border:.5px solid var(--line);border-radius:12px;overflow:hidden;position:relative}
 .mapsvg{display:block;width:100%;height:auto;max-height:calc(100vh - 250px);min-height:360px}
 .mapsvg .trk{cursor:pointer}
 .mapsvg .trk:focus-visible{outline:none}
@@ -300,43 +335,57 @@ pre.payload{margin:0;font-family:var(--f-mono);font-size:12px;background:var(--s
 .legend2 i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
 .tlist{display:flex;flex-direction:column;gap:14px;max-height:calc(100vh - 250px);overflow-y:auto}
 .tgroup{display:flex;flex-direction:column;gap:6px}
-.trow{display:grid;grid-template-columns:12px minmax(0,1fr) auto;gap:10px;align-items:center;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 10px;font-size:13px;width:100%}
-.trow:hover,.trow[aria-current="true"]{border-color:var(--ink)}
+.trow{display:grid;grid-template-columns:12px minmax(0,1fr) auto;gap:10px;align-items:center;text-align:left;border:.5px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 10px;font-size:13px;width:100%}
+.trow:hover{background:var(--sunk)}
+.trow[aria-current="true"]{box-shadow:0 0 0 2px var(--magenta)}
 .trow .dot{width:12px;height:12px;border-radius:50%}
 .trow small{display:block;color:var(--muted);font-size:12px}
-.afbar{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 66px);z-index:5;box-shadow:var(--shadow)}
-.af{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--muted);font-weight:600;min-width:140px;flex:1}
-.af select{padding:7px 8px}
+/* analytics */
+.afbar{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;background:var(--bar);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border:.5px solid var(--line);border-radius:12px;padding:12px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 62px);z-index:5;box-shadow:var(--shadow)}
+.af{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--muted);font-weight:600;min-width:140px;flex:1}
 .defs{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:8px 18px;font-size:13px;color:var(--muted);margin:0}
 .defs b{color:var(--ink)}
 .why{display:flex;flex-direction:column;gap:14px}
 .why-row{display:flex;flex-direction:column;gap:5px}
 .why-top{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
-.why-top b{font-size:15px}
-.why .bar{height:10px;border-radius:4px;background:var(--sunk);overflow:hidden}
+.why-top b{font-size:14px;font-weight:600}
+.why .bar{height:8px;border-radius:4px;background:var(--fill);overflow:hidden}
 .why .bar i{display:block;height:100%;border-radius:4px}
 .why-sub{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;font-size:12px;color:var(--muted)}
 .why-sum{font-size:13px;color:var(--muted);margin:0}
-tr.pick{cursor:pointer} tr.pick:hover td{background:var(--sunk)}
-@media (max-width:1100px){.mapwrap{grid-template-columns:minmax(0,1fr)}.tlist{max-height:none}}
-@media (max-width:860px){.afbar{position:static}}
 
-@media (max-width:1100px){.fw{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* ============ HOW IT WORKS ============ */
+.spec{display:flex;flex-direction:column;gap:22px}
+.lede{max-width:70ch;font-size:16px;margin:0}
+.fw{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.fw .step{background:var(--surface);border:.5px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:8px;min-width:0;box-shadow:var(--shadow)}
+.fw .num{font-weight:700;font-size:14px;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;color:#FFFFFF;background:var(--magenta)}
+.fw .step:nth-child(2) .num{background:var(--violet)} .fw .step:nth-child(3) .num{background:var(--info)} .fw .step:nth-child(4) .num{background:var(--hit)}
+.fw ul{margin:0;padding-left:18px;font-size:13px;display:flex;flex-direction:column;gap:4px}
+.fw .who{font-size:12px;color:var(--muted);margin-top:auto;padding-top:8px;border-top:.5px solid var(--line)}
+.rule{background:var(--surface);border:.5px solid var(--line);border-radius:12px;padding:18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;box-shadow:var(--shadow)}
+.rule .formula{font-family:var(--f-mono);font-size:13px;background:var(--sunk);padding:10px 12px;border-radius:8px}
+pre.payload{margin:0;font-family:var(--f-mono);font-size:12px;background:var(--sunk);border-radius:10px;padding:14px;overflow-x:auto;line-height:1.5}
+
+@media (max-width:1100px){.fw{grid-template-columns:repeat(2,minmax(0,1fr))}.mapwrap{grid-template-columns:minmax(0,1fr)}.tlist{max-height:none}}
 @media (max-width:860px){
   .trucker{grid-template-columns:minmax(0,1fr);justify-items:center}.rail{width:100%}
-  .cc{grid-template-columns:minmax(0,1fr)}
-  .nav{position:static}
+  .cc{grid-template-columns:minmax(0,1fr);background:var(--bg)}
+  .nav{position:static;min-height:0;border-right:0;border-bottom:.5px solid var(--line);background:var(--side)}
   .navlist{flex-direction:row;overflow-x:auto}
   .navlist button{white-space:nowrap}
-  .navgroup{display:none}
-  .perm{display:none}
+  .navgroup,.perm{display:none}
+  .usercard{margin-top:0}
+  .main{padding:16px 14px 24px}
+  .afbar{position:static}
 }
 @media (max-width:560px){
   .fw{grid-template-columns:minmax(0,1fr)}
   .split,.facts{grid-template-columns:minmax(0,1fr)}
   .clock{margin-left:0}
-  .screen{height:700px}
-  .pareto .r{grid-template-columns:110px minmax(0,1fr) 30px}
+  .phone{border-radius:52px;padding:10px}
+  .screen{height:720px;border-radius:42px}
+  .mac-title{display:none}
 }
 </style>
 
@@ -379,6 +428,15 @@ const REASONS = [
   { code:'OTH-99', label:'Other (remarks required)', cls:'TMD decides' },
 ];
 const reason = code => REASONS.find(r => r.code === code);
+/* what the driver sees in TAS: Filipino label, icon, tile colour */
+const REASON_FIL = {
+  'CUS-01':['Hindi pa handa ang customer', 'building', '#5856D6'], 'CUS-02':['Sarado ang gate', 'lock', '#AF52DE'],
+  'PRT-01':['Mahabang pila sa port', 'ship', '#007AFF'], 'PRT-02':['Naka-hold ang container', 'box', '#30B0C7'],
+  'TRF-01':['Traffic o aksidente', 'traffic', '#FF9500'], 'TRF-02':['Truck ban', 'noentry', '#FF3B30'],
+  'WTH-01':['Ulan o baha', 'rain', '#32ADE6'], 'TRK-01':['Nasira ang truck', 'wrench', '#636366'],
+  'TRK-02':['Late akong nakaalis', 'alarm', '#FF2D55'], 'DOC-01':['Kulang ang papeles', 'doc', '#A2845E'], 'OTH-99':['Iba pa', 'dots', '#8E8E93'],
+};
+for (const r of REASONS) [r.fil, r.icon, r.color] = REASON_FIL[r.code];
 const FLAGS = {
   MOCK_LOCATION:'Fake GPS app detected', CLOCK_DRIFT:'Phone clock does not match server', MANUAL_ENTRY:'Container number typed, not scanned',
   LATE_SYNC:'Event synced late', PHOTO_REUSED:'Photo matches an earlier upload', CONTAINER_MISMATCH:'Scanned container does not match job',
@@ -393,6 +451,8 @@ const SITES = {
   TAG:{ customer:'Taguig Consumer Goods DC', city:'Taguig City', addr:'FTI Complex, Taguig', lat:14.5081, lng:121.0390, radius:250, gate:'Dock 5 to 9. Book slot with DC control.' },
   LIP:{ customer:'Lipa Agri Feeds', city:'Lipa, Batangas', addr:'Lima Technology Center, Malvar–Lipa', lat:14.0526, lng:121.1667, radius:200, gate:'Use Lima Gate B.' },
 };
+const GATE_FIL = { STR:'Gate 3. Pumasok sa Greenfield Ave.', CAL:'Mag-weigh-in sa main gate. Mag-hard hat.', GTR:'Gate 1. May security escort.', VAL:'Makitid ang daan. Umatras mula Gen. Luis St.', MEY:'Kumuha ng gate pass sa guard house.', TAG:'Dock 5 hanggang 9.', LIP:'Gamitin ang Lima Gate B.' };
+for (const [k, v] of Object.entries(GATE_FIL)) SITES[k].gateFil = v;
 const TRUCKERS = {
   T01:{ name:'Ramon Dela Cruz', plate:'NBK 4821', mobile:'0917 555 0142', haulier:'RDC Trucking', device:'Samsung A15 · Android 14', app:'1.0.3', integrity:'Pass', bound:'02 Oct 2026' },
   T02:{ name:'Arnel Bautista', plate:'NDE 2290', mobile:'0918 555 0377', haulier:'Bautista Haulers', device:'Redmi 13C · Android 14', app:'1.0.3', integrity:'Pass', bound:'02 Oct 2026' },
@@ -610,7 +670,7 @@ function advance(ms) {
       const at = prev + Math.max(0, need) / sp * MIN;
       L.travelled = Math.min(j.d0, L.travelled + can); L.entry = at;
       emit({ type:'geofence.entered', job:j.id, at, detail:'Automatic, no tap needed' });
-      toast('You are at the customer site. Arrival time recorded: ' + hm(at));
+      toast('Nandito ka na! Na-record ang oras: ' + hm12(at));
     } else L.travelled += can;
   }
   if (S.phone.online) for (const id in S.phone.local) { const L = S.phone.local[id]; if (L.tripStart) { L.seenKm = distanceKm(job(id)); L.seenAt = S.now; } }
@@ -621,15 +681,17 @@ function tick() {
   advance(1000);
   const sig = S.jobs.map(evaluate).join() + phoneSig();
   document.querySelectorAll('[data-clock]').forEach(el => el.textContent = hms(S.now));
-  document.querySelectorAll('[data-dclock]').forEach(el => el.textContent = hm(S.now + S.phone.skew * MIN));
+  document.querySelectorAll('[data-dclock]').forEach(el => el.textContent = sbTime(S.now + S.phone.skew * MIN));
   if (sig !== lastSig || before !== phoneSig()) { lastSig = sig; render(); return; }
   if (S.view === 'command' && S.page === 'map' && S.auth.cc.stage === 'in' && Math.floor(S.now / 1000) % 5 === 0) { render(); return; }
   document.querySelectorAll('[data-cd]').forEach(el => el.textContent = countdown(+el.dataset.cd));
   document.querySelectorAll('[data-dist]').forEach(el => { const j = job(el.dataset.dist); el.textContent = distanceKm(j).toFixed(1) + ' km'; });
-  document.querySelectorAll('[data-prog]').forEach(el => { const j = job(el.dataset.prog); el.style.width = Math.min(100, (1 - distanceKm(j) / j.d0) * 100) + '%'; });
+  const prog = j => Math.min(1, Math.max(0, 1 - distanceKm(j) / j.d0)).toFixed(3);
+  document.querySelectorAll('[data-prog]').forEach(el => { el.style.width = `calc((100% - 44px) * ${prog(job(el.dataset.prog))})`; });
+  document.querySelectorAll('[data-truck]').forEach(el => { el.style.left = `calc(23px + (100% - 64px) * ${prog(job(el.dataset.truck))})`; });
 }
 const phoneSig = () => Object.values(S.phone.local).map(l => (l.entry || 0)).join();
-function countdown(agreed) { const { m, txt } = relMin(agreed - S.now); return m >= 0 ? `in ${txt}` : `${txt} past agreed time`; }
+function countdown(agreed) { const m = Math.round((agreed - S.now) / MIN); return m >= 0 ? `${minsTxt(m)} pa` : `Late na ng ${minsTxt(-m)}`; }
 let toastTimer;
 function toast(msg) { S.phone.toast = msg; clearTimeout(toastTimer); toastTimer = setTimeout(() => { S.phone.toast = null; render(); }, 4200); }
 
@@ -680,195 +742,228 @@ function armSplash() {
 function topbar() {
   const t = (v, l) => `<button class="tab" role="tab" aria-selected="${S.view === v}" data-act="view" data-arg="${v}">${l}</button>`;
   return `<header class="top"><div class="top-in">
-    <div class="brand"><span class="mark" aria-hidden="true">${pinSvg(18)}</span>
-      <span><b>Trucker Visibility Platform</b><small>Version 3 prototype · container pick-up and delivery</small></span></div>
-    <nav class="tabs" role="tablist">${t('trucker','TAS · Trucker app')}${t('command','Command Center')}${t('spec','How it works')}</nav>
+    <div class="brand">${appIcon(30)}<span><b>Trucker Visibility Platform</b><small>Version 4 prototype · container pick-up and delivery</small></span></div>
+    <nav class="tabs" role="tablist">${t('trucker','TAS · iPhone')}${t('command','Command Center · Mac')}${t('spec','How it works')}</nav>
     <div class="clock"><span class="sample">Sample data</span><span class="live-dot" aria-hidden="true"></span><span class="muted">${dateLabel(S.now)}</span><span class="mono" data-clock>${hms(S.now)}</span></div>
   </div></header>`;
 }
 
-/* ---------- TRUCKER VIEW ---------- */
+/* ---------- icons (SF Symbols-style line icons) ---------- */
+const ICONS = {
+  truck:'<path d="M2 6h12v10H2z"/><path d="M14 9h4.5L22 12.5V16h-8z"/><circle cx="6" cy="17.5" r="2"/><circle cx="17.5" cy="17.5" r="2"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  alarm:'<circle cx="12" cy="13" r="7.5"/><path d="M12 9.5V13l2.5 2M4 5l3-2.5M20 5l-3-2.5"/>',
+  pin:'<path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
+  camera:'<path d="M3 8h4l2-3h6l2 3h4v11H3z"/><circle cx="12" cy="13" r="3.5"/>',
+  qr:'<path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4z"/><path d="M14 14h2v2h-2zM18 14h2M14 18h2v2M18 18h2v2h-2"/>',
+  check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  building:'<path d="M4 21V5l8-2v18M12 8h8v13M3 21h18"/><path d="M7 8h2M7 12h2M7 16h2M15 12h2M15 16h2"/>',
+  traffic:'<rect x="8" y="2" width="8" height="20" rx="3"/><circle cx="12" cy="7" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="17" r="1.6"/>',
+  ship:'<path d="M3 15h18l-3 5H6z"/><path d="M6 15V9h12v6"/><path d="M9 9V5h6v4"/>',
+  box:'<path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/>',
+  rain:'<path d="M7 15a4 4 0 1 1 1-7.9A5 5 0 0 1 17.6 9 3.5 3.5 0 1 1 17 15z"/><path d="M8 18l-1 2.5M12 18l-1 2.5M16 18l-1 2.5"/>',
+  wrench:'<path d="M15 3a5 5 0 0 0-4.6 7L3 17.4V21h3.6L14 13.6A5 5 0 0 0 21 9l-3 3-3-1-1-3z"/>',
+  doc:'<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/>',
+  lock:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+  noentry:'<circle cx="12" cy="12" r="9"/><path d="M6 6l12 12"/>',
+  dots:'<circle cx="6" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="18" cy="12" r="1.4"/>',
+  back:'<path d="M15 4l-8 8 8 8"/>', chev:'<path d="M9 5l7 7-7 7"/>', x:'<path d="M6 6l12 12M18 6L6 18"/>',
+  alert:'<path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.4"/>',
+  shield:'<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/>',
+  nosignal:'<path d="M2 8.5a15 15 0 0 1 20 0M5.5 12a10 10 0 0 1 13 0M9 15.5a5 5 0 0 1 6 0"/><path d="M3 3l18 18"/>',
+  list:'<path d="M8 6h13M8 12h13M8 18h13"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/>',
+  map:'<path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/>',
+  chart:'<path d="M4 20V11M10 20V5M16 20v-6M2 20h20"/>',
+  sliders:'<path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/>',
+  users:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14a6 6 0 0 1 3.5 6"/>',
+  tag:'<path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.5"/>',
+};
+const ic = (name, size = 22, sw = 1.9) => `<svg class="ic" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]}</svg>`;
+const appIcon = n => `<span class="appicon" style="width:${n}px;height:${n}px">${pinSvg(Math.round(n * .55))}</span>`;
+const picon = (name, color) => `<span class="picon" style="background:${color}">${ic(name, 18, 2.1)}</span>`;
+
+/* ---------- TAS helpers: 12-hour time, Filipino durations ---------- */
+const hm12 = ms => { const d = local(ms); const h = d.getUTCHours(); return `${h % 12 || 12}:${pad(d.getUTCMinutes())} ${h < 12 ? 'AM' : 'PM'}`; };
+const sbTime = ms => { const d = local(ms); return `${d.getUTCHours() % 12 || 12}:${pad(d.getUTCMinutes())}`; };
+const minsTxt = m => m >= 60 ? `${Math.floor(m / 60)} oras${m % 60 ? ' ' + (m % 60) + ' min' : ''}` : `${m} min`;
+const greet = () => { const h = local(S.now).getUTCHours(); return h < 12 ? 'Magandang umaga' : h < 18 ? 'Magandang hapon' : 'Magandang gabi'; };
+function pState(j) { const L = S.phone.local[j.id]; return L.confirmed ? 'done' : L.entry ? 'site' : L.tripStart ? 'road' : 'ready'; }
+const pHit = j => S.phone.local[j.id].entry <= j.agreed + S.config.grace * MIN;
+function timePill(j) {
+  const L = S.phone.local[j.id], st = pState(j);
+  if (st === 'done') return pHit(j) ? `<span class="ppill pp-ok">${ic('check', 16, 2.4)}On time</span>` : `<span class="ppill pp-bad">${ic('clock', 16, 2.2)}Late</span>`;
+  if (st === 'site') return `<span class="ppill pp-ok">${ic('check', 16, 2.4)}Nandito ka na</span>`;
+  const left = Math.round((j.agreed - S.now) / MIN);
+  if (left < 0) return `<span class="ppill pp-bad">${ic('clock', 16, 2.2)}Late na ng ${minsTxt(-left)}</span>`;
+  if (st === 'road') { const eta = S.now + distanceKm(j) / speedKmMin() * MIN; if (eta > j.agreed) return `<span class="ppill pp-warn">${ic('alert', 16, 2.2)}Baka ma-late ka</span>`; return `<span class="ppill pp-ok">${ic('check', 16, 2.4)}On time ka</span>`; }
+  return `<span class="ppill ${left <= 30 ? 'pp-warn' : 'pp-info'}">${ic('clock', 16, 2.2)}<span data-cd="${j.agreed}">${countdown(j.agreed)}</span></span>`;
+}
+
+/* ---------- TAS VIEW ---------- */
 function truckerView() {
-  const P = S.phone;
-  const qn = P.queue.length;
+  const P = S.phone, A = S.auth.phone;
+  const body = phoneScreen();
+  const inApp = A.stage === 'in' && P.jobId;
+  const mode = inApp && P.screen === 'capture' ? 'cam-on' : inApp && P.screen === 'result' ? (pHit(job(P.jobId)) ? 'res-ok' : 'res-bad') : '';
+  const bars = `<svg width="18" height="12" viewBox="0 0 18 12" aria-hidden="true"><rect x="0" y="8" width="3" height="4" rx="1" fill="currentColor"/><rect x="5" y="5.5" width="3" height="6.5" rx="1" fill="currentColor"/><rect x="10" y="3" width="3" height="9" rx="1" fill="currentColor"/><rect x="15" y="0" width="3" height="12" rx="1" fill="currentColor"/></svg>`;
+  const batt = `<svg width="27" height="13" viewBox="0 0 27 13" aria-hidden="true"><rect x=".5" y=".5" width="23" height="12" rx="3.5" fill="none" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="16" height="9" rx="2" fill="currentColor"/><rect x="25" y="4.5" width="1.6" height="4" rx=".8" fill="currentColor" opacity=".4"/></svg>`;
   return `<div class="trucker">
-    <div class="phone" aria-label="TAS on the trucker's smartphone"><div class="screen">
-      <div class="sbar"><span data-dclock>${hm(S.now + P.skew * MIN)}</span><span class="ic">${P.mock ? '<span class="pchip pc-miss">Fake GPS</span>' : ''}<span>${P.online ? '4G ▂▄▆█' : 'No signal'}</span><span>82%</span></span></div>
-      ${!P.online ? `<div class="offline-bar">● Offline. <b>${qn} event${qn === 1 ? '' : 's'} saved on phone</b>, will send automatically.</div>` : ''}
-      ${phoneScreen()}
-      ${P.toast ? `<div class="toast" role="status">${esc(P.toast)}</div>` : ''}
-    </div></div>
+    <div class="phone" aria-label="TAS sa iPhone ng trucker"><div class="screen ${mode}"><span class="island"></span>
+      <div class="sbar"><span data-dclock>${sbTime(S.now + P.skew * MIN)}</span><span class="sbi">${P.online ? `${bars}<span style="font-size:14px">5G</span>` : '<span style="font-size:14px">No Service</span>'}${batt}</span></div>
+      ${!P.online && A.stage === 'in' ? `<div class="offline-bar">${ic('nosignal', 18, 2.2)}Walang signal. Naka-save sa phone, ise-send mamaya.</div>` : ''}
+      ${body}
+      ${P.toast ? `<div class="toast" role="status">${appIcon(34)}<span><b>TAS</b>${esc(P.toast)}</span></div>` : ''}
+      <span class="homebar"></span></div></div>
     <div class="rail">${demoPanel()}${logPanel()}</div>
   </div>`;
-}
-function phoneAuthScreen() {
-  const A = S.auth.phone;
-  if (A.stage === 'splash') return `<div class="psplash"><div class="logo">${pinSvg(44)}</div><h2 style="font-size:46px;letter-spacing:.06em">TAS</h2><p>Trucker Application System</p><div class="loadbar"><i></i></div><p style="font-size:12px">Version 3.0 · Checking phone security</p></div>`;
-  if (A.stage === 'consent') return `<div class="appbar"><div><div class="pk">First sign-in on this phone</div><h2>Before you start</h2></div></div>
-    <div class="pbody">
-      <span class="pk">Hi ${esc(TRUCKERS[A.user].name.split(' ')[0])}. The app needs your OK to use these. You only see this once.</span>
-      <div class="pcard"><b>Location</b><span class="pk">Used only from Start trip until the job closes. Never outside active jobs.</span></div>
-      <div class="pcard"><b>Camera</b><span class="pk">Used for arrival photos and container scans. Gallery photos are not used.</span></div>
-      <div class="pcard"><b>Your data</b><span class="pk">Used only to confirm deliveries. Seen by TMD, Sales Support and System Admin. Kept under the company privacy policy (Data Privacy Act, RA 10173).</span></div>
-      <button class="pbtn" data-act="pconsent">I agree<small>Sumasang-ayon ako</small></button>
-      <button class="pbtn alt" data-act="plogout">Not now</button>
-    </div>`;
-  return `<div class="plogin-hero"><span style="font-size:13px;opacity:.85">TAS · Trucker Application System</span><h2>Sign in</h2><span style="font-size:14px;opacity:.9">Mag-sign in para makita ang mga trabaho ngayon.</span></div>
-  <form class="pbody" data-form="plogin" novalidate>
-    <div class="pfield"><label class="plabel" for="pmobile">Mobile number</label><input class="pinput" id="pmobile" data-draft="pmobile" inputmode="numeric" autocomplete="username" placeholder="09XX XXX XXXX" value="${esc(S.drafts.pmobile || '')}"></div>
-    <div class="pfield"><label class="plabel" for="ppin">6-digit PIN</label><input class="pinput pin" id="ppin" data-draft="ppin" type="password" inputmode="numeric" maxlength="6" autocomplete="current-password" placeholder="••••••" value="${esc(S.drafts.ppin || '')}"></div>
-    ${A.err ? `<div class="perr" role="alert">${esc(A.err)}</div>` : ''}
-    <button class="pbtn" type="submit">Sign in<small>Pumasok</small></button>
-    <p class="note">This phone is registered to one driver. Forgot your PIN? Ask your TMD dispatcher to reset it.</p>
-    <p class="note">${esc(TRUCKERS[PHONE_OWNER].device)} · TAS 3.0.0 · Phone security check passed</p>
-  </form>`;
 }
 function phoneScreen() {
   const P = S.phone;
   if (S.auth.phone.stage !== 'in') return phoneAuthScreen();
-  if (P.screen === 'list' || !P.jobId) return phoneList();
+  if (P.screen === 'list' || !P.jobId) return phoneHome();
   const j = job(P.jobId);
-  if (P.screen === 'job') return phoneJob(j);
-  if (P.screen === 'capture') return phoneCapture(j);
-  if (P.screen === 'result') return phoneResult(j);
-  if (P.screen === 'exception') return phoneReasonForm(j, 'exception');
-  if (P.screen === 'delay') return phoneReasonForm(j, 'delay');
-  return phoneList();
+  if (P.screen === 'job' && pState(j) === 'done') P.screen = 'result';
+  return ({ job: phoneJob, capture: phoneCapture, result: phoneResult, exception: x => phoneReasons(x, 'exception'), delay: x => phoneReasons(x, 'delay') }[P.screen] || phoneHome)(j);
 }
-function pResultChip(j) {
-  const L = S.phone.local[j.id];
-  if (L.confirmed) { const hit = L.entry <= j.agreed + S.config.grace * MIN; return `<span class="pchip ${hit ? 'pc-hit' : 'pc-miss'}">${hit ? 'Hit' : 'Miss'}</span>`; }
-  if (L.entry) return '<span class="pchip pc-info">At site · confirm now</span>';
-  if (L.tripStart) return '<span class="pchip pc-info">En route</span>';
-  return '<span class="pchip pc-n">Assigned</span>';
+function phoneAuthScreen() {
+  const A = S.auth.phone;
+  if (A.stage === 'splash') return `<div class="psplash">${appIcon(108)}<div><div class="psplash-name">TAS</div><div class="psplash-sub">Trucker Application System</div></div><span class="spinner" aria-label="Naglo-load"></span></div>`;
+  if (A.stage === 'consent') return `<div class="pview" style="padding-top:12px">
+      <h2 class="ptitle">Bago tayo magsimula</h2>
+      <p class="pinstr">Kailangan namin ang pahintulot mo para sa mga ito. Isang beses lang ito.</p>
+      <div class="pgroup">
+        <div class="prow">${picon('pin', '#007AFF')}<span class="grow"><b>Location</b><span class="sub">Habang may biyahe ka lang.</span></span></div>
+        <div class="prow">${picon('camera', '#5856D6')}<span class="grow"><b>Camera</b><span class="sub">Para sa litrato ng container.</span></span></div>
+        <div class="prow">${picon('shield', '#34C759')}<span class="grow"><b>Data mo</b><span class="sub">Para lang sa delivery. Protektado ng Data Privacy Act.</span></span></div>
+      </div></div>
+    <div class="pact"><button class="pbtn" data-act="pconsent">Sige, Payag Ako</button><button class="pbtn plain" data-act="plogout">Hindi Muna</button></div>`;
+  return `<form class="pform" data-form="plogin" novalidate><div class="pview">
+      <div class="plogo">${appIcon(72)}</div>
+      <h2 class="ptitle" style="text-align:center">Mag-login sa TAS</h2>
+      <p class="pinstr" style="text-align:center">Ilagay ang iyong mobile number at 6-digit PIN.</p>
+      <div class="pgroup">
+        <label class="prow pfield-row" for="pmobile"><span class="plbl">Mobile</span><input id="pmobile" data-draft="pmobile" inputmode="numeric" autocomplete="username" placeholder="09XX XXX XXXX" value="${esc(S.drafts.pmobile || '')}"></label>
+        <label class="prow pfield-row" for="ppin"><span class="plbl">PIN</span><input id="ppin" data-draft="ppin" type="password" inputmode="numeric" maxlength="6" autocomplete="current-password" placeholder="6 na numero" value="${esc(S.drafts.ppin || '')}"></label>
+      </div>
+      ${A.err ? `<p class="perr" role="alert">${esc(A.err)}</p>` : ''}
+      <p class="pinstr" style="text-align:center;font-size:15px">Nakalimutan ang PIN? Tawagan ang TMD dispatcher.</p>
+    </div><div class="pact"><button class="pbtn" type="submit">Mag-login</button></div></form>`;
 }
-function phoneList() {
-  const mine = S.jobs.filter(j => j.demo);
-  return `<div class="appbar"><div><div class="pk">Magandang umaga</div><h2>Ramon · ${TRUCKERS.T01.plate}</h2></div><button class="plink" data-act="plogout">Sign out</button></div>
-  <div class="pbody" data-keep-scroll="plist">
-    <div class="pk" style="font-weight:600">TODAY · ${dateLabel(S.now).toUpperCase()}</div>
-    ${mine.map(j => `<button class="pcard" data-act="openjob" data-arg="${j.id}">
-      <div class="row"><span class="pk">Agreed arrival</span>${pResultChip(j)}</div>
-      <div class="row"><span class="big-time">${hm(j.agreed)}</span><span class="pk" data-cd="${j.agreed}">${countdown(j.agreed)}</span></div>
-      <div class="pv">${esc(site(j).customer)}</div>
-      <div class="pk">${esc(site(j).city)} · <span class="mono">${fmtCntr(j.container)}</span> · ${j.size}</div>
-    </button>`).join('')}
-    <p class="note">ⓘ Jobs come from TMD-Haulage. To change a time, call TMD dispatch.</p>
+function phoneHome() {
+  const mine = S.jobs.filter(j => j.demo).sort((a, b) => a.agreed - b.agreed);
+  const needsReason = j => pState(j) === 'done' && !pHit(j) && !(j.exception || S.phone.local[j.id].excQueued);
+  const next = mine.find(j => needsReason(j) || pState(j) !== 'done');
+  const later = mine.filter(j => j !== next && pState(j) !== 'done');
+  const done = mine.filter(j => j !== next && pState(j) === 'done');
+  return `<div class="pview">
+    <div class="pnav"><span></span><button data-act="plogout">Logout</button></div>
+    <h2 class="ptitle">${greet()},<br>Ramon!</h2>
+    <div class="psec">Susunod na delivery</div>
+    ${next ? heroCard(next) : `<div class="phero" style="align-items:center;text-align:center"><span class="bigcheck" style="width:72px;height:72px">${ic('check', 38, 2.6)}</span><b>Tapos na lahat ngayong araw. Salamat!</b></div>`}
+    ${later.length ? `<div class="psec">Mamaya</div><div class="pgroup">${later.map(j => `<button class="prow" data-act="openjob" data-arg="${j.id}"><span class="ptime">${hm12(j.agreed)}</span><span class="grow">${esc(site(j).customer)}</span><span style="color:var(--p-muted)">${ic('chev', 16, 2.2)}</span></button>`).join('')}</div>` : ''}
+    ${done.length ? `<div class="psec">Tapos na</div><div class="pgroup">${done.map(j => `<button class="prow" data-act="openjob" data-arg="${j.id}">${picon(pHit(j) ? 'check' : 'clock', pHit(j) ? '#34C759' : '#FF3B30')}<span class="grow">${esc(site(j).customer)}</span><span class="ppill ${pHit(j) ? 'pp-ok' : 'pp-bad'}">${pHit(j) ? 'On time' : 'Late'}</span></button>`).join('')}</div>` : ''}
   </div>`;
 }
-function phoneChecks(j) {
-  const L = S.phone.local[j.id], P = S.phone, d = distanceKm(j) * 1000, inside = d <= site(j).radius;
-  const items = [
-    [inside ? 'y' : 'p', inside ? '✓' : '…', `Inside customer site area`, inside ? `${P.mock ? 'Reported by GPS' : 'Within ' + site(j).radius + ' m of gate'}` : `${(d / 1000).toFixed(1)} km away. Unlocks within ${site(j).radius} m.`],
-    ['y', '✓', 'GPS accuracy 12 m', `Limit ${S.config.acc} m`],
-    [P.mock ? 'n' : 'y', P.mock ? '✕' : '✓', P.mock ? 'Fake GPS app is on' : 'No fake GPS app', P.mock ? 'Turn off the fake location app to continue. TMD has been notified.' : 'Location comes from the phone GPS'],
-    [P.skew ? 'w' : 'y', P.skew ? '!' : '✓', P.online ? 'Time from server' : 'Time secured offline', P.skew ? `Your phone clock is ${Math.abs(P.skew)} min off. Server time is used.` : P.online ? 'Phone clock is not used' : 'Uses the phone\'s internal timer since last sync'],
-  ];
-  return { ok: inside && !P.mock, html: `<ul class="checks">${items.map(([c, i, t, s]) => `<li><span class="ck ${c}">${i}</span><span><b>${t}</b><small>${s}</small></span></li>`).join('')}</ul>` };
+function heroCard(j) {
+  const st = pState(j);
+  const btn = { ready:['', 'truck', 'Simulan ang Biyahe', 'starttrip'], road:['', 'map', 'Tingnan ang Biyahe', 'openjob'], site:['green', 'camera', 'Kumpirmahin ang Pagdating', 'openjob'], done:['orange', 'alert', 'Sabihin Kung Bakit Late', 'openjob'] }[st];
+  return `<div class="phero">
+    <div class="hrow">${picon('building', '#5856D6')}<div class="grow"><span class="hname">${esc(site(j).customer)}</span><span class="sub">${esc(site(j).city)}</span></div></div>
+    <div><span class="sub">Dapat dumating</span><div class="pbig">${hm12(j.agreed)}</div></div>
+    ${timePill(j)}
+    <button class="pbtn ${btn[0]}" data-act="${btn[3]}" data-arg="${j.id}">${ic(btn[1], 22, 2.1)}${btn[2]}</button></div>`;
 }
 function phoneJob(j) {
-  const L = S.phone.local[j.id], s = site(j);
-  const info = `<div class="pcard"><div class="row"><span class="pk">Agreed arrival</span>${pResultChip(j)}</div>
-      <div class="row"><span class="big-time">${hm(j.agreed)}</span><span class="pk" data-cd="${j.agreed}">${countdown(j.agreed)}</span></div>
-      <dl class="kv"><dt>Customer</dt><dd>${esc(s.customer)}</dd><dt>Address</dt><dd>${esc(s.addr)}</dd><dt>Gate notes</dt><dd>${esc(s.gate)}</dd>
-      <dt>Container</dt><dd class="mono">${fmtCntr(j.container)} · ${j.size}</dd><dt>Booking</dt><dd class="mono">${j.booking}</dd><dt>Pick-up</dt><dd>${PICKUPS[j.pickup]}</dd></dl></div>`;
-  let action;
-  if (L.confirmed) action = `<button class="pbtn" data-act="pscreen" data-arg="result">View result</button>`;
-  else if (!L.tripStart) action = `<button class="pbtn" data-act="starttrip">Start trip<small>Simulan ang biyahe</small></button>
-      <p class="note">📍 Location is tracked only while this job is active, then it stops.</p>`;
-  else {
-    const c = phoneChecks(j);
-    const d = distanceKm(j);
-    const prog = L.entry ? '' : `<div class="pcard"><div class="row"><span class="pk">Distance to site</span><span class="pk">ETA ${hm(S.now + d / speedKmMin() * MIN)}</span></div>
-        <div class="dist" data-dist="${j.id}">${d.toFixed(1)} km</div><div class="track"><i data-prog="${j.id}" style="width:${Math.min(100, (1 - d / j.d0) * 100)}%"></i></div>
-        <p class="note">Arrival time is recorded automatically when you enter the site area. You don't need to tap anything.</p></div>`;
-    const entry = L.entry ? `<div class="pcard"><div class="row"><span class="pk">Arrival time recorded</span><span class="mono pv">${hm(L.entry)}</span></div><p class="note">This is when you entered the site area. Confirming later doesn't change it.</p></div>` : '';
-    action = `${prog}${entry}<div class="pcard"><span class="pk" style="font-weight:600">ARRIVAL CHECKS</span>${c.html}</div>
-      <button class="pbtn go" data-act="pscreen" data-arg="capture" ${c.ok ? '' : 'disabled'}>Confirm arrival<small>${c.ok ? 'Photo + container scan' : 'Unlocks at the customer gate'}</small></button>
-      ${!L.entry ? `<button class="pbtn alt" data-act="pscreen" data-arg="delay">Report delay<small>Tell TMD early if you will be late</small></button>` : ''}`;
+  const L = S.phone.local[j.id], st = pState(j), s = site(j), P = S.phone;
+  const nav = `<div class="pnav"><button data-act="pscreen" data-arg="list">${ic('back', 20, 2.4)}Delivery</button><span></span></div>`;
+  const where = `<div class="pgroup"><div class="prow">${picon('pin', '#FF3B30')}<span class="grow"><b>${esc(s.addr)}</b><span class="sub">${esc(s.gateFil)}</span></span></div></div>`;
+  const details = `<details class="pgroup pdetails"><summary class="prow">${picon('doc', '#8E8E93')}<span class="grow">Detalye ng job</span><span style="color:var(--p-muted)">${ic('chev', 16, 2.2)}</span></summary>
+      <div class="prow"><span class="plbl">Container</span><span class="mono">${fmtCntr(j.container)}</span></div>
+      <div class="prow"><span class="plbl">Laki</span><span>${j.size}</span></div></details>`;
+  const fake = P.mock ? `<div class="palert">${ic('alert', 24, 2.2)}<span><b>Naka-on ang Fake GPS app.</b> Patayin muna ito para makapagpatuloy.</span></div>` : '';
+  if (st === 'ready') return `<div class="pview">${nav}<h2 class="ptitle">${esc(s.customer)}</h2>
+      <div class="phero"><div><span class="sub">Dapat dumating</span><div class="pbig">${hm12(j.agreed)}</div></div>${timePill(j)}</div>
+      ${where}${details}
+      <p class="pinstr">Pindutin ang <b>Simulan ang Biyahe</b> kapag paalis ka na.</p></div>
+    <div class="pact"><button class="pbtn" data-act="starttrip" data-arg="${j.id}">${ic('truck', 22, 2.1)}Simulan ang Biyahe</button></div>`;
+  if (st === 'road') {
+    const d = distanceKm(j), p = Math.min(1, Math.max(0, 1 - d / j.d0)), eta = S.now + d / speedKmMin() * MIN, pre = j.prealert || L.delayQueued;
+    return `<div class="pview">${nav}<h2 class="ptitle">Papunta ka na</h2>${fake}
+      <div class="proute">
+        <div class="road"><span class="line"></span><span class="done" data-prog="${j.id}" style="width:calc((100% - 44px) * ${p.toFixed(3)})"></span><span class="truckdot" data-truck="${j.id}" style="left:calc(23px + (100% - 64px) * ${p.toFixed(3)})">${ic('truck', 22, 2.1)}</span><span class="flag">${ic('building', 18, 2.1)}</span></div>
+        <div class="road-txt"><div><div class="pbig" data-dist="${j.id}">${d.toFixed(1)} km</div><span class="sub">papunta sa ${esc(s.customer)}</span></div><div style="text-align:right;white-space:nowrap;flex:none"><span class="sub">Darating mga</span><span class="eta">${hm12(eta)}</span></div></div>
+        ${timePill(j)}</div>
+      ${pre ? `<div class="pgroup"><div class="prow">${picon('clock', '#FF9500')}<span class="grow"><b>Na-report mo na ang delay</b><span class="sub">${esc(reason(pre.code).fil)}</span></span></div></div>` : ''}
+      <p class="pinstr">Magmaneho nang ligtas. Kusang mare-record ang oras pagdating mo. Hindi mo kailangang pindutin ang kahit ano.</p>
+      ${where}</div>
+    <div class="pact"><button class="pbtn orange" data-act="pscreen" data-arg="delay">${ic('clock', 22, 2.1)}May Delay? I-report</button></div>`;
   }
-  return `<div class="appbar"><button class="back" data-act="pscreen" data-arg="list" aria-label="Back">‹</button><div><div class="pk mono">${j.id}</div><h2>${esc(s.customer)}</h2></div></div>
-  <div class="pbody" data-keep-scroll="pjob">${action}${info}</div>`;
+  return `<div class="pview">${nav}
+      <div class="parrive"><span class="bigcheck">${ic('check', 66, 2.6)}</span><h2 class="ptitle" style="padding:0">Nandito ka na!</h2>
+        <p class="pinstr" style="padding:0">Na-record ang dating mo: <b>${hm12(L.entry)}</b></p></div>${fake}
+      <p class="pinstr" style="text-align:center">Kunan ng litrato ang container, tapos i-scan ang QR code.</p></div>
+    <div class="pact"><button class="pbtn green" data-act="pscreen" data-arg="capture" ${P.mock ? 'disabled' : ''}>${ic('camera', 22, 2.1)}Kumpirmahin ang Pagdating</button></div>`;
 }
 function phoneCapture(j) {
-  const L = S.phone.local[j.id], P = S.phone;
-  const steps = `<div class="steps"><span class="on"></span><span class="${L.photo ? 'on' : ''}"></span></div>`;
-  let body;
-  if (!L.photo) body = `<div class="pk" style="font-weight:600">STEP 1 OF 2 · PHOTO OF CONTAINER AT GATE</div>
-    <div class="finder">${containerArt(j)}</div>
-    <button class="shutter" data-act="photo" aria-label="Take photo"></button>
-    <p class="note">📷 Camera only. Photos from the gallery can't be used.</p>`;
-  else body = `<div class="pk" style="font-weight:600">STEP 2 OF 2 · SCAN CONTAINER CODE</div>
-    <div class="row" style="display:flex;gap:10px;align-items:center"><div style="width:84px;border-radius:8px;overflow:hidden;flex:none">${containerArt(j)}</div><span class="note">✓ Photo taken ${hm(L.photo)}, stamped with time, GPS and job number</span></div>
-    ${L.scan ? `<div class="pcard"><span class="pk">Container</span><span class="mono pv" style="font-size:18px">${fmtCntr(j.container)}</span><span class="note" style="color:var(--p-hit)">✓ Matches this job${L.scan === 'Manual' ? ' · typed by you (TMD will see this)' : ''}</span></div>
-      <button class="pbtn go" data-act="submitarrival">Submit arrival<small>Ipadala</small></button>`
-    : `<div class="finder">${containerArt(j)}<div class="qrframe"></div><div class="scanline"></div></div>
-      <button class="pbtn" data-act="scan">Scan code</button>
-      ${P.manual ? `<label class="pk" for="manualno">Container number (11 characters)</label><input class="pinput" id="manualno" data-draft="manualno" value="${esc(S.drafts.manualno || '')}" placeholder="TMDU2026451" maxlength="11" autocomplete="off">
-        ${P.scanErr ? `<div class="err">${esc(P.scanErr)}</div>` : ''}<button class="pbtn alt" data-act="manual">Use this number</button>`
-      : `<button class="pbtn alt" data-act="showmanual">Label damaged? Type number</button>`}`}`;
-  return `<div class="appbar"><button class="back" data-act="pscreen" data-arg="job" aria-label="Back">‹</button><div><div class="pk">Confirm arrival</div><h2>${esc(site(j).customer)}</h2></div></div>
-  <div class="pbody">${steps}${body}</div>`;
+  const L = S.phone.local[j.id], P = S.phone, two = !!L.photo;
+  const top = `<div class="camtop"><button class="camx" data-act="pscreen" data-arg="job" aria-label="Isara">${ic('x', 18, 2.4)}</button><span class="campill">Hakbang ${two ? 2 : 1} sa 2</span><span style="width:36px"></span></div>`;
+  if (!two) return `<div class="cam">${top}<p class="camtxt">Kunan ng litrato ang container</p><div class="finder">${containerArt(j)}</div>
+    <div class="camfoot"><button class="shutter" data-act="photo" aria-label="Kunan ng litrato"></button></div></div>`;
+  return `<div class="cam">${top}<p class="camtxt">I-scan ang QR code sa container</p><div class="finder">${containerArt(j)}<div class="qrframe"></div><div class="scanline"></div></div>
+    <div class="camfoot">${P.manual
+      ? `<div class="manual"><input class="pinput" id="manualno" data-draft="manualno" value="${esc(S.drafts.manualno || '')}" placeholder="TMDU 202645 8" maxlength="14" autocomplete="off" aria-label="Container number">${P.scanErr ? `<p class="camerr" role="alert">${esc(P.scanErr)}</p>` : ''}<button class="pbtn" data-act="manual">Gamitin ang Number</button></div>`
+      : `<button class="pbtn" data-act="scan">${ic('qr', 22, 2.1)}I-scan</button><button class="camlink" data-act="showmanual">Sira ang QR? I-type ang number</button>`}</div></div>`;
 }
 function phoneResult(j) {
-  const L = S.phone.local[j.id], hit = L.entry <= j.agreed + S.config.grace * MIN;
-  const { m, txt } = relMin(L.entry - j.agreed);
+  const L = S.phone.local[j.id], hit = pHit(j), m = Math.round(Math.abs(L.entry - j.agreed) / MIN);
   const exc = j.exception || L.excQueued;
-  const queued = S.phone.queue.length;
-  return `<div class="appbar"><button class="back" data-act="pscreen" data-arg="list" aria-label="Back">‹</button><div><div class="pk mono">${j.id}</div><h2>Arrival result</h2></div></div>
-  <div class="pbody">
-    <div class="result ${hit ? 'hit' : 'miss'}"><span style="font-weight:600;opacity:.9">${hit ? 'On time' : 'Late'}</span><h3>${hit ? 'HIT' : 'MISS'}</h3>
-      <span>${m === 0 ? 'Right on the agreed time' : m < 0 ? `${txt} before agreed time` : `${txt} after agreed time`}</span></div>
-    <div class="pcard"><dl class="kv"><dt>Agreed</dt><dd class="mono">${hm(j.agreed)}</dd><dt>Arrived</dt><dd class="mono">${hm(L.entry)}</dd><dt>Confirmed</dt><dd class="mono">${hm(L.confirmed)}</dd></dl>
-      <p class="note">Arrived = when you entered the site area, measured by the server, not your phone clock.</p></div>
-    ${queued ? `<p class="note">📶 No signal. Saved on phone and will send automatically.</p>` : `<p class="note">✓ Sent to TMD and the customer.</p>`}
-    ${!hit && !exc ? `<div class="pcard" style="border-color:var(--p-miss)"><b style="color:var(--p-miss)">Exception required</b><span class="pk">Tell TMD why you were late. The job closes only after this.</span></div>
-      <button class="pbtn" data-act="pscreen" data-arg="exception">File exception<small>Ilagay ang dahilan</small></button>` : ''}
-    ${exc ? `<div class="pcard"><span class="pk">Exception filed</span><span class="pv">${exc.code} · ${esc(reason(exc.code).label)}</span><span class="pchip pc-risk" style="align-self:flex-start">Waiting for TMD review</span></div>` : ''}
-    ${hit || exc ? `<button class="pbtn alt" data-act="pscreen" data-arg="list">Back to jobs</button>` : ''}
-  </div>`;
+  const sub = hit ? (m === 0 ? 'Eksakto sa oras ka dumating.' : `Dumating ka ${minsTxt(m)} bago ang oras.`) : `Dumating ka ${hm12(L.entry)}. Ang usapan ay ${hm12(j.agreed)}.`;
+  return `<div class="pres">
+      <span class="rescircle">${ic(hit ? 'check' : 'clock', 62, 2.6)}</span>
+      <h2 class="restitle">${hit ? 'On Time!' : `Late ng ${minsTxt(m)}`}</h2>
+      <p class="ressub">${hit ? 'Salamat, Ramon! ' : ''}${sub}</p>
+      ${!hit && exc ? `<p class="resnote">${ic('check', 18, 2.6)}Na-send na ang dahilan mo</p>` : ''}
+      ${S.phone.queue.length ? `<p class="resnote">${ic('nosignal', 18, 2.2)}Ise-send pag may signal na</p>` : ''}
+    </div>
+    <div class="pact">${!hit && !exc ? `<p class="resinstr">Sabihin sa amin kung bakit ka na-late.</p><button class="pbtn white" data-act="pscreen" data-arg="exception">Piliin ang Dahilan</button>` : `<button class="pbtn white" data-act="pscreen" data-arg="list">Tapos Na</button>`}</div>`;
 }
-function phoneReasonForm(j, kind) {
-  const P = S.phone, isExc = kind === 'exception';
-  const list = REASONS.map(r => `<button class="opt" aria-pressed="${P.sel === r.code}" data-act="pickreason" data-arg="${r.code}"><span class="code">${r.code}</span><span>${esc(r.label)}</span></button>`).join('');
-  const etaSel = isExc ? '' : `<span class="pk" style="font-weight:600">How late will you be?</span>
-    <div class="seg" style="gap:6px">${[15, 30, 60, 90].map(n => `<button class="opt" style="width:auto;flex:1;justify-content:center" aria-pressed="${(S.drafts.delaymin || 30) == n}" data-act="delaymin" data-arg="${n}">+${n} min</button>`).join('')}</div>`;
-  const needRemarks = P.sel === 'OTH-99';
-  return `<div class="appbar"><button class="back" data-act="pscreen" data-arg="${isExc ? 'result' : 'job'}" aria-label="Back">‹</button><div><div class="pk mono">${j.id}</div><h2>${isExc ? 'File exception' : 'Report delay'}</h2></div></div>
-  <div class="pbody" data-keep-scroll="preason">
-    <span class="pk">${isExc ? 'Your arrival was after the agreed time. Choose the main reason.' : 'TMD and Sales Support will be told right away. This doesn\'t change the Hit/Miss result.'}</span>
-    ${etaSel}<div style="display:flex;flex-direction:column;gap:6px">${list}</div>
-    <label class="pk" for="remarks" style="font-weight:600">Remarks ${needRemarks ? '(required)' : '(optional)'}</label>
-    <textarea class="ptxt" id="remarks" data-draft="remarks" placeholder="What happened? Where?">${esc(S.drafts.remarks || '')}</textarea>
-    ${isExc ? `<button class="pbtn alt" data-act="excphoto">${S.drafts.excphoto ? '✓ Evidence photo attached' : 'Add evidence photo (camera)'}</button>` : ''}
-    ${P.scanErr ? `<div class="err">${esc(P.scanErr)}</div>` : ''}
-    <button class="pbtn" data-act="${isExc ? 'fileexc' : 'filedelay'}" ${P.sel ? '' : 'disabled'}>${isExc ? 'Submit exception' : 'Send delay alert'}</button>
-  </div>`;
+const DRIVER_REASON_ORDER = ['TRF-01', 'PRT-01', 'CUS-01', 'WTH-01', 'TRK-01', 'TRK-02', 'CUS-02', 'PRT-02', 'TRF-02', 'DOC-01', 'OTH-99'];
+function phoneReasons(j, kind) {
+  const P = S.phone, isExc = kind === 'exception', need = P.sel === 'OTH-99', mins = S.drafts.delaymin || 30;
+  const tiles = DRIVER_REASON_ORDER.map(c => { const r = reason(c); return `<button class="rtile" aria-pressed="${P.sel === c}" data-act="pickreason" data-arg="${c}"><span class="ricon" style="background:${r.color}">${ic(r.icon, 24, 2)}</span>${esc(r.fil)}</button>`; }).join('');
+  return `<div class="pview" data-keep-scroll="preason"><div class="pnav"><button data-act="pscreen" data-arg="${isExc ? 'result' : 'job'}">${ic('back', 20, 2.4)}Bumalik</button><span></span></div>
+      <h2 class="ptitle">${isExc ? 'Bakit ka na-late?' : 'Bakit ka male-late?'}</h2>
+      <p class="pinstr">Pumili ng isa.${isExc ? '' : ' Malalaman agad ito ng TMD.'}</p>
+      <div class="rgrid">${tiles}</div>
+      ${isExc ? '' : `<div class="psec">Gaano katagal ang delay?</div><div class="pseg">${[[15, '15 min'], [30, '30 min'], [60, '1 oras'], [90, '1½ oras']].map(([n, l]) => `<button aria-pressed="${mins == n}" data-act="delaymin" data-arg="${n}">+${l}</button>`).join('')}</div>`}
+      ${need || S.drafts.shownote ? `<div class="psec">${need ? 'Ano ang nangyari? (kailangan)' : 'Note (optional)'}</div><div class="pgroup"><textarea class="ptxt" id="remarks" data-draft="remarks" placeholder="Isulat dito">${esc(S.drafts.remarks || '')}</textarea></div>` : `<button class="plink2" data-act="shownote">+ Magdagdag ng note</button>`}
+      ${isExc ? `<div class="pgroup"><button class="prow" data-act="excphoto">${picon('camera', S.drafts.excphoto ? '#34C759' : '#8E8E93')}<span class="grow">${S.drafts.excphoto ? 'May litrato na' : 'Magdagdag ng litrato (optional)'}</span>${S.drafts.excphoto ? ic('check', 18, 2.6) : ''}</button></div>` : ''}
+      ${P.scanErr ? `<p class="perr" role="alert">${esc(P.scanErr)}</p>` : ''}</div>
+    <div class="pact"><button class="pbtn" data-act="${isExc ? 'fileexc' : 'filedelay'}" ${P.sel ? '' : 'disabled'}>I-send</button></div>`;
 }
+const utilWin = (title, body) => `<section class="mac-window"><div class="mac-titlebar"><span class="lights" aria-hidden="true"><i></i><i></i><i></i></span><span class="mac-title">${title}</span></div><div class="util-body">${body}</div></section>`;
 function demoPanel() {
-  const P = S.phone, pr = (on) => `aria-pressed="${on}"`;
-  return `<section class="panel"><div class="head" style="align-items:center"><div><span class="eyebrow">Demo controls</span><h3>Play the trucker, then try to cheat</h3></div>
+  const P = S.phone, pr = on => `aria-pressed="${on}"`;
+  return utilWin('Demo Controls', `<div class="head" style="align-items:center"><div><span class="eyebrow">Paano gamitin ang demo</span><h3>Gampanan ang driver, tapos subukang mandaya</h3></div>
       <button class="btn sm" data-act="reset">Reset demo</button></div>
     <ol class="guide">
-      <li>Sign in as Ramon. Use <b>Fill Ramon's login</b> below, then tap <b>Sign in</b>.</li>
-      <li>Open the <b>10:30 Sta. Rosa Food Packers</b> job and tap <b>Start trip</b>.</li>
-      <li>Fast-forward the clock until the truck enters the site area. Turn on heavy traffic first to make it late.</li>
-      <li>Confirm arrival with photo and container scan, then open the <b>Command Center</b> to see it live.</li>
+      <li>Mag-login bilang si Ramon. Pindutin ang <b>Fill Ramon's login</b> sa ibaba, tapos ang <b>Mag-login</b> sa phone.</li>
+      <li>Sa delivery para sa <b>Sta. Rosa Food Packers (10:30 AM)</b>, pindutin ang <b>Simulan ang Biyahe</b>.</li>
+      <li>Pabilisin ang oras hanggang makarating ang truck. Para ma-late, i-on muna ang <b>Heavy traffic</b>.</li>
+      <li>Pindutin ang <b>Kumpirmahin ang Pagdating</b>, kunan ng litrato at i-scan ang QR. Tapos buksan ang <b>Command Center</b> para makita ito nang live.</li>
     </ol>
     <div class="ctrls">
-      <div class="ctrl"><span class="lbl">Sign-in</span><div class="seg"><button data-act="pfill" data-arg="own">Fill Ramon's login</button><button data-act="pfill" data-arg="wrong">Wrong PIN</button><button class="cheat" data-act="pfill" data-arg="other">Another driver on this phone</button></div><p>Ramon: <span class="mono">0917 555 0142</span> · PIN <span class="mono">482100</span>. 5 wrong PINs lock sign-in for 15 min. Other drivers are blocked on Ramon's phone.</p></div>
-      <div class="ctrl"><span class="lbl">Clock</span><div class="seg"><button data-act="ff" data-arg="5">+5 min</button><button data-act="ff" data-arg="15">+15 min</button><button data-act="ff" data-arg="60">+1 hour</button></div><p>Simulated time runs live. Skip ahead to drive faster.</p></div>
-      <div class="ctrl"><span class="lbl">Road</span><div class="seg"><button data-act="traffic" data-arg="0" ${pr(!P.traffic)}>Normal 30 km/h</button><button data-act="traffic" data-arg="1" ${pr(P.traffic)}>Heavy traffic 10 km/h</button></div><p>6.2 km to Sta. Rosa. Heavy traffic makes the 10:30 slot a Miss.</p></div>
-      <div class="ctrl"><span class="lbl">Mobile signal</span><div class="seg"><button data-act="online" data-arg="1" ${pr(P.online)}>Online</button><button data-act="online" data-arg="0" ${pr(!P.online)}>No signal</button></div><p>Offline events keep their true time and sync later.</p></div>
-      <div class="ctrl"><span class="lbl">Cheat attempts</span><div class="seg"><button class="cheat" data-act="mock" ${pr(P.mock)}>Fake GPS app</button><button class="cheat" data-act="skew" ${pr(!!P.skew)}>Set phone clock back 30 min</button></div><p>Both are detected and flagged to TMD. Neither changes the arrival time.</p></div>
-    </div></section>`;
+      <div class="ctrl"><span class="lbl">Login</span><div class="seg"><button data-act="pfill" data-arg="own">Fill Ramon's login</button><button data-act="pfill" data-arg="wrong">Wrong PIN</button><button class="cheat" data-act="pfill" data-arg="other">Ibang driver</button></div><p>Ramon: <span class="mono">0917 555 0142</span> · PIN <span class="mono">482100</span>. Pag 5 beses mali ang PIN, naka-lock ng 15 min. Ang ibang driver ay hindi makakapag-login sa phone ni Ramon.</p></div>
+      <div class="ctrl"><span class="lbl">Oras</span><div class="seg"><button data-act="ff" data-arg="5">+5 min</button><button data-act="ff" data-arg="15">+15 min</button><button data-act="ff" data-arg="60">+1 oras</button></div><p>Tumatakbo ang oras nang live. Pabilisin para mas mabilis ang biyahe.</p></div>
+      <div class="ctrl"><span class="lbl">Daan</span><div class="seg"><button data-act="traffic" data-arg="0" ${pr(!P.traffic)}>Normal 30 km/h</button><button data-act="traffic" data-arg="1" ${pr(P.traffic)}>Heavy traffic 10 km/h</button></div><p>6.2 km papuntang Sta. Rosa. Sa heavy traffic, male-late ang 10:30 AM.</p></div>
+      <div class="ctrl"><span class="lbl">Signal</span><div class="seg"><button data-act="online" data-arg="1" ${pr(P.online)}>Online</button><button data-act="online" data-arg="0" ${pr(!P.online)}>Walang signal</button></div><p>Kahit offline, tama pa rin ang oras na naka-record. Ise-send ito pagbalik ng signal.</p></div>
+      <div class="ctrl"><span class="lbl">Pandaraya</span><div class="seg"><button class="cheat" data-act="mock" ${pr(P.mock)}>Fake GPS app</button><button class="cheat" data-act="skew" ${pr(!!P.skew)}>Iurong ang orasan ng phone 30 min</button></div><p>Pareho itong nade-detect at nire-report sa TMD. Hindi nito mababago ang oras ng pagdating.</p></div>
+    </div>`);
 }
 function logPanel() {
   const L = S.phone.log;
-  return `<section class="panel"><div><span class="eyebrow">What the phone sent</span><h3>Events to the platform</h3></div>
-    ${L.length ? `<ul class="evlog" data-keep-scroll="evlog">${L.map(e => `<li><span class="mono muted">${hm(e.at)}</span><span><code>${e.type}</code>${e.detail ? ` <span class="muted">· ${esc(e.detail)}</span>` : ''}</span>${e.queued ? '<span class="chip c-risk">Queued</span>' : '<span class="chip c-hit">Sent</span>'}</li>`).join('')}</ul>`
-      : `<p class="muted" style="margin:0">Nothing yet. Events appear here as you use the phone: trip start, geofence entry, confirmation, exceptions and integrity flags.</p>`}
-  </section>`;
+  return utilWin('Events sent by TAS', L.length ? `<ul class="evlog" data-keep-scroll="evlog">${L.map(e => `<li><span class="mono muted">${hm(e.at)}</span><span><code>${e.type}</code>${e.detail ? ` <span class="muted">· ${esc(e.detail)}</span>` : ''}</span>${e.queued ? '<span class="chip c-risk">Queued</span>' : '<span class="chip c-hit">Sent</span>'}</li>`).join('')}</ul>`
+    : `<p class="muted" style="margin:0">Nothing yet. Events appear here as the driver uses TAS: trip start, arrival at the site, confirmation, delays and integrity flags.</p>`);
 }
 
 /* ---------- COMMAND CENTER ---------- */
@@ -884,29 +979,27 @@ function pagesFor(role) {
   if (role !== 'SALES') p.push(['audit','Audit trail']);
   return p;
 }
+const PAGE_ICON = { board:'list', map:'map', exceptions:'alert', analytics:'chart', rules:'sliders', users:'users', sites:'pin', codes:'tag', audit:'shield' };
+const macWin = (title, inner, right = '') => `<div class="mac-window"><div class="mac-titlebar"><span class="lights" aria-hidden="true"><i></i><i></i><i></i></span><span class="mac-title">${title}</span><span class="mac-tb-right">${right}</span></div>${inner}</div>`;
 function ccAuth() {
   const A = S.auth.cc;
-  if (A.stage === 'splash') return `<div class="cc-splash"><span class="mark" style="width:68px;height:68px;border-radius:20px;background:rgba(255,255,255,.16)">${pinSvg(36)}</span><h2>Command Center</h2><p style="margin:0;opacity:.88">Trucker Visibility Platform · Version 3</p><div class="loadbar"><i></i></div></div>`;
+  if (A.stage === 'splash') return macWin('Command Center', `<div class="cc-splash">${appIcon(88)}<h2>Command Center</h2><p class="muted" style="margin:0">Trucker Visibility Platform</p><span class="spinner" aria-label="Loading"></span></div>`);
   const err = A.err ? `<div class="alert bad" role="alert">${esc(A.err)}</div>` : '';
-  const form = A.stage === 'mfa'
-    ? `<div><span class="eyebrow">Step 2 of 2 · System Admin</span><h3>Enter your 6-digit code</h3><p class="muted" style="margin:6px 0 0;font-size:14px">Open your authenticator app. Admin accounts need this second step because they can change rules, geofences and devices.</p></div>
-      <form data-form="ccmfa" novalidate><div class="field"><label for="ccotp">Code for ${esc(A.pending.email)}</label><input class="in mono" id="ccotp" data-draft="ccotp" inputmode="numeric" maxlength="6" autocomplete="one-time-code" value="${esc(S.drafts.ccotp || '')}" style="font-size:22px;letter-spacing:.3em"></div>${err}
-        <button class="btn primary" type="submit" style="padding:11px">Verify and sign in</button><button type="button" class="btn" data-act="cclogout">Cancel</button></form>
-      <p class="muted" style="font-size:12px;margin:0">Demo code: <span class="mono">${A.pending.mfa}</span></p>`
-    : `<div><span class="eyebrow">Sign in</span><h3>Welcome back</h3></div>
+  const card = A.stage === 'mfa'
+    ? `<div class="center">${appIcon(64)}<h3>Two-step verification</h3><p class="muted" style="margin:0;font-size:13px">Enter the 6-digit code from your authenticator app. Admin accounts need this because they can change rules, geofences and devices.</p></div>
+      <form data-form="ccmfa" novalidate><div class="field"><label for="ccotp">Code for ${esc(A.pending.email)}</label><input class="in mono" id="ccotp" data-draft="ccotp" inputmode="numeric" maxlength="6" autocomplete="one-time-code" value="${esc(S.drafts.ccotp || '')}" style="font-size:22px;letter-spacing:.3em;text-align:center"></div>${err}
+        <button class="btn primary" type="submit" style="padding:7px">Verify and Sign In</button><button type="button" class="btn" data-act="cclogout" style="padding:7px">Cancel</button></form>
+      <p class="muted" style="font-size:12px;margin:0;text-align:center">Demo code: <span class="mono">${A.pending.mfa}</span></p>`
+    : `<div class="center">${appIcon(64)}<h3>Sign in to Command Center</h3><p class="muted" style="margin:0;font-size:13px">For TMD Team, Sales Support and System Admin. Your role comes from your account.</p></div>
       <form data-form="cclogin" novalidate>
         <div class="field"><label for="ccemail">Work email</label><input class="in" id="ccemail" data-draft="ccemail" type="email" autocomplete="username" placeholder="name@tmd.example" value="${esc(S.drafts.ccemail || '')}"></div>
         <div class="field"><label for="ccpw">Password</label><div class="pw"><input class="in" id="ccpw" data-draft="ccpw" type="${S.drafts.showpw ? 'text' : 'password'}" autocomplete="current-password" value="${esc(S.drafts.ccpw || '')}"><button type="button" class="btn sm" data-act="showpw" aria-label="${S.drafts.showpw ? 'Hide' : 'Show'} password">${S.drafts.showpw ? 'Hide' : 'Show'}</button></div></div>
-        ${err}<button class="btn primary" type="submit" style="padding:11px">Sign in</button>
-        <p class="muted" style="font-size:13px;margin:0">Forgot your password? Ask System Admin to send you a reset link.</p>
+        ${err}<button class="btn primary" type="submit" style="padding:7px">Sign In</button>
+        <p class="muted" style="font-size:12px;margin:0;text-align:center">Forgot your password? Ask System Admin for a reset link.</p>
       </form>
       <div class="demo-acc"><span class="eyebrow">Demo accounts · click to fill</span>${CC_USERS.map(u => `<button data-act="ccfill" data-arg="${u.email}"><span><b>${ROLES[u.role]}</b> · ${u.email}</span><span class="mono muted">${u.pw}</span></button>`).join('')}
-        <span class="muted" style="font-size:12px">5 wrong passwords lock the account for 15 min. Every sign-in is written to the audit trail.</span></div>`;
-  return `<div class="auth"><div class="auth-brand"><div><span class="eyebrow" style="color:#FFFFFF;opacity:.8">TMD Team · Sales Support · System Admin</span><h2 style="margin-top:8px">Command Center</h2>
-      <p style="max-width:44ch;opacity:.9;margin:12px 0 0">Live arrival visibility from truckers' phones. Every arrival is checked against the date and time agreed at booking.</p></div>
-      <ol><li><b>1 Capture</b>Photo, QR, GPS, time</li><li><b>2 Confirm</b>Hit or Miss on arrival</li><li><b>3 Integrate</b>Events to TMD-Haulage</li><li><b>4 Govern</b>KPIs, exceptions, audit</li></ol>
-      <p style="font-size:12px;opacity:.8;margin:0">Authorized users only. Your role is set by your account.</p></div>
-    <div class="auth-form">${form}</div></div>`;
+        <span class="muted" style="font-size:11px">5 wrong passwords lock the account for 15 min. Every sign-in is written to the audit trail.</span></div>`;
+  return macWin('Command Center', `<div class="auth"><div class="auth-card">${card}</div></div>`);
 }
 function ccEnter(u) {
   const A = S.auth.cc;
@@ -916,16 +1009,22 @@ function ccEnter(u) {
 }
 function commandView() {
   if (S.auth.cc.stage !== 'in') return ccAuth();
-  const k = kpis();
-  const pages = pagesFor(S.role);
+  const k = kpis(), pages = pagesFor(S.role);
   if (!pages.some(p => p[0] === S.page)) S.page = 'board';
-  const count = { exceptions: k.pend };
-  const nav = pages.map(([id, l], i) => `${i === 4 ? '<span class="navgroup eyebrow">Administration</span>' : ''}<button data-act="page" data-arg="${id}" ${S.page === id ? 'aria-current="page"' : ''}>${l}${count[id] ? `<span class="n">${count[id]}</span>` : ''}</button>`).join('');
+  const count = { exceptions: k.pend }, gov = ['rules', 'users', 'sites', 'codes', 'audit'];
+  let grouped = false;
+  const nav = pages.map(([id, l]) => {
+    let h = '';
+    if (gov.includes(id) && !grouped) { grouped = true; h = `<span class="navgroup eyebrow">${S.role === 'ADMIN' ? 'Administration' : 'Governance'}</span>`; }
+    return h + `<button data-act="page" data-arg="${id}" ${S.page === id ? 'aria-current="page"' : ''}>${ic(PAGE_ICON[id], 17, 1.9)}<span>${l}</span>${count[id] ? `<span class="n">${count[id]}</span>` : ''}</button>`;
+  }).join('');
   const body = { board, map: mapPage, exceptions: exceptionsPage, analytics, rules, users, sites, codes, audit: auditPage }[S.page]();
-  return `<div class="cc"><aside class="nav">
-      <div class="usercard"><span class="eyebrow">Signed in</span><b>${esc(me().name)}</b><span class="muted" style="font-size:13px;overflow-wrap:anywhere">${ROLES[S.role]} · ${esc(me().email)}</span><button class="btn sm" data-act="cclogout">Sign out</button></div>
-      <div class="navlist">${nav}</div><p class="perm">${ROLE_NOTE[S.role]}</p></aside>
-    <div class="main">${body}</div></div>`;
+  const title = pages.find(p => p[0] === S.page)[1];
+  return macWin(`${title} — Command Center`, `<div class="cc"><aside class="nav">
+      <span class="navgroup eyebrow" style="padding-top:2px">Monitor</span>
+      <div class="navlist">${nav}</div><p class="perm">${ROLE_NOTE[S.role]}</p>
+      <div class="usercard"><span class="avatar">${esc(me().name.replace(/[^A-Z]/g, '').slice(0, 2))}</span><div class="grow"><b>${esc(me().name)}</b><small>${ROLES[S.role]}</small></div><button class="btn sm" data-act="cclogout">Sign Out</button></div></aside>
+    <div class="main">${body}</div></div>`, `<span class="mono" data-clock>${hms(S.now)}</span>`);
 }
 function filteredJobs() {
   let js = [...S.jobs].sort((a, b) => a.agreed - b.agreed);
@@ -997,7 +1096,7 @@ function drawer() {
       <span class="muted" style="font-size:13px">${esc(f.detail)} · ${hm(f.at)}</span>${f.clearedBy ? `<span style="font-size:13px">Cleared by ${esc(f.clearedBy)}: ${esc(f.note)}</span>` : ''}
       ${f.status === 'Open' && canAct ? `<div class="actions"><input class="in" id="fnote-${i}" data-draft="fnote-${i}" placeholder="Note (what you checked)" value="${esc(S.drafts['fnote-' + i] || '')}" style="flex:1;min-width:160px"><button class="btn sm" data-act="clearflag" data-arg="${i}">Clear flag</button></div>` : ''}</div>`).join('');
   const excHtml = ex ? `<section class="panel"><div class="head"><h3>Exception · ${ex.code}</h3><span class="chip ${ex.status === 'Pending' ? 'c-risk' : ex.status === 'Validated' ? 'c-hit' : 'c-miss'}">${ex.status}${ex.cls ? ' · ' + ex.cls : ''}</span></div>
-      <div><b>${esc(reason(ex.code).label)}</b><div class="muted" style="font-size:13px">Filed ${hm(ex.filedAt)} by ${esc(t.name)}${ex.photo ? ' · evidence photo attached' : ''} · default class ${reason(ex.code).cls}</div></div>
+      <div><b>${esc(reason(ex.code).label)}</b><div style="font-size:13px">Driver chose in TAS: “${esc(reason(ex.code).fil)}”</div><div class="muted" style="font-size:13px">Filed ${hm(ex.filedAt)} by ${esc(t.name)}${ex.photo ? ' · evidence photo attached' : ''} · default class ${reason(ex.code).cls}</div></div>
       ${ex.remarks ? `<p style="margin:0">“${esc(ex.remarks)}”</p>` : ''}
       ${ex.reviewer ? `<p class="muted" style="margin:0;font-size:13px">Reviewed by ${esc(ex.reviewer)} at ${hm(ex.reviewedAt)}: ${esc(ex.reviewNote)}</p>` : ''}
       ${ex.status === 'Pending' && canAct ? `<textarea class="in" id="revnote" data-draft="revnote" placeholder="Review note (required to reject)">${esc(S.drafts.revnote || '')}</textarea>
@@ -1349,7 +1448,7 @@ function specView() {
     ['Lend phone or login to another driver','One phone per trucker, SMS PIN login, Admin-only reset','DEVICE_CHANGE'],
   ];
   return `<div class="spec">
-    <div><span class="eyebrow">Version 3 design</span><h2 style="font-size:34px">How it works</h2></div>
+    <div><span class="eyebrow">Version 4 design</span><h2 style="font-size:34px">How it works</h2></div>
     <p class="lede">The trucker's phone records the arrival automatically when the truck enters the customer's site area, using server time. The trucker then proves it with a live photo and a container scan. The Command Center compares that time with the time agreed at booking and marks the job Hit or Miss.</p>
     <div class="fw">
       <div class="step"><span class="num">1</span><h3>Capture</h3><ul><li>Live photo, camera only</li><li>Container QR scan, ISO 6346 check digit</li><li>GPS with accuracy</li><li>Server-trusted time</li><li>Works offline</li></ul><span class="who">Trucker · TAS on own smartphone</span></div>
@@ -1362,6 +1461,13 @@ function specView() {
       <div style="font-size:14px">Arrival = first entry into the site geofence, timed by the server. Exceptions explain a Miss. They never turn it into a Hit. Late trips TMD confirms were outside our control are left out of the <b>on-time rate excluding outside delays</b> only.</div></section>
     <section class="panel"><div><span class="eyebrow">Integrity</span><h3>How each workaround is stopped</h3></div><div class="tablebox" style="border:0"><table><thead><tr><th>If a trucker tries to…</th><th>The platform…</th><th>TMD sees</th></tr></thead><tbody>
       ${anti.map(([a, b, c]) => `<tr><td>${a}</td><td>${b}</td><td>${c.includes('_') ? `<span class="chip c-miss">${c}</span>` : `<span class="chip c-neutral">${c}</span>`}</td></tr>`).join('')}</tbody></table></div></section>
+    <section class="panel"><div><span class="eyebrow">Version 4 · Driver usability</span><h3>How TAS stays simple</h3></div><div class="tablebox" style="border:0"><table><thead><tr><th>Rule</th><th>In TAS</th></tr></thead><tbody>
+      <tr><td><b>One task per screen</b></td><td>Home shows only the next delivery and one button. Every screen has one main action at the bottom, in thumb reach.</td></tr>
+      <tr><td><b>Pictures before words</b></td><td>Delay reasons are big tiles with an icon. The result is a full green or red screen.</td></tr>
+      <tr><td><b>The driver's own language</b></td><td>Taglish buttons (“Simulan ang Biyahe”, “I-scan”), instructions in Filipino, 12-hour time (10:30 AM).</td></tr>
+      <tr><td><b>Nothing the driver doesn't need</b></td><td>No booking refs, reason codes, GPS accuracy or check lists. Container details fold under “Detalye ng job”. Integrity checks still run and still reach TMD.</td></tr>
+      <tr><td><b>No typing in the normal flow</b></td><td>The arrival time records itself. Photo, scan and tap only. Typing is needed only for a damaged QR or “Iba pa”.</td></tr>
+    </tbody></table></div></section>
     <section class="panel"><div><span class="eyebrow">Access</span><h3>Sign-in for both apps</h3></div><div class="tablebox" style="border:0"><table><thead><tr><th></th><th>TAS (trucker app)</th><th>Command Center</th></tr></thead><tbody>
       <tr><td><b>Splash</b></td><td>Brand screen while the app checks phone security (rooted phone, fake GPS, app version)</td><td>Brand screen while the session loads</td></tr>
       <tr><td><b>Credentials</b></td><td>Mobile number + 6-digit PIN</td><td>Work email + password</td></tr>
@@ -1379,16 +1485,17 @@ function specView() {
 const ACT = {
   view: v => { S.view = v; try { history.replaceState(null, '', '#' + v); } catch (_) {} window.scrollTo(0, 0); },
   openjob: id => { S.phone.jobId = id; S.phone.screen = job(id).demo && S.phone.local[id].confirmed ? 'result' : 'job'; },
-  pscreen: s => { S.phone.screen = s; S.phone.scanErr = ''; if (s === 'exception' || s === 'delay') { S.phone.sel = null; S.drafts.remarks = ''; S.drafts.excphoto = false; } if (s === 'capture') { S.phone.manual = false; } },
-  starttrip: () => { const j = job(S.phone.jobId), L = S.phone.local[j.id]; L.tripStart = S.now; emit({ type:'trip.started', job:j.id, at:S.now, detail:'Location tracking on for this job' }); if (S.phone.mock) mockFlag(j); },
+  pscreen: s => { S.phone.screen = s; S.phone.scanErr = ''; S.phone.toast = null; if (s === 'exception' || s === 'delay') { S.phone.sel = null; S.drafts.remarks = ''; S.drafts.excphoto = false; S.drafts.shownote = false; } if (s === 'capture') { S.phone.manual = false; } },
+  shownote: () => { S.drafts.shownote = true; },
+  starttrip: id => { if (id) S.phone.jobId = id; S.phone.screen = 'job'; const j = job(S.phone.jobId), L = S.phone.local[j.id]; L.tripStart = S.now; emit({ type:'trip.started', job:j.id, at:S.now, detail:'Location tracking on for this job' }); if (S.phone.mock) mockFlag(j); },
   photo: () => { const L = S.phone.local[S.phone.jobId]; L.photo = S.now; plog('photo.captured', S.now, 'Camera, stamped with time and GPS'); },
-  scan: () => { const L = S.phone.local[S.phone.jobId]; L.scan = 'QR'; },
+  scan: () => { S.phone.local[S.phone.jobId].scan = 'QR'; ACT.submitarrival(); },
   showmanual: () => { S.phone.manual = true; },
   manual: () => {
     const j = job(S.phone.jobId), v = (S.drafts.manualno || '').toUpperCase().replace(/\s/g, '');
-    if (!validCntr(v)) { S.phone.scanErr = 'This is not a valid container number. Check the 4 letters, 6 digits and the last check digit.'; return; }
-    if (v !== j.container) { S.phone.scanErr = 'This container is not on this job. Check the number on the door.'; return; }
-    S.phone.scanErr = ''; S.phone.local[j.id].scan = 'Manual';
+    if (!validCntr(v)) { S.phone.scanErr = 'Mali ang number. Tingnan ulit: 4 na letra at 7 numero.'; return; }
+    if (v !== j.container) { S.phone.scanErr = 'Hindi ito ang container ng delivery na ito. Tingnan ang number sa pinto.'; return; }
+    S.phone.scanErr = ''; S.phone.local[j.id].scan = 'Manual'; ACT.submitarrival();
   },
   submitarrival: () => {
     const j = job(S.phone.jobId), L = S.phone.local[j.id];
@@ -1401,17 +1508,18 @@ const ACT = {
   excphoto: () => { S.drafts.excphoto = !S.drafts.excphoto; },
   fileexc: () => {
     const j = job(S.phone.jobId);
-    if (S.phone.sel === 'OTH-99' && !(S.drafts.remarks || '').trim()) { S.phone.scanErr = 'Add remarks for "Other".'; return; }
+    if (S.phone.sel === 'OTH-99' && !(S.drafts.remarks || '').trim()) { S.phone.scanErr = 'Isulat kung ano ang nangyari.'; return; }
     S.phone.local[j.id].excQueued = { code:S.phone.sel };
     emit({ type:'exception.filed', job:j.id, at:S.now, code:S.phone.sel, remarks:(S.drafts.remarks || '').trim(), photo:!!S.drafts.excphoto, detail:S.phone.sel });
-    S.phone.screen = 'result'; toast('Exception sent to TMD for review.');
+    S.phone.screen = 'result'; toast('Na-send na ang dahilan mo sa TMD.');
   },
   filedelay: () => {
     const j = job(S.phone.jobId);
-    if (S.phone.sel === 'OTH-99' && !(S.drafts.remarks || '').trim()) { S.phone.scanErr = 'Add remarks for "Other".'; return; }
+    if (S.phone.sel === 'OTH-99' && !(S.drafts.remarks || '').trim()) { S.phone.scanErr = 'Isulat kung ano ang nangyari.'; return; }
     const mins = S.drafts.delaymin || 30;
     emit({ type:'delay.prealert', job:j.id, at:S.now, code:S.phone.sel, eta:j.agreed + mins * MIN, remarks:(S.drafts.remarks || '').trim(), detail:`${S.phone.sel}, +${mins} min` });
-    S.phone.screen = 'job'; toast('Delay alert sent. TMD and Sales Support have been told.');
+    S.phone.local[j.id].delayQueued = { code:S.phone.sel };
+    S.phone.screen = 'job'; toast('Na-send na. Alam na ng TMD at Sales Support.');
   },
   ff: m => advance(+m * MIN),
   traffic: v => { S.phone.traffic = v === '1'; },
@@ -1434,23 +1542,23 @@ const ACT = {
   },
   plogin: () => {
     const A = S.auth.phone, owner = TRUCKERS[PHONE_OWNER];
-    if (A.lockUntil > S.now) { A.err = `Sign-in is locked until ${hm(A.lockUntil)} after too many wrong PINs. Call TMD dispatch if you need help now.`; return; }
+    if (A.lockUntil > S.now) { A.err = `Naka-lock muna ang login hanggang ${hm12(A.lockUntil)}. Tawagan ang TMD dispatcher kung kailangan.`; return; }
     const m = digits(S.drafts.pmobile), pin = digits(S.drafts.ppin);
-    if (!m || pin.length !== 6) { A.err = 'Enter your mobile number and your 6-digit PIN.'; return; }
+    if (!m || pin.length !== 6) { A.err = 'Ilagay ang mobile number at 6-digit PIN.'; return; }
     const id = Object.keys(TRUCKERS).find(t => digits(TRUCKERS[t].mobile) === m);
     S.drafts.ppin = '';
     if (!id || PINS[id] !== pin) {
       A.fails++;
       if (A.fails >= MAX_FAILS) {
         A.lockUntil = S.now + LOCK_MIN * MIN; A.fails = 0;
-        A.err = `Too many wrong tries. Sign-in is locked until ${hm(A.lockUntil)}.`;
+        A.err = `Sobra na ang maling subok. Naka-lock hanggang ${hm12(A.lockUntil)}.`;
         logAudit(id ? TRUCKERS[id].name : 'Unknown number', 'TAS', 'Sign-in locked', `${MAX_FAILS} wrong PINs on ${owner.name}'s registered phone`);
         feed('risk', `<b>Trucker sign-in locked</b> · ${MAX_FAILS} wrong PINs on ${owner.name}'s phone`);
-      } else A.err = `Mobile number or PIN is wrong. ${MAX_FAILS - A.fails} ${MAX_FAILS - A.fails === 1 ? 'try' : 'tries'} left.`;
+      } else A.err = `Mali ang mobile number o PIN. May ${MAX_FAILS - A.fails} pang subok.`;
       return;
     }
     if (id !== PHONE_OWNER) {
-      A.err = 'This phone is registered to another driver. Sign in on your own phone, or ask System Admin to move your account.';
+      A.err = 'Naka-register ang phone na ito sa ibang driver. Gamitin ang sarili mong phone.';
       logAudit(TRUCKERS[id].name, 'TAS', 'Blocked sign-in', `Correct PIN, but on ${owner.name}'s registered phone (${owner.device})`);
       feed('risk', `<b>Blocked sign-in</b> · ${TRUCKERS[id].name} tried to use ${owner.name}'s phone`);
       return;

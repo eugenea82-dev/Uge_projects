@@ -1,4 +1,4 @@
-# Trucker Visibility Platform — Design (Version 3)
+# Trucker Visibility Platform — Design (Version 4)
 
 Container pick-up and delivery visibility and compliance platform. It has two
 parts: **TAS (Trucker Application System)**, the mobile app that drivers use on their own smartphones to
@@ -13,6 +13,7 @@ It runs on its own in a browser, with simulated data and a demo control panel.
 | 1 | Trucker arrival app, Command Center, Hit/Miss rules, anti-cheat controls, exceptions, integration |
 | 2 | Splash screen and credential sign-in for both apps (section 12) |
 | 3 | Live map in the Command Center (section 13). Analytics: global filters, plain-language on-time rates, late reasons spelled out (section 14). "Hit rate (adjusted)" tile removed from the live board. Trucker app named **TAS** |
+| 4 | TAS redesigned for drivers: one task per screen, Taglish labels, Filipino instructions and delay reasons. Both apps restyled to iOS (TAS) and macOS (Command Center) (section 15) |
 
 ---
 
@@ -402,3 +403,71 @@ shown below the chart, because a half-finished day is misleading.
 
 Prototype note: 1–20 October is generated sample history so the filters have
 data to work on. Today comes from the live demo.
+
+---
+
+## 15. Version 4: TAS made simple, Apple look
+
+**Goal:** a driver who has never been trained, or a 10-year-old, can finish a
+delivery in TAS without help.
+
+### Design rules
+
+| Rule | How TAS follows it |
+|---|---|
+| One task per screen | Home shows only the next delivery and one button. Every screen has a single main action at the bottom, in thumb reach |
+| Pictures before words | Delay reasons are big tiles with an icon. The result is a full green (on time) or red (late) screen |
+| The driver's own language | Buttons and labels in Taglish, instructions in Filipino, 12-hour time (10:30 AM) |
+| Nothing the driver doesn't need | Removed from the driver's view: booking ref, reason codes, GPS accuracy, the 4-point check list, phone-clock warnings, ISO and geofence wording. Container number and size fold under "Detalye ng job" |
+| No typing in the normal flow | The arrival time records itself. Photo, then QR scan, which sends the arrival on its own. Typing is needed only for a damaged QR or "Iba pa" |
+
+All integrity checks (fake GPS, phone clock, typed container number, offline
+time) still run and still reach TMD. Only the driver's screen is simpler. The
+one exception is fake GPS: the driver sees a red card telling them to turn it
+off, because it blocks confirmation.
+
+### Driver flow
+
+| Screen | What the driver sees | Main button |
+|---|---|---|
+| Home | "Magandang umaga, Ramon!", next delivery: customer, "Dapat dumating 10:30 AM", time left | **Simulan ang Biyahe** |
+| On the road | Truck moving to the customer, km left, "Darating mga 10:17 AM", on time / baka ma-late | **May Delay? I-report** |
+| At the site | Big check, "Nandito ka na!", recorded arrival time | **Kumpirmahin ang Pagdating** |
+| Photo (1 of 2) | "Kunan ng litrato ang container" | Shutter |
+| Scan (2 of 2) | "I-scan ang QR code sa container" | **I-scan** (sends automatically) |
+| Result | Full green "On Time!" or red "Late ng 11 min" | **Tapos Na** or **Piliin ang Dahilan** |
+| Reason | "Bakit ka na-late?" / "Bakit ka male-late?", 11 picture tiles | **I-send** |
+
+### Delay and late reasons in Filipino
+
+| Code (TMD only) | TAS tile (driver) | Command Center (English) |
+|---|---|---|
+| TRF-01 | Traffic o aksidente | Road closure, accident or heavy traffic |
+| PRT-01 | Mahabang pila sa port | Port or depot congestion at pick-up |
+| CUS-01 | Hindi pa handa ang customer | Customer not ready / asked for later arrival |
+| WTH-01 | Ulan o baha | Weather or flooding |
+| TRK-01 | Nasira ang truck | Truck breakdown / flat tire |
+| TRK-02 | Late akong nakaalis | Late dispatch / driver late |
+| CUS-02 | Sarado ang gate | Gate closed / access refused at site |
+| PRT-02 | Naka-hold ang container | Container on hold / not released |
+| TRF-02 | Truck ban | Truck ban window (LGU / MMDA) |
+| DOC-01 | Kulang ang papeles | Incomplete documents at pick-up |
+| OTH-99 | Iba pa (note required) | Other |
+
+The Command Center stays in English for TMD staff. It also shows the
+driver's own choice, for example *Driver chose in TAS: "Traffic o aksidente"*,
+so nothing is lost in translation.
+
+**Recommendation:** have 3–5 drivers and a TMD supervisor review the Filipino
+wording before the pilot. Terms differ by region, and drivers' own words work
+best.
+
+### Apple look
+
+- **TAS (iOS):** iPhone frame, large titles, grouped lists, full-width
+  rounded buttons, iOS system colours, notification banners, light and dark
+  mode.
+- **Command Center (macOS):** app window with traffic-light controls,
+  translucent sidebar with icons, macOS tables, buttons and segmented controls,
+  light and dark mode.
+- **Fonts:** the system font (SF Pro) on Apple devices, Inter on others.
