@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yard Tractor Telematics</title>
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7; --surface: #fcfcfb; --border: rgba(11,11,11,0.10);
+  --ink: #0b0b0b; --ink-2: #52514e; --muted: #898781;
+  --grid: #e1e0d9; --axis: #c3c2b7;
+  --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a;
+  --off: #c3c2b7;
+  --good: #0ca30c; --warning: #fab219; --serious: #ec835a; --critical: #d03b3b;
+  --wash: rgba(42,120,214,0.08);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --border: rgba(255,255,255,0.10);
+    --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
+    --grid: #2c2c2a; --axis: #383835;
+    --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --off: #4a4a46;
+    --wash: rgba(57,135,229,0.14);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d; --surface: #1a1a19; --border: rgba(255,255,255,0.10);
+  --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
+  --grid: #2c2c2a; --axis: #383835;
+  --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --off: #4a4a46;
+  --wash: rgba(57,135,229,0.14);
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page); color: var(--ink);
+  font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+header { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center;
+  padding: 14px 16px; border-bottom: 1px solid var(--border); background: var(--surface);
+  position: sticky; top: 0; z-index: 5; }
+h1 { font-size: 17px; margin: 0; font-weight: 650; }
+h2 { font-size: 13px; margin: 0 0 10px; font-weight: 600; color: var(--ink-2);
+  text-transform: uppercase; letter-spacing: .04em; }
+main { padding: 16px; max-width: 1400px; margin: 0 auto; display: grid; gap: 16px; }
+.meta { color: var(--ink-2); font-size: 12px; display: flex; gap: 14px; flex-wrap: wrap; }
+.spacer { flex: 1; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; min-width: 0; }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px;
+  font-weight: 600; font-size: 12px; border: 1px solid var(--border); }
+.dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.seg button, .btn { background: transparent; color: var(--ink-2); border: 0; padding: 5px 10px;
+  font: inherit; font-size: 12px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--wash); color: var(--ink); font-weight: 600; }
+.btn { border: 1px solid var(--border); border-radius: 8px; text-decoration: none; display: inline-block; }
+.btn:hover, .seg button:hover { background: var(--wash); }
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.tile { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+.tile .label { font-size: 12px; color: var(--ink-2); }
+.tile .value { font-size: 24px; font-weight: 600; margin-top: 2px; white-space: nowrap; }
+.tile .unit { font-size: 13px; color: var(--ink-2); font-weight: 400; margin-left: 3px; }
+.tile .sub { font-size: 11px; color: var(--muted); margin-top: 2px; min-height: 15px; }
+.tile.stale .value { color: var(--muted); }
+.tile .flag { display: inline-flex; gap: 4px; align-items: center; font-size: 11px; color: var(--ink); }
+.alerts { display: grid; gap: 6px; }
+.alert { display: flex; gap: 10px; align-items: center; padding: 8px 12px; border-radius: 8px;
+  border: 1px solid var(--border); border-left-width: 4px; background: var(--surface); }
+.alert .sev { font-weight: 650; font-size: 11px; text-transform: uppercase; min-width: 62px; }
+.alert .since { margin-left: auto; color: var(--muted); font-size: 12px; white-space: nowrap; }
+.ok { color: var(--ink-2); display: flex; gap: 8px; align-items: center; }
+.row2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+.charts { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 12px; }
+.chart { position: relative; }
+.chart-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }
+.chart-head .t { font-weight: 600; font-size: 13px; }
+.chart-head .v { color: var(--ink-2); font-size: 12px; }
+.chart-head .btn { margin-left: auto; padding: 2px 8px; font-size: 11px; }
+.chart svg { display: block; width: 100%; height: 150px; overflow: visible; }
+.chart .empty { height: 150px; display: grid; place-items: center; color: var(--muted); font-size: 12px; }
+.tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 6px; padding: 4px 8px; font-size: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.12);
+  white-space: nowrap; display: none; z-index: 3; }
+.tip b { font-weight: 600; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th { text-align: left; color: var(--ink-2); font-weight: 600; border-bottom: 1px solid var(--axis); padding: 6px; }
+td { border-bottom: 1px solid var(--grid); padding: 6px; vertical-align: top; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
+.tablewrap { overflow-x: auto; max-height: 360px; overflow-y: auto; }
+.util-bar { display: flex; height: 22px; gap: 2px; margin: 6px 0 8px; }
+.util-bar div { border-radius: 4px; min-width: 2px; }
+.legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-top: 12px; }
+.muted { color: var(--muted); }
+.tag { font-size: 11px; padding: 1px 6px; border-radius: 4px; border: 1px solid var(--border); color: var(--ink-2); }
+details summary { cursor: pointer; color: var(--ink-2); font-weight: 600; font-size: 13px; }
+@media (max-width: 860px) { .row2 { grid-template-columns: 1fr; } .charts { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header>
+  <h1 id="vid">Yard Tractor</h1>
+  <span class="pill" id="state"><span class="dot"></span><span>—</span></span>
+  <div class="meta" id="meta"></div>
+  <div class="spacer"></div>
+  <div class="seg" role="group" aria-label="Time range" id="range">
+    <button data-m="5">5 min</button><button data-m="15" aria-pressed="true">15 min</button><button data-m="60">1 h</button><button data-m="480">8 h</button>
+  </div>
+  <a class="btn" id="csv" href="/api/export.csv?minutes=15">Export CSV</a>
+  <button class="btn" id="theme" title="Toggle theme">Theme</button>
+</header>
+<main>
+  <section class="alerts" id="alerts" aria-live="polite"></section>
+
+  <section>
+    <h2>Live sensors</h2>
+    <div class="tiles" id="tiles"></div>
+  </section>
+
+  <section class="row2">
+    <div class="card">
+      <h2>Shift utilization</h2>
+      <div class="util-bar" id="utilbar" role="img"></div>
+      <div class="legend" id="utillegend"></div>
+      <div class="kpis" id="kpis"></div>
+    </div>
+    <div class="card">
+      <h2>Active diagnostic codes (DM1)</h2>
+      <div id="lamps" class="legend" style="margin-bottom:8px"></div>
+      <div class="tablewrap"><table id="dtcs"></table></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Trends</h2>
+    <div class="charts" id="charts"></div>
+  </section>
+
+  <section class="row2">
+    <div class="card">
+      <h2>Alert log</h2>
+      <div class="tablewrap"><table id="alertlog"></table></div>
+    </div>
+    <div class="card">
+      <h2>DTC history</h2>
+      <div class="tablewrap"><table id="dtchist"></table></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <details id="disc">
+      <summary>Bus discovery — every PGN / ECU seen on the network</summary>
+      <p class="muted" style="font-size:12px">Undecoded rows (usually proprietary PGNs 0xFF00–0xFFFF) are where
+        OEM-specific yard tractor data lives (fifth wheel, hydraulics, body controller). Map them in an OEM JSON file.</p>
+      <div class="tablewrap" style="max-height:480px"><table id="pgns"></table></div>
+    </details>
+  </section>
+</main>
+
+<script>
+const TILES = [
+  ["engine_speed", 0], ["vehicle_speed", 1], ["current_gear", 0], ["engine_load", 0],
+  ["coolant_temp", 0], ["engine_oil_pressure", 0], ["engine_oil_temp", 0], ["battery_voltage", 1],
+  ["fuel_level", 0], ["fuel_rate", 1], ["def_level", 0], ["engine_hours", 1],
+  ["trans_oil_temp", 0], ["hydraulic_oil_temp", 0], ["hydraulic_pressure", 0], ["fifth_wheel_height", 0],
+  ["fifth_wheel_raised"], ["kingpin_locked"], ["parking_brake"], ["ambient_temp", 0],
+];
+const CHARTS = [
+  {key: "engine_speed", min: 0},
+  {key: "vehicle_speed", min: 0, th: [{v: 30, sev: "warning", label: "yard limit"}]},
+  {key: "coolant_temp", th: [{v: 100, sev: "warning", label: "high"}, {v: 105, sev: "critical", label: "critical"}]},
+  {key: "engine_oil_pressure", min: 0, th: [{v: 100, sev: "critical", label: "low (running)"}]},
+  {key: "battery_voltage", th: [{v: 25.5, sev: "serious", label: "charging low"}]},
+  {key: "fuel_level", min: 0, max: 100, th: [{v: 15, sev: "warning", label: "low"}]},
+  {key: "engine_load", min: 0, max: 100},
+  {key: "fuel_rate", min: 0},
+  {key: "hydraulic_oil_temp", th: [{v: 85, sev: "warning", label: "high"}]},
+  {key: "trans_oil_temp", th: [{v: 120, sev: "serious", label: "high"}]},
+];
+const SEV_LABEL = {critical: "Critical", serious: "Serious", warning: "Warning"};
+const STATE = {off: ["Engine off", "var(--off)"], idle: ["Idling", "var(--series-2)"], working: ["Working", "var(--series-1)"]};
+const ICON = {
+  critical: '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="6" fill="var(--critical)"/><path d="M4.5 4.5l5 5M9.5 4.5l-5 5" stroke="#fff" stroke-width="1.6"/></svg>',
+  serious: '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 1l6 6-6 6-6-6z" fill="var(--serious)"/><path d="M7 4v3.5" stroke="#fff" stroke-width="1.6"/><circle cx="7" cy="9.8" r=".9" fill="#fff"/></svg>',
+  warning: '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 1l6.5 12h-13z" fill="var(--warning)"/><path d="M7 5v3.5" stroke="#0b0b0b" stroke-width="1.5"/><circle cx="7" cy="10.6" r=".8" fill="#0b0b0b"/></svg>',
+  good: '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="6" fill="var(--good)"/><path d="M4 7.2l2 2 4-4.4" stroke="#fff" stroke-width="1.6" fill="none"/></svg>',
+};
+let minutes = 15, snap = null, history = {}, tableView = new Set();
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fmt = (v, d = 0) => v == null ? "—" : Number(v).toLocaleString(undefined, {minimumFractionDigits: d, maximumFractionDigits: d});
+const hhmm = (ts) => new Date(ts * 1000).toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"});
+const hhmmss = (ts) => new Date(ts * 1000).toLocaleTimeString([], {hour: "2-digit", minute: "2-digit", second: "2-digit"});
+const ago = (s) => s < 60 ? `${Math.round(s)} s` : s < 3600 ? `${Math.round(s / 60)} min` : `${(s / 3600).toFixed(1)} h`;
+const decimals = (key) => (TILES.find(t => t[0] === key) || [])[1] ?? 1;
+
+// ---------------------------------------------------------------- live view
+function render(s) {
+  snap = s;
+  $("vid").textContent = s.vehicle_id + " · Yard Tractor";
+  const [label, color] = STATE[s.state] || ["—", "var(--off)"];
+  $("state").innerHTML = `<span class="dot" style="background:${color}"></span><span>${label}</span>`;
+  const b = s.bus;
+  $("meta").innerHTML = [
+    `Source: ${esc(s.source)}`,
+    `${fmt(b.frames_per_s, 0)} frames/s`,
+    `${b.pgns_seen} PGNs`,
+    b.last_frame_age_s == null ? "No data yet" : `Last frame ${ago(b.last_frame_age_s)} ago`,
+    s.error ? `<b style="color:var(--critical)">${esc(s.error)}</b>` : "",
+  ].filter(Boolean).map(x => `<span>${x}</span>`).join("");
+
+  // alerts
+  $("alerts").innerHTML = s.alerts.length ? s.alerts.map(a => `
+    <div class="alert" style="border-left-color:var(--${a.severity})">
+      ${ICON[a.severity]}<span class="sev">${SEV_LABEL[a.severity]}</span>
+      <span>${esc(a.message)}${a.value != null ? ` — <b>${fmt(a.value, 1)} ${esc(s.signals[a.key]?.unit || "")}</b> (limit ${a.threshold})` : ""}</span>
+      <span class="since">for ${ago(s.now - a.since)}</span>
+    </div>`).join("")
+    : `<div class="alert" style="border-left-color:var(--good)">${ICON.good}<span class="ok">No active alerts</span></div>`;
+
+  // tiles
+  $("tiles").innerHTML = TILES.filter(([k]) => s.signals[k]).map(([k, d]) => {
+    const sig = s.signals[k];
+    const val = sig.text != null ? esc(sig.text) : fmt(sig.value, d ?? 1);
+    const alert = s.alerts.find(a => a.key === k);
+    const sub = alert ? `<span class="flag">${ICON[alert.severity]} ${SEV_LABEL[alert.severity]}</span>`
+      : sig.value == null ? "not received" : sig.stale ? `stale · ${ago(s.now - sig.ts)} old`
+      : sig.spn ? `SPN ${sig.spn}` : "OEM signal";
+    return `<div class="tile ${sig.stale ? "stale" : ""}" title="${esc(sig.name)}">
+      <div class="label">${esc(sig.name)}</div>
+      <div class="value">${val}${sig.text == null && sig.unit ? `<span class="unit">${esc(sig.unit)}</span>` : ""}</div>
+      <div class="sub">${sub}</div></div>`;
+  }).join("");
+
+  renderUtil(s.kpis);
+  renderDtcs(s);
+  CHARTS.forEach(c => updateChartHead(c));
+}
+
+function renderUtil(k) {
+  const order = ["working", "idle", "off"];
+  const total = order.reduce((a, x) => a + k.state_seconds[x], 0) || 1;
+  $("utilbar").innerHTML = order.map(x => {
+    const pct = 100 * k.state_seconds[x] / total;
+    return pct > 0 ? `<div style="flex:${pct};background:${STATE[x][1]}" title="${STATE[x][0]}: ${pct.toFixed(1)}%"></div>` : "";
+  }).join("");
+  $("utilbar").setAttribute("aria-label", order.map(x => `${STATE[x][0]} ${(100 * k.state_seconds[x] / total).toFixed(0)}%`).join(", "));
+  $("utillegend").innerHTML = order.map(x =>
+    `<span><i style="background:${STATE[x][1]}"></i>${STATE[x][0]} <b style="color:var(--ink)">${(100 * k.state_seconds[x] / total).toFixed(0)}%</b> · ${ago(k.state_seconds[x])}</span>`).join("");
+  const items = [
+    ["Observed", fmt(k.observed_hours, 2), "h"],
+    ["Idle share of engine-on", fmt(k.idle_pct_of_engine_on, 0), "%"],
+    ["Fuel used", fmt(k.fuel_used_l, 1), "L"],
+    ["Fuel burned idling", fmt(k.idle_fuel_l, 1), "L"],
+    ["Avg fuel rate", fmt(k.avg_fuel_rate_lph, 1), "L/h"],
+    ["CO₂ emitted", fmt(k.co2_kg, 0), "kg"],
+    ["Distance", fmt(k.distance_km, 1), "km"],
+    ["Trailer lifts", k.trailer_lifts == null ? "—" : fmt(k.trailer_lifts), ""],
+  ];
+  $("kpis").innerHTML = items.map(([l, v, u]) =>
+    `<div><div class="label muted" style="font-size:12px">${l}</div><div style="font-size:19px;font-weight:600">${v}<span class="unit" style="font-size:12px;color:var(--ink-2);margin-left:3px">${u}</span></div></div>`).join("");
+}
+
+function renderDtcs(s) {
+  const lampEntries = Object.entries(s.lamps);
+  $("lamps").innerHTML = lampEntries.length ? lampEntries.map(([sa, l]) =>
+    `<span class="tag">SA 0x${Number(sa).toString(16).toUpperCase().padStart(2, "0")}</span>` +
+    [["red", "Red stop", "critical"], ["amber", "Amber warning", "warning"], ["mil", "MIL", "serious"]].map(([k, n, sev]) =>
+      `<span>${l[k] === "on" ? ICON[sev] : '<i style="background:var(--grid)"></i>'}${n}: ${l[k]}</span>`).join("")).join("")
+    : '<span class="muted">No DM1 received (engine off or not broadcast)</span>';
+  $("dtcs").innerHTML = s.dtcs.length ? `<tr><th>ECU</th><th class="num">SPN</th><th>Parameter</th><th class="num">FMI</th><th>Failure mode</th><th class="num">Count</th></tr>` +
+    s.dtcs.map(d => `<tr><td>${esc(d.ecu)}</td><td class="num">${d.spn}</td><td>${esc(d.spn_name)}</td><td class="num">${d.fmi}</td><td>${esc(d.fmi_text)}</td><td class="num">${d.occurrences}</td></tr>`).join("")
+    : `<tr><td class="ok">${ICON.good} No active trouble codes</td></tr>`;
+}
+
+// ---------------------------------------------------------------- charts
+function initCharts() {
+  $("charts").innerHTML = CHARTS.map(c => `
+    <div class="chart" id="c-${c.key}">
+      <div class="chart-head"><span class="t"></span><span class="v"></span>
+        <button class="btn" data-k="${c.key}" aria-pressed="false">Table</button></div>
+      <div class="body"></div><div class="tip"></div>
+    </div>`).join("");
+  $("charts").querySelectorAll("button[data-k]").forEach(btn => btn.onclick = () => {
+    const k = btn.dataset.k;
+    tableView.has(k) ? tableView.delete(k) : tableView.add(k);
+    btn.setAttribute("aria-pressed", tableView.has(k));
+    btn.textContent = tableView.has(k) ? "Chart" : "Table";
+    drawChart(CHARTS.find(c => c.key === k));
+  });
+}
+
+function updateChartHead(c) {
+  const el = $("c-" + c.key), sig = snap?.signals[c.key];
+  if (!el || !sig) return;
+  el.querySelector(".t").textContent = `${sig.name}${sig.unit ? ` (${sig.unit})` : ""}`;
+  el.querySelector(".v").textContent = sig.value == null ? "" : `now ${fmt(sig.value, decimals(c.key))}`;
+}
+
+function segments(pts, gap) {
+  const segs = []; let cur = [];
+  pts.forEach((p, i) => { if (i && p[0] - pts[i - 1][0] > gap) { segs.push(cur); cur = []; } cur.push(p); });
+  if (cur.length) segs.push(cur);
+  return segs;
+}
+
+function niceTicks(lo, hi, n = 4) {
+  const span = hi - lo || 1, step0 = span / n, mag = 10 ** Math.floor(Math.log10(step0));
+  const step = [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => s >= step0);
+  const out = []; for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) out.push(+v.toFixed(6));
+  return out;
+}
+
+function drawChart(c) {
+  const el = $("c-" + c.key); if (!el) return;
+  const body = el.querySelector(".body"), tip = el.querySelector(".tip");
+  const pts = history[c.key] || [], unit = snap?.signals[c.key]?.unit || "", d = decimals(c.key);
+  if (tableView.has(c.key)) {
+    const rows = pts.slice(-25).reverse();
+    body.innerHTML = `<div class="tablewrap" style="max-height:150px"><table><tr><th>Time</th><th class="num">Value (${esc(unit)})</th></tr>${
+      rows.map(p => `<tr><td>${hhmmss(p[0])}</td><td class="num">${fmt(p[1], d)}</td></tr>`).join("")}</table></div>`;
+    return;
+  }
+  if (pts.length < 2) { body.innerHTML = '<div class="empty">Waiting for data…</div>'; return; }
+  const W = body.clientWidth || 380, H = 150, L = 40, R = 8, T = 8, B = 20;
+  const now = history.__now, t0 = now - minutes * 60;
+  const vals = pts.map(p => p[1]).concat((c.th || []).map(t => t.v));
+  let lo = c.min ?? Math.min(...vals), hi = c.max ?? Math.max(...vals);
+  if (c.min == null) lo -= (hi - lo) * 0.1 || 1;
+  if (c.max == null) hi += (hi - lo) * 0.1 || 1;
+  const ticks = niceTicks(lo, hi); lo = Math.min(lo, ticks[0]); hi = Math.max(hi, ticks[ticks.length - 1]);
+  const x = t => L + (t - t0) / (now - t0) * (W - L - R), y = v => T + (1 - (v - lo) / (hi - lo)) * (H - T - B);
+  const gap = Math.max(15, minutes * 60 / 300);
+  const paths = segments(pts.filter(p => p[0] >= t0), gap).map(seg =>
+    `<path d="${seg.map((p, i) => `${i ? "L" : "M"}${x(p[0]).toFixed(1)},${y(p[1]).toFixed(1)}`).join("")}" fill="none" stroke="var(--series-1)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`).join("");
+  const xt = niceTicks(0, minutes, 4).map(m => now - (minutes - m) * 60).filter(t => t >= t0);
+  body.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(c.key)} trend">
+    ${ticks.map(v => `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)" stroke-width="1"/>
+      <text x="${L - 6}" y="${y(v) + 4}" text-anchor="end" font-size="10" fill="var(--muted)" style="font-variant-numeric:tabular-nums">${fmt(v, Math.abs(hi - lo) < 5 ? 1 : 0)}</text>`).join("")}
+    <line x1="${L}" x2="${W - R}" y1="${H - B}" y2="${H - B}" stroke="var(--axis)"/>
+    ${xt.map(t => `<text x="${x(t)}" y="${H - 5}" text-anchor="middle" font-size="10" fill="var(--muted)">${hhmm(t)}</text>`).join("")}
+    ${(c.th || []).filter(t => t.v >= lo && t.v <= hi).map(t => `<line x1="${L}" x2="${W - R}" y1="${y(t.v)}" y2="${y(t.v)}" stroke="var(--${t.sev})" stroke-width="1.5" stroke-dasharray="4 3"/>
+      <text x="${W - R - 2}" y="${y(t.v) - 4}" text-anchor="end" font-size="10" fill="var(--ink-2)">${esc(t.label)} ${t.v}</text>`).join("")}
+    ${paths}
+    <g class="hover" style="display:none"><line y1="${T}" y2="${H - B}" stroke="var(--axis)"/>
+      <circle r="4.5" fill="var(--series-1)" stroke="var(--surface)" stroke-width="2"/></g>
+    <rect x="${L}" y="0" width="${W - L - R}" height="${H}" fill="transparent"/>
+  </svg>`;
+  const svg = body.querySelector("svg"), g = svg.querySelector(".hover");
+  svg.querySelector("rect").addEventListener("mousemove", ev => {
+    const r = svg.getBoundingClientRect(), mx = (ev.clientX - r.left) * W / r.width;
+    const t = t0 + (mx - L) / (W - L - R) * (now - t0);
+    let best = pts[0]; for (const p of pts) if (Math.abs(p[0] - t) < Math.abs(best[0] - t)) best = p;
+    const px = x(best[0]), py = y(best[1]);
+    g.style.display = ""; g.querySelector("line").setAttribute("x1", px); g.querySelector("line").setAttribute("x2", px);
+    g.querySelector("circle").setAttribute("cx", px); g.querySelector("circle").setAttribute("cy", py);
+    tip.style.display = "block";
+    tip.innerHTML = `<b>${fmt(best[1], d)} ${esc(unit)}</b> <span class="muted">${hhmmss(best[0])}</span>`;
+    const left = px * r.width / W; tip.style.left = Math.min(left + 10, r.width - tip.offsetWidth) + "px";
+    tip.style.top = (py * r.height / H + 20) + "px";
+  });
+  svg.querySelector("rect").addEventListener("mouseleave", () => { g.style.display = "none"; tip.style.display = "none"; });
+}
+
+async function loadHistory() {
+  try {
+    const r = await fetch(`/api/history?minutes=${minutes}&keys=${CHARTS.map(c => c.key).join(",")}`);
+    const j = await r.json();
+    history = {...j.series, __now: j.now};
+    CHARTS.forEach(drawChart);
+  } catch (e) { /* gateway restarting */ }
+}
+
+async function loadTables() {
+  try {
+    const [log, hist] = await Promise.all([fetch("/api/alerts").then(r => r.json()), fetch("/api/dtc-history").then(r => r.json())]);
+    $("alertlog").innerHTML = log.length ? `<tr><th>Time</th><th>Event</th><th>Severity</th><th>Message</th></tr>` + log.map(a =>
+      `<tr><td>${hhmmss(a.ts)}</td><td>${a.event}</td><td>${ICON[a.severity]} ${SEV_LABEL[a.severity]}</td><td>${esc(a.message)}</td></tr>`).join("")
+      : '<tr><td class="muted">No alerts this session</td></tr>';
+    $("dtchist").innerHTML = hist.length ? `<tr><th>Status</th><th class="num">SPN</th><th>Parameter</th><th class="num">FMI</th><th>First seen</th><th>Last seen</th></tr>` + hist.map(d =>
+      `<tr><td>${d.active ? "Active" : "Cleared"}</td><td class="num">${d.spn}</td><td>${esc(d.spn_name)}</td><td class="num">${d.fmi}</td><td>${hhmmss(d.first_seen)}</td><td>${hhmmss(d.last_seen)}</td></tr>`).join("")
+      : '<tr><td class="muted">No trouble codes recorded</td></tr>';
+    if ($("disc").open) {
+      const pg = await fetch("/api/pgns").then(r => r.json());
+      $("pgns").innerHTML = `<tr><th>PGN</th><th>Name</th><th>Source ECU</th><th class="num">Rate (Hz)</th><th class="num">Frames</th><th>Decoded</th><th>Last payload</th></tr>` +
+        pg.map(p => `<tr><td class="mono">${p.pgn_hex} (${p.pgn})</td><td>${esc(p.name)}</td><td>${esc(p.ecu)}</td><td class="num">${fmt(p.rate_hz, 1)}</td><td class="num">${fmt(p.count)}</td><td>${p.decoded ? "Yes" : "<b>No</b>"}</td><td class="mono">${p.last_data}</td></tr>`).join("");
+    }
+  } catch (e) { /* ignore */ }
+}
+
+// ---------------------------------------------------------------- wiring
+$("range").querySelectorAll("button").forEach(b => b.onclick = () => {
+  $("range").querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b));
+  minutes = +b.dataset.m; $("csv").href = `/api/export.csv?minutes=${minutes}`; loadHistory();
+});
+$("theme").onclick = () => {
+  const dark = document.documentElement.dataset.theme ? document.documentElement.dataset.theme === "dark"
+    : matchMedia("(prefers-color-scheme: dark)").matches;
+  document.documentElement.dataset.theme = dark ? "light" : "dark";
+  try { localStorage.setItem("yt-theme", document.documentElement.dataset.theme); } catch (e) {}
+  CHARTS.forEach(drawChart);
+};
+try { const t = localStorage.getItem("yt-theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+$("disc").addEventListener("toggle", loadTables);
+window.addEventListener("resize", () => CHARTS.forEach(drawChart));
+
+initCharts();
+const es = new EventSource("/api/stream");
+es.onmessage = (ev) => render(JSON.parse(ev.data));
+es.onerror = () => { $("meta").innerHTML = '<span style="color:var(--critical)">Gateway connection lost — retrying…</span>'; };
+loadHistory(); loadTables();
+setInterval(loadHistory, 5000);
+setInterval(loadTables, 5000);
+</script>
+</body>
+</html>

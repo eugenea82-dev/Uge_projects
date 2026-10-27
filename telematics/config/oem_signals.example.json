@@ -1,0 +1,18 @@
+{
+  "_comment": "EXAMPLE ONLY. These proprietary (PGN 0xFF00-0xFFFF) layouts are invented to demonstrate the format; they do not describe any real OEM's bus. Replace with the layouts from your yard tractor OEM's CAN/DBC documentation or from your own bus reverse-engineering (see /api/pgns discovery view).",
+  "pgns": {
+    "0xFF10": "PropB 0xFF10 - Fifth wheel / hydraulics (example layout)"
+  },
+  "signals": [
+    {"key": "fifth_wheel_height", "name": "Fifth wheel height", "pgn": "0xFF10", "source_address": "0x21",
+     "start_bit": 0, "length": 16, "resolution": 1, "offset": 0, "unit": "mm"},
+    {"key": "hydraulic_oil_temp", "name": "Hydraulic oil temperature", "pgn": "0xFF10", "source_address": "0x21",
+     "start_bit": 16, "length": 8, "resolution": 1, "offset": -40, "unit": "°C"},
+    {"key": "hydraulic_pressure", "name": "Lift hydraulic pressure", "pgn": "0xFF10", "source_address": "0x21",
+     "start_bit": 24, "length": 16, "resolution": 0.1, "offset": 0, "unit": "bar"},
+    {"key": "fifth_wheel_raised", "name": "Fifth wheel raised", "pgn": "0xFF10", "source_address": "0x21",
+     "start_bit": 40, "length": 2, "unit": "", "states": {"0": "lowered", "1": "raised"}},
+    {"key": "kingpin_locked", "name": "Kingpin lock engaged", "pgn": "0xFF10", "source_address": "0x21",
+     "start_bit": 42, "length": 2, "unit": "", "states": {"0": "unlocked", "1": "locked"}}
+  ]
+}
