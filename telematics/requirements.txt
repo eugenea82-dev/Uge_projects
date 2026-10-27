@@ -1,0 +1,1 @@
+python-can>=4.3  # only needed for a live CAN adapter; simulator/replay use the standard library
