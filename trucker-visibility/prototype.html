@@ -4,7 +4,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
-/* Layout: Apple look. Page = desktop backdrop. TAS = iPhone + demo utility windows. Command Center = macOS window with a source-list sidebar. */
+/* Layout: Apple look. Page = desktop backdrop. TAS = iPhone + demo utility windows. TAS Portal = macOS window with a source-list sidebar. */
 :root{
   --bg:#F2F2F7; --surface:#FFFFFF; --sunk:#F5F5F7; --fill:#E9E9EE; --ink:#1D1D1F; --muted:#6E6E73; --line:#D8D8DD;
   --magenta:#007AFF; --violet:#5856D6; --on-accent:#FFFFFF; /* --magenta is the accent token used across the markup: iOS system blue */
@@ -354,6 +354,10 @@ button.linkish{border:0;background:none;padding:0;color:var(--magenta);font-weig
 .why-sub{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;font-size:12px;color:var(--muted)}
 .why-sum{font-size:13px;color:var(--muted);margin:0}
 
+.why-stage{display:flex;justify-content:space-between;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);border-bottom:.5px solid var(--line);padding:6px 0 4px}
+.stack{display:flex;height:14px;border-radius:7px;overflow:hidden;background:var(--fill);margin:6px 0 8px}
+.stack i{display:block;height:100%}
+
 /* ============ HOW IT WORKS ============ */
 .spec{display:flex;flex-direction:column;gap:22px}
 .lede{max-width:70ch;font-size:16px;margin:0}
@@ -414,29 +418,40 @@ const fmtCntr = c => `${c.slice(0,4)} ${c.slice(4,10)} ${c.slice(10)}`;
 const validCntr = c => /^[A-Z]{3}[UJZ]\d{7}$/.test(c) && checkDigit(c.slice(0,10)) === +c[10];
 
 /* ---------- reference data (sample) ---------- */
+/* delay reasons tagged by the trucker in TAS (Trucker Complement Framework v1.1) */
 const REASONS = [
-  { code:'CUS-01', label:'Customer not ready / asked for later arrival', cls:'Uncontrollable' },
-  { code:'CUS-02', label:'Gate closed / access refused at site', cls:'Uncontrollable' },
-  { code:'PRT-01', label:'Port or depot congestion at pick-up', cls:'Uncontrollable' },
-  { code:'PRT-02', label:'Container on hold / not released', cls:'Uncontrollable' },
-  { code:'TRF-01', label:'Road closure, accident or heavy traffic', cls:'Uncontrollable' },
-  { code:'TRF-02', label:'Truck ban window (LGU / MMDA)', cls:'Controllable' },
-  { code:'WTH-01', label:'Weather or flooding', cls:'Uncontrollable' },
-  { code:'TRK-01', label:'Truck breakdown / flat tire', cls:'Controllable' },
-  { code:'TRK-02', label:'Late dispatch / driver late', cls:'Controllable' },
-  { code:'DOC-01', label:'Incomplete documents at pick-up', cls:'Controllable' },
-  { code:'OTH-99', label:'Other (remarks required)', cls:'TMD decides' },
+  // A. Prior empty pull-out
+  { code:'PO-01', stage:'pickup', label:'Container availability', owner:'Port / CY', fil:'Walang available na container', icon:'box', color:'#30B0C7' },
+  { code:'PO-02', stage:'pickup', label:'2GO system downtime', owner:'2GO internal', fil:'Down ang system ng 2GO', icon:'server', color:'#5856D6' },
+  { code:'PO-03', stage:'pickup', label:'Northport system downtime', owner:'Port / CY', fil:'Down ang system ng Northport', icon:'server', color:'#007AFF' },
+  { code:'PO-04', stage:'pickup', label:'Late scheduling / booking by Sales Support', owner:'2GO internal', fil:'Late ang schedule o booking', icon:'calendar', color:'#AF52DE' },
+  { code:'PO-05', stage:'pickup', label:'Staggered basis', owner:'Port / CY', fil:'Staggered ang release', icon:'layers', color:'#A2845E' },
+  { code:'PO-06', stage:'pickup', label:'Replacement of container', owner:'Port / CY', fil:'Pinalitan ang container', icon:'swap', color:'#FF2D55' },
+  { code:'PO-07', stage:'pickup', label:'CHE availability', owner:'Port / CY', fil:'Walang available na CHE', icon:'crane', color:'#FF9500' },
+  { code:'PO-08', stage:'pickup', label:'FDT queuing', owner:'Port / CY', fil:'Mahabang pila sa FDT', icon:'queue', color:'#C69200' },
+  { code:'PO-09', stage:'pickup', label:'Pier congestion', owner:'Port / CY', fil:'Siksikan sa pier', icon:'ship', color:'#0A84FF' },
+  { code:'PO-10', stage:'pickup', label:'Weather condition', owner:'External', fil:'Masamang panahon', icon:'rain', color:'#32ADE6' },
+  { code:'PO-99', stage:'pickup', label:'Others, pull-out (remarks required)', owner:'TMD decides', fil:'Iba pa', icon:'dots', color:'#8E8E93' },
+  // B. While in transit
+  { code:'IT-01', stage:'transit', label:"Rerouting (gov't event, etc.)", owner:'External', fil:'Iniba ang ruta (event ng gobyerno, atbp.)', icon:'route', color:'#34C759' },
+  { code:'IT-02', stage:'transit', label:'Traffic jam', owner:'External', fil:'Traffic', icon:'traffic', color:'#FF9500' },
+  { code:'IT-03', stage:'transit', label:'Truck breakdown', owner:'Trucker / haulier', fil:'Nasira ang truck', icon:'wrench', color:'#636366' },
+  { code:'IT-04', stage:'transit', label:'Road closure', owner:'External', fil:'Sarado ang daan', icon:'noentry', color:'#FF3B30' },
+  { code:'IT-99', stage:'transit', label:'Others, in transit (remarks required)', owner:'TMD decides', fil:'Iba pa', icon:'dots', color:'#8E8E93' },
 ];
+for (const r of REASONS) r.cls = ['Port / CY', 'External'].includes(r.owner) ? 'Uncontrollable' : 'Controllable';
 const reason = code => REASONS.find(r => r.code === code);
-/* what the driver sees in TAS: Filipino label, icon, tile colour */
-const REASON_FIL = {
-  'CUS-01':['Hindi pa handa ang customer', 'building', '#5856D6'], 'CUS-02':['Sarado ang gate', 'lock', '#AF52DE'],
-  'PRT-01':['Mahabang pila sa port', 'ship', '#007AFF'], 'PRT-02':['Naka-hold ang container', 'box', '#30B0C7'],
-  'TRF-01':['Traffic o aksidente', 'traffic', '#FF9500'], 'TRF-02':['Truck ban', 'noentry', '#FF3B30'],
-  'WTH-01':['Ulan o baha', 'rain', '#32ADE6'], 'TRK-01':['Nasira ang truck', 'wrench', '#636366'],
-  'TRK-02':['Late akong nakaalis', 'alarm', '#FF2D55'], 'DOC-01':['Kulang ang papeles', 'doc', '#A2845E'], 'OTH-99':['Iba pa', 'dots', '#8E8E93'],
-};
-for (const r of REASONS) [r.fil, r.icon, r.color] = REASON_FIL[r.code];
+const STAGE_LABEL = { pickup:'Prior empty pull-out', transit:'In transit', late:'After arrival' };
+const OWNER_CHIP = { '2GO internal':'c-risk', 'Port / CY':'c-info', 'Trucker / haulier':'c-miss', 'External':'c-neutral', 'TMD decides':'c-neutral' };
+const OWNER_COLOR = { '2GO internal':'var(--risk)', 'Port / CY':'var(--info)', 'Trucker / haulier':'var(--miss)', 'External':'var(--violet)', 'TMD decides':'var(--muted)', 'Not reported':'#AEAEB2' };
+const exOpen = ex => ex.stage === 'late' ? ex.status === 'Pending' : !ex.resolution;
+const slaOver = ex => ex.stage !== 'late' && !ex.resolution && S.now - ex.filedAt > S.config.sla * MIN;
+function slaChip(ex) {
+  if (ex.stage === 'late') return '<span class="muted">—</span>';
+  if (ex.resolution) { const m = Math.round((ex.resolvedAt - ex.filedAt) / MIN); return `<span class="chip ${m <= S.config.sla ? 'c-hit' : 'c-miss'}">${m} min</span>`; }
+  const m = Math.round((S.now - ex.filedAt) / MIN);
+  return m > S.config.sla ? `<span class="chip c-miss">${m} min · over SLA</span>` : `<span class="chip c-risk">${m} of ${S.config.sla} min</span>`;
+}
 const FLAGS = {
   MOCK_LOCATION:'Fake GPS app detected', CLOCK_DRIFT:'Phone clock does not match server', MANUAL_ENTRY:'Container number typed, not scanned',
   LATE_SYNC:'Event synced late', PHOTO_REUSED:'Photo matches an earlier upload', CONTAINER_MISMATCH:'Scanned container does not match job',
@@ -463,7 +478,7 @@ const TRUCKERS = {
   T07:{ name:'Allan Mendoza', plate:'DAK 5527', mobile:'0921 555 0384', haulier:'Garcia Brothers', device:'Infinix Hot 40 · Android 13', app:'1.0.3', integrity:'Pass', bound:'04 Oct 2026' },
   T08:{ name:'Noel Aquino', plate:'NCF 8806', mobile:'0939 555 0651', haulier:'Bautista Haulers', device:'Samsung A25 · Android 14', app:'1.0.3', integrity:'Pass', bound:'06 Oct 2026' },
 };
-const PICKUPS = { MICT:'MICT, Tondo (laden)', NH:'North Harbor, Tondo (laden)', VEY:'Valenzuela empty yard', BCT:'Batangas Container Terminal (laden)' };
+const PICKUPS = { MICT:'MICT, Tondo (laden)', NH:'North Harbor, Tondo (laden)', VEY:'Valenzuela empty yard', BCT:'Batangas Container Terminal (laden)', SCY:'Cabuyao CY (empty yard)' };
 
 /* ---------- sign-in accounts (demo credentials, sample only) ---------- */
 const PINS = { T01:'482100', T02:'220913', T03:'771405', T04:'104512', T05:'663201', T06:'330819', T07:'905517', T08:'418260' };
@@ -486,54 +501,63 @@ const pinSvg = n => `<svg width="${n}" height="${n}" viewBox="0 0 24 24" fill="n
 /* ---------- state ---------- */
 let S;
 function seed() {
-  const J = (o) => Object.assign({ events:[], flags:[], exception:null, prealert:null, arrival:null, confirmedAt:null, status:'Assigned', photo:false, scan:null }, o);
+  const J = (o) => Object.assign({ events:[], flags:[], exception:null, hold:false, arrival:null, confirmedAt:null, consigneeAt:null, status:'Dispatched', photo:false, scan:null }, o);
+  const DISP = 'Dispatched from Poseidon (TMD Haulage)';
   const ev = (type, at, label, extra) => Object.assign({ type, at, label }, extra || {});
+  const closed = at => [ev('consignee.confirmed', at, 'Consignee confirmed arrival (SMS link)'), ev('trip.closed', at, 'Trip auto-closed')];
   const jobs = [
-    J({ id:'HJ-2610-0411', booking:'BKG-551801', container:cntr('TMDU','202611'), size:"40' HC", move:'Import delivery', site:'TAG', pickup:'MICT', agreed:T(8,0), trucker:'T02', status:'Confirmed', photo:true, scan:'QR',
-        arrival:{ at:T(7,46)+20000, acc:9, offline:false }, confirmedAt:T(7,49),
-        events:[ev('job.assigned',T(5,10),'Assigned from TMD-Haulage'), ev('trip.started',T(6,2),'Trip started at MICT'), ev('geofence.entered',T(7,46)+20000,'Entered site geofence (250 m)'), ev('arrival.confirmed',T(7,49),'Confirmed with photo + QR scan')] }),
+    J({ id:'HJ-2610-0411', booking:'BKG-551801', container:cntr('TMDU','202611'), size:"40' HC", move:'Import delivery', site:'TAG', pickup:'MICT', agreed:T(8,0), trucker:'T02', status:'Closed', photo:true, scan:'QR',
+        arrival:{ at:T(7,46)+20000, acc:9, offline:false }, confirmedAt:T(7,49), consigneeAt:T(7,58),
+        events:[ev('trip.dispatched',T(5,10),DISP), ev('trip.started',T(6,2),'Gate out at MICT. Trip to customer started'), ev('geofence.entered',T(7,46)+20000,'Entered site geofence (250 m)'), ev('arrival.confirmed',T(7,49),'Confirmed with photo + QR scan'), ...closed(T(7,58))] }),
     J({ id:'HJ-2610-0412', booking:'BKG-551806', container:cntr('TMDU','318204'), size:"20' GP", move:'Import delivery', site:'VAL', pickup:'NH', agreed:T(8,30), trucker:'T03', status:'Confirmed', photo:true, scan:'QR',
         arrival:{ at:T(8,52)+40000, acc:14, offline:false }, confirmedAt:T(8,55),
-        exception:{ code:'TRF-01', remarks:'Accident on MacArthur Hwy near Malinta exit, 1 lane open.', filedAt:T(8,58), status:'Pending', photo:true },
-        events:[ev('job.assigned',T(5,20),'Assigned from TMD-Haulage'), ev('trip.started',T(7,25),'Trip started at North Harbor'), ev('geofence.entered',T(8,52)+40000,'Entered site geofence (120 m)'), ev('arrival.confirmed',T(8,55),'Confirmed with photo + QR scan'), ev('exception.filed',T(8,58),'Exception TRF-01 filed')] }),
-    J({ id:'HJ-2610-0413', booking:'BKG-551809', container:cntr('PHCU','551207'), size:"40' HC", move:'Import delivery', site:'MEY', pickup:'MICT', agreed:T(9,0), trucker:'T04', status:'Confirmed', photo:true, scan:'Manual',
-        arrival:{ at:T(8,41)+5000, acc:11, offline:false }, confirmedAt:T(8,44),
+        exception:{ code:'IT-02', stage:'transit', remarks:'Aksidente sa MacArthur Hwy malapit sa Malinta exit, isang lane lang bukas.', filedAt:T(8,38), status:'Pending', photo:true, priority:'Normal', resolution:'Resume', resolvedAt:T(8,44), resolvedBy:'L. Ramos' },
+        events:[ev('trip.dispatched',T(5,20),DISP), ev('trip.started',T(7,25),'Gate out at North Harbor. Trip to customer started'), ev('exception.reported',T(8,38),'Exception reported (In transit): Traffic jam',{bad:true}), ev('exception.resolved',T(8,44),'Exception resolved: Resume (L. Ramos)'), ev('geofence.entered',T(8,52)+40000,'Entered site geofence (120 m)'), ev('arrival.confirmed',T(8,55),'Confirmed with photo + QR scan')] }),
+    J({ id:'HJ-2610-0413', booking:'BKG-551809', container:cntr('PHCU','551207'), size:"40' HC", move:'Import delivery', site:'MEY', pickup:'MICT', agreed:T(9,0), trucker:'T04', status:'Closed', photo:true, scan:'Manual',
+        arrival:{ at:T(8,41)+5000, acc:11, offline:false }, confirmedAt:T(8,44), consigneeAt:T(8,52),
         flags:[{ type:'MANUAL_ENTRY', detail:'Driver typed PHCU 551207 instead of scanning. Check digit valid.', at:T(8,44), status:'Open' }],
-        events:[ev('job.assigned',T(5,25),'Assigned from TMD-Haulage'), ev('trip.started',T(7,5),'Trip started at MICT'), ev('geofence.entered',T(8,41)+5000,'Entered site geofence (180 m)'), ev('arrival.confirmed',T(8,44),'Confirmed with photo + typed container no.')] }),
-    J({ id:'HJ-2610-0414', booking:'BKG-551812', container:cntr('TMDU','407795'), size:"40' GP", move:'Export empty', site:'GTR', pickup:'VEY', agreed:T(9,30), trucker:'T05', status:'Confirmed', photo:true, scan:'QR',
-        arrival:{ at:T(9,58)+10000, acc:16, offline:false }, confirmedAt:T(10,1),
-        exception:{ code:'TRK-01', remarks:'Flat tire on CAVITEX, changed at Kawit.', filedAt:T(10,3), status:'Validated', cls:'Controllable', reviewer:'TMD · L. Ramos', reviewNote:'Confirmed by haulier. Counted as controllable.', reviewedAt:T(10,4) },
-        events:[ev('job.assigned',T(5,30),'Assigned from TMD-Haulage'), ev('trip.started',T(7,40),'Trip started at Valenzuela empty yard'), ev('geofence.entered',T(9,58)+10000,'Entered site geofence (150 m)'), ev('arrival.confirmed',T(10,1),'Confirmed with photo + QR scan'), ev('exception.filed',T(10,3),'Exception TRK-01 filed'), ev('exception.reviewed',T(10,4),'Validated · Controllable by L. Ramos')] }),
-    J({ id:'HJ-2610-0415', booking:'BKG-551815', container:cntr('TMDU','520388'), size:"20' GP", move:'Import delivery', site:'CAL', pickup:'MICT', agreed:T(9,45), trucker:'T08', status:'En route',
-        prealert:{ code:'PRT-01', eta:T(10,40), at:T(8,50), remarks:'Long queue at MICT gate-out, 2 h wait.' },
-        events:[ev('job.assigned',T(5,40),'Assigned from TMD-Haulage'), ev('delay.prealert',T(8,50),'Delay pre-alert PRT-01, new ETA 10:40'), ev('trip.started',T(9,12),'Trip started at MICT')] }),
-    J({ id:'HJ-2610-0417', booking:'BKG-551821', container:cntr('PHCU','610042'), size:"40' HC", move:'Import delivery', site:'LIP', pickup:'BCT', agreed:T(10,0), trucker:'T07', status:'Confirmed', photo:true, scan:'QR',
-        arrival:{ at:T(9,51)+30000, acc:18, offline:true, syncedAt:T(10,2) }, confirmedAt:T(9,53),
-        events:[ev('job.assigned',T(5,45),'Assigned from TMD-Haulage'), ev('trip.started',T(8,30),'Trip started at Batangas Container Terminal'), ev('geofence.entered',T(9,51)+30000,'Entered site geofence (200 m) · captured offline',{offline:true}), ev('arrival.confirmed',T(9,53),'Confirmed with photo + QR scan · captured offline',{offline:true}), ev('sync',T(10,2),'Synced 2 queued events')] }),
-    J({ id:'HJ-2610-0416', booking:'BKG-551818', container:cntr('TMDU','733419'), size:"40' HC", move:'Import delivery', site:'LIP', pickup:'BCT', agreed:T(10,15), trucker:'T06', status:'Assigned',
+        events:[ev('trip.dispatched',T(5,25),DISP), ev('trip.started',T(7,5),'Gate out at MICT. Trip to customer started'), ev('geofence.entered',T(8,41)+5000,'Entered site geofence (180 m)'), ev('arrival.confirmed',T(8,44),'Confirmed with photo + typed container no.'), ...closed(T(8,52))] }),
+    J({ id:'HJ-2610-0414', booking:'BKG-551812', container:cntr('TMDU','407795'), size:"40' GP", move:'Export empty', site:'GTR', pickup:'VEY', agreed:T(9,30), trucker:'T05', status:'Closed', photo:true, scan:'QR',
+        arrival:{ at:T(9,58)+10000, acc:16, offline:false }, confirmedAt:T(10,1), consigneeAt:T(10,6),
+        exception:{ code:'IT-03', stage:'transit', remarks:'Flat tire sa CAVITEX, pinalitan sa Kawit.', filedAt:T(9,20), status:'Validated', cls:'Controllable', priority:'High', resolution:'Resume', resolvedAt:T(9,27), resolvedBy:'L. Ramos', reviewer:'TMD · L. Ramos', reviewNote:'Confirmed by haulier.', reviewedAt:T(10,4) },
+        events:[ev('trip.dispatched',T(5,30),DISP), ev('trip.started',T(7,40),'Gate out at Valenzuela empty yard. Trip to customer started'), ev('exception.reported',T(9,20),'Exception reported (In transit): Truck breakdown. Trip on hold',{bad:true}), ev('exception.resolved',T(9,27),'Exception resolved: Resume (L. Ramos)'), ev('geofence.entered',T(9,58)+10000,'Entered site geofence (150 m)'), ev('arrival.confirmed',T(10,1),'Confirmed with photo + QR scan'), ev('exception.reviewed',T(10,4),'Reason confirmed by L. Ramos'), ...closed(T(10,6))] }),
+    J({ id:'HJ-2610-0415', booking:'BKG-551815', container:cntr('TMDU','520388'), size:"20' GP", move:'Import delivery', site:'CAL', pickup:'MICT', agreed:T(9,45), trucker:'T08', status:'In transit', revisedEta:T(10,40),
+        exception:{ code:'PO-09', stage:'pickup', remarks:'Siksikan sa pier, 2 oras sa gate-out.', filedAt:T(8,50), status:'Pending', priority:'High', resolution:'Resume', resolvedAt:T(9,4), resolvedBy:'L. Ramos' },
+        events:[ev('trip.dispatched',T(5,40),DISP), ev('exception.reported',T(8,50),'Exception reported (Prior empty pull-out): Pier congestion. Trip on hold',{bad:true}), ev('exception.resolved',T(9,4),'Exception resolved: Resume (L. Ramos)'), ev('trip.started',T(9,12),'Gate out at MICT. Trip to customer started')] }),
+    J({ id:'HJ-2610-0417', booking:'BKG-551821', container:cntr('PHCU','610042'), size:"40' HC", move:'Import delivery', site:'LIP', pickup:'BCT', agreed:T(10,0), trucker:'T07', status:'Closed', photo:true, scan:'QR',
+        arrival:{ at:T(9,51)+30000, acc:18, offline:true, syncedAt:T(10,2) }, confirmedAt:T(9,53), consigneeAt:T(10,3),
+        events:[ev('trip.dispatched',T(5,45),DISP), ev('trip.started',T(8,30),'Gate out at Batangas Container Terminal. Trip to customer started'), ev('geofence.entered',T(9,51)+30000,'Entered site geofence (200 m) · captured offline',{offline:true}), ev('arrival.confirmed',T(9,53),'Confirmed with photo + QR scan · captured offline',{offline:true}), ev('sync',T(10,2),'Synced 2 queued events'), ...closed(T(10,3))] }),
+    J({ id:'HJ-2610-0416', booking:'BKG-551818', container:cntr('TMDU','733419'), size:"40' HC", move:'Import delivery', site:'LIP', pickup:'BCT', agreed:T(10,15), trucker:'T06', status:'At CY', hold:true,
+        exception:{ code:'PO-01', stage:'pickup', remarks:'Walang available na 40HC sa yard, hinihintay pa ang release.', filedAt:T(9,52), status:'Pending', photo:true, priority:'High', resolution:null },
         flags:[{ type:'DEVICE_CHANGE', detail:'Login from a new phone on 19 Oct. Admin reset approved by IT.', at:T(5,41), status:'Open' }],
-        events:[ev('job.assigned',T(5,40),'Assigned from TMD-Haulage')] }),
-    J({ id:'HJ-2610-0418', booking:'BKG-551820', container:cntr('TMDU','202645'), size:"40' HC", move:'Import delivery', site:'STR', pickup:'MICT', agreed:T(10,30), trucker:'T01', status:'Assigned', demo:true, d0:6.2,
-        events:[ev('job.assigned',T(5,50),'Assigned from TMD-Haulage'), ev('pickup.confirmed',T(8,58),'Pick-up confirmed at MICT')] }),
-    J({ id:'HJ-2610-0419', booking:'BKG-551826', container:cntr('TMDU','845120'), size:"20' GP", move:'Import delivery', site:'TAG', pickup:'MICT', agreed:T(11,0), trucker:'T02', status:'En route',
-        events:[ev('job.assigned',T(6,0),'Assigned from TMD-Haulage'), ev('trip.started',T(9,40),'Trip started at MICT')] }),
-    J({ id:'HJ-2610-0420', booking:'BKG-551830', container:cntr('PHCU','229861'), size:"40' GP", move:'Export empty', site:'VAL', pickup:'VEY', agreed:T(13,0), trucker:'T03', events:[ev('job.assigned',T(6,5),'Assigned from TMD-Haulage')] }),
-    J({ id:'HJ-2610-0421', booking:'BKG-551834', container:cntr('TMDU','390576'), size:"20' GP", move:'Import delivery', site:'CAL', pickup:'MICT', agreed:T(14,30), trucker:'T01', demo:true, d0:18.4, events:[ev('job.assigned',T(6,10),'Assigned from TMD-Haulage')] }),
-    J({ id:'HJ-2610-0422', booking:'BKG-551839', container:cntr('TMDU','118053'), size:"40' HC", move:'Import delivery', site:'MEY', pickup:'NH', agreed:T(15,0), trucker:'T04', events:[ev('job.assigned',T(6,12),'Assigned from TMD-Haulage')] }),
+        events:[ev('trip.dispatched',T(5,40),DISP), ev('trip.accepted',T(7,55),'Trip accepted in TAS'), ev('cy.started',T(8,0),'Trip to Batangas Container Terminal started'), ev('cy.arrived',T(9,30),'Arrived at Batangas Container Terminal (geofence)'), ev('exception.reported',T(9,52),'Exception reported (Prior empty pull-out): Container availability. Trip on hold',{bad:true})] }),
+    J({ id:'HJ-2610-0418', booking:'BKG-551820', container:cntr('TMDU','202645'), size:"40' HC", move:'Export empty', site:'STR', pickup:'SCY', agreed:T(10,45), trucker:'T01', demo:true, d0Cy:3.5, d0:6.2,
+        events:[ev('trip.dispatched',T(5,50),DISP)] }),
+    J({ id:'HJ-2610-0419', booking:'BKG-551826', container:cntr('TMDU','845120'), size:"20' GP", move:'Import delivery', site:'TAG', pickup:'MICT', agreed:T(11,0), trucker:'T02', status:'In transit',
+        events:[ev('trip.dispatched',T(6,0),DISP), ev('trip.started',T(9,40),'Gate out at MICT. Trip to customer started')] }),
+    J({ id:'HJ-2610-0420', booking:'BKG-551830', container:cntr('PHCU','229861'), size:"40' GP", move:'Export empty', site:'VAL', pickup:'VEY', agreed:T(13,0), trucker:'T03', events:[ev('trip.dispatched',T(6,5),DISP)] }),
+    J({ id:'HJ-2610-0421', booking:'BKG-551834', container:cntr('TMDU','390576'), size:"20' GP", move:'Export empty', site:'CAL', pickup:'SCY', agreed:T(14,30), trucker:'T01', demo:true, d0Cy:3.0, d0:12.0, events:[ev('trip.dispatched',T(6,10),DISP)] }),
+    J({ id:'HJ-2610-0422', booking:'BKG-551839', container:cntr('TMDU','118053'), size:"40' HC", move:'Import delivery', site:'MEY', pickup:'NH', agreed:T(15,0), trucker:'T04', events:[ev('trip.dispatched',T(6,12),DISP)] }),
   ];
   const feed = [
-    { at:T(10,4), kind:'info', text:'<b>Exception validated</b> · HJ-2610-0414 TRK-01 counted as controllable', job:'HJ-2610-0414' },
+    { at:T(10,6), kind:'hit', text:'<b>Trip closed</b> · HJ-2610-0414 Gen. Trias Electronics confirmed arrival', job:'HJ-2610-0414' },
+    { at:T(10,4), kind:'info', text:'<b>Reason confirmed</b> · HJ-2610-0414 truck breakdown, trucker / haulier', job:'HJ-2610-0414' },
     { at:T(10,2), kind:'info', text:'<b>Offline events synced</b> · HJ-2610-0417, 2 events, 11 min after capture', job:'HJ-2610-0417' },
     { at:T(10,1), kind:'miss', text:'<b>Arrival confirmed · MISS</b> · Gen. Trias Electronics, 28 min late', job:'HJ-2610-0414' },
     { at:T(9,53), kind:'hit', text:'<b>Arrival confirmed · HIT</b> · Lipa Agri Feeds, 8 min early', job:'HJ-2610-0417' },
+    { at:T(9,52), kind:'risk', text:'<b>Exception · Prior empty pull-out</b> · HJ-2610-0416 Container availability. TMD alerted, SLA 15 min', job:'HJ-2610-0416' },
     { at:T(9,46), kind:'miss', text:'<b>Missed agreed time</b> · HJ-2610-0415 Calamba Steel, truck not arrived', job:'HJ-2610-0415' },
-    { at:T(8,58), kind:'risk', text:'<b>Exception filed</b> · HJ-2610-0412 TRF-01, awaiting TMD review', job:'HJ-2610-0412' },
-    { at:T(8,50), kind:'risk', text:'<b>Delay pre-alert</b> · HJ-2610-0415 PRT-01, new ETA 10:40', job:'HJ-2610-0415' },
+    { at:T(9,27), kind:'info', text:'<b>Exception resolved · Resume</b> · HJ-2610-0414 truck breakdown', job:'HJ-2610-0414' },
+    { at:T(8,50), kind:'risk', text:'<b>Exception · Prior empty pull-out</b> · HJ-2610-0415 Pier congestion', job:'HJ-2610-0415' },
     { at:T(8,44), kind:'risk', text:'<b>Integrity flag</b> · HJ-2610-0413 container number typed', job:'HJ-2610-0413' },
+    { at:T(8,38), kind:'risk', text:'<b>Exception · In transit</b> · HJ-2610-0412 Traffic jam', job:'HJ-2610-0412' },
   ];
   const audit = [
-    { at:T(10,4), who:'L. Ramos', role:'TMD Team', action:'Validated exception', detail:'HJ-2610-0414 · TRK-01 → Controllable' },
-    { at:T(7,30), who:'System', role:'Integration', action:'Imported jobs', detail:'12 jobs for 21 Oct from TMD-Haulage' },
+    { at:T(10,4), who:'L. Ramos', role:'TMD Team', action:'Confirmed exception reason', detail:'HJ-2610-0414 · Truck breakdown → Trucker / haulier' },
+    { at:T(9,27), who:'L. Ramos', role:'TMD Team', action:'Resolved exception', detail:'HJ-2610-0414 · Truck breakdown → Resume' },
+    { at:T(9,4), who:'L. Ramos', role:'TMD Team', action:'Resolved exception', detail:'HJ-2610-0415 · Pier congestion → Resume' },
+    { at:T(8,44), who:'L. Ramos', role:'TMD Team', action:'Resolved exception', detail:'HJ-2610-0412 · Traffic jam → Resume' },
+    { at:T(7,30), who:'System', role:'Integration', action:'Imported trips', detail:'12 trips for 21 Oct from Poseidon (TMD Haulage)' },
     { at:BASE - 18 * 60 * MIN, who:'K. Uy', role:'System Admin', action:'Reset device binding', detail:'Dennis Reyes · new phone Samsung A05 (ticket IT-8841)' },
     { at:BASE - 3 * 24 * 60 * MIN, who:'K. Uy', role:'System Admin', action:'Changed rule', detail:'Geofence radius for Taguig Consumer Goods DC 150 m → 250 m (large yard)' },
   ];
@@ -541,11 +565,11 @@ function seed() {
     auth: S && S.auth ? S.auth : newAuth(),
     now: T(10,5), view: 'trucker', role: 'TMD', page: 'board', filter: 'all', customer: '', sel: null,
     af: { period:'mtd', site:'', haulier:'', trucker:'', move:'' }, mapView:'all', mapf:'all',
-    config: { grace:0, radius:150, acc:50, drift:2, atRisk:30, lateSync:240, otp:false, scanRequired:true },
+    config: { grace:0, sla:15, radius:150, acc:50, drift:2, atRisk:30, lateSync:240, otp:false, scanRequired:true },
     jobs, feed, audit, drafts: {}, lastPayload: null,
     phone: { online:true, mock:false, skew:0, traffic:false, screen:'list', jobId:null, step:'photo', toast:null, queue:[], log:[], local:{}, sel:null, manual:false, scanErr:'' },
   };
-  for (const j of jobs) if (j.demo) S.phone.local[j.id] = { tripStart:null, travelled:0, entry:null, photo:null, scan:null, confirmed:null, mockFlagged:false, driftFlagged:false };
+  for (const j of jobs) if (j.demo) S.phone.local[j.id] = { accepted:null, cyStart:null, cyTravelled:0, cyEntry:null, pick:{ photo:null, seal:null, eir:null }, tripStart:null, travelled:0, entry:null, photo:null, scan:null, confirmed:null, hold:null, ended:null, mockFlagged:false, driftFlagged:false };
 }
 seed();
 
@@ -555,6 +579,8 @@ const trk = j => TRUCKERS[j.trucker];
 
 /* ---------- Hit / Miss engine ---------- */
 function evaluate(j) {
+  if (j.status === 'Rescheduled') return 'RESCHED';
+  if (j.status === 'Cancelled') return 'CANCELLED';
   const due = j.agreed + S.config.grace * MIN;
   if (j.arrival) return j.arrival.at <= due ? 'HIT' : 'MISS';
   if (S.now > due) return 'MISS_NA';
@@ -562,22 +588,25 @@ function evaluate(j) {
   return 'ON_SCHEDULE';
 }
 const RESULT_CHIP = {
-  HIT:['c-hit','Hit'], MISS:['c-miss','Miss'], MISS_NA:['c-miss','Miss · not arrived'], AT_RISK:['c-risk','At risk'], ON_SCHEDULE:['c-neutral','On schedule'],
+  HIT:['c-hit','Hit'], MISS:['c-miss','Miss'], MISS_NA:['c-miss','Miss · not arrived'], AT_RISK:['c-risk','At risk'], ON_SCHEDULE:['c-neutral','On schedule'], RESCHED:['c-neutral','Rescheduled'], CANCELLED:['c-neutral','Cancelled'],
 };
 const resultChip = j => { const [c, t] = RESULT_CHIP[evaluate(j)]; const early = j.arrival && j.arrival.at < j.agreed - 15 * MIN ? ' <span class="chip c-info">Early</span>' : ''; return `<span class="chip ${c}">${t}</span>${early}`; };
 function kpis() {
-  const r = S.jobs.map(j => ({ j, e: evaluate(j) }));
+  const live = S.jobs.filter(j => !['Rescheduled', 'Cancelled'].includes(j.status));
+  const r = live.map(j => ({ j, e: evaluate(j) }));
   const hits = r.filter(x => x.e === 'HIT').length;
   const misses = r.filter(x => x.e === 'MISS' || x.e === 'MISS_NA');
   const decided = hits + misses.length;
   const excused = misses.filter(x => x.j.exception && x.j.exception.status === 'Validated' && x.j.exception.cls === 'Uncontrollable').length;
   const missArrived = misses.filter(x => x.e === 'MISS');
   return {
-    total: S.jobs.length, arrived: S.jobs.filter(j => j.arrival).length, hits, misses: misses.length, decided,
+    total: live.length, arrived: live.filter(j => j.arrival).length, hits, misses: misses.length, decided,
     raw: decided ? Math.round(hits / decided * 100) : null,
     adj: decided - excused ? Math.round(hits / (decided - excused) * 100) : null,
     risk: r.filter(x => x.e === 'AT_RISK').length,
-    pend: S.jobs.filter(j => j.exception && j.exception.status === 'Pending').length,
+    open: S.jobs.filter(j => j.exception && exOpen(j.exception)).length,
+    slaOver: S.jobs.filter(j => j.exception && slaOver(j.exception)).length,
+    notify: S.jobs.filter(j => j.exception && j.exception.notify && j.exception.notify.status === 'Pending').length,
     flags: S.jobs.reduce((n, j) => n + j.flags.filter(f => f.status === 'Open').length, 0),
     noExc: missArrived.filter(x => !x.j.exception).length,
     notArrived: misses.filter(x => x.e === 'MISS_NA').length,
@@ -601,9 +630,13 @@ function apply(ev, synced) {
     addFlag(j, 'CLOCK_DRIFT', `Phone clock ${S.phone.skew > 0 ? 'ahead' : 'behind'} by ${Math.abs(S.phone.skew)} min. Server time used for all events.`, ev.at);
   }
   switch (ev.type) {
-    case 'trip.started': j.status = 'En route'; j.events.push({ type:ev.type, at:ev.at, label:'Trip started at ' + PICKUPS[j.pickup].split(' (')[0] + tag, offline:off }); break;
+    case 'trip.accepted': j.status = 'Accepted'; j.events.push({ type:ev.type, at:ev.at, label:'Trip accepted in TAS' + tag, offline:off }); break;
+    case 'cy.started': j.status = 'To CY'; j.events.push({ type:ev.type, at:ev.at, label:`Trip to ${cyName(j)} started${tag}`, offline:off }); break;
+    case 'cy.arrived': j.status = 'At CY'; j.events.push({ type:ev.type, at:ev.at, label:`Arrived at ${cyName(j)} (geofence)${tag}`, offline:off }); break;
+    case 'pickup.checked': j.pickupCheck = { seal:ev.seal, eir:ev.eir, at:ev.at }; j.events.push({ type:ev.type, at:ev.at, label:`Pick-up check OK: photo, seal ${ev.seal}, EIR ${ev.eir}${tag}`, offline:off }); break;
+    case 'trip.started': j.status = 'In transit'; j.events.push({ type:ev.type, at:ev.at, label:`Gate out at ${cyName(j)}. Trip to customer started${tag}`, offline:off }); break;
     case 'geofence.entered':
-      j.arrival = { at: ev.at, acc: 12, offline: off }; j.status = 'At site';
+      j.arrival = { at: ev.at, acc: 12, offline: off }; j.status = 'At customer';
       j.events.push({ type:ev.type, at:ev.at, label:`Entered site geofence (${site(j).radius} m)${tag}`, offline:off });
       feed(evaluate(j) === 'HIT' ? 'hit' : 'miss', `<b>Truck at site · ${evaluate(j) === 'HIT' ? 'HIT' : 'MISS'}</b> · ${site(j).customer}, ${variance(j)}`, j.id, ev.at);
       break;
@@ -616,14 +649,16 @@ function apply(ev, synced) {
       feed('info', `<b>Notification sent</b> · SMS and email to ${site(j).customer} receiving and Sales Support`, j.id, ev.at);
       S.lastPayload = payload(j, off);
       break; }
-    case 'delay.prealert':
-      j.prealert = { code: ev.code, eta: ev.eta, at: ev.at, remarks: ev.remarks };
-      j.events.push({ type:ev.type, at:ev.at, label:`Delay pre-alert ${ev.code}, new ETA ${hm(ev.eta)}${tag}`, offline:off });
-      feed('risk', `<b>Delay pre-alert</b> · ${j.id} ${ev.code}, new ETA ${hm(ev.eta)}`, j.id, ev.at); break;
-    case 'exception.filed':
-      j.exception = { code: ev.code, remarks: ev.remarks, filedAt: ev.at, status:'Pending', photo: ev.photo };
-      j.events.push({ type:ev.type, at:ev.at, label:`Exception ${ev.code} filed${tag}`, offline:off });
-      feed('risk', `<b>Exception filed</b> · ${j.id} ${ev.code}, awaiting TMD review`, j.id, ev.at); break;
+    case 'exception.reported': { const r = reason(ev.code);
+      if (j.exception) (j.exHistory ||= []).push(j.exception);
+      j.exception = { code:ev.code, stage:ev.stage, remarks:ev.remarks, filedAt:ev.at, status:'Pending', photo:ev.photo, priority:ev.hold ? 'High' : 'Normal', resolution:null };
+      if (ev.hold) j.hold = true;
+      j.events.push({ type:ev.type, at:ev.at, label:`Exception reported (${STAGE_LABEL[ev.stage]}): ${r.label}${ev.hold ? '. Trip on hold' : ''}${tag}`, offline:off, bad:true });
+      feed('risk', `<b>Exception · ${STAGE_LABEL[ev.stage]}</b> · ${j.id} ${esc(r.label)}. TMD alerted, SLA ${S.config.sla} min`, j.id, ev.at); break; }
+    case 'exception.filed': { const r = reason(ev.code);
+      j.exception = { code:ev.code, stage:'late', remarks:ev.remarks, filedAt:ev.at, status:'Pending', photo:ev.photo, priority:null, resolution:null };
+      j.events.push({ type:ev.type, at:ev.at, label:`Late reason filed: ${r.label}${tag}`, offline:off });
+      feed('risk', `<b>Late reason filed</b> · ${j.id} ${esc(r.label)}, waiting for TMD check`, j.id, ev.at); break; }
     case 'integrity.flagged': addFlag(j, ev.flag, ev.detail, ev.at); j.events.push({ type:ev.type, at:ev.at, label:'Integrity flag: ' + FLAGS[ev.flag], bad:true }); break;
   }
 }
@@ -662,10 +697,18 @@ function speedKmMin() { return (S.phone.traffic ? 10 : 30) / 60; }
 function distanceKm(j) { const L = S.phone.local[j.id]; if (S.phone.mock && L.tripStart && !L.entry) return 0; return Math.max(0, j.d0 - L.travelled); }
 function advance(ms) {
   const prev = S.now; S.now += ms;
+  const sp = speedKmMin(), can = sp * ms / MIN;
   for (const j of S.jobs) {
     const L = S.phone.local[j.id];
-    if (!L || !L.tripStart || L.entry) continue;
-    const sp = speedKmMin(), can = sp * ms / MIN, need = j.d0 - L.travelled - site(j).radius / 1000;
+    if (!L || L.hold || L.ended) continue;
+    if (L.cyStart && !L.cyEntry) {
+      const need = j.d0Cy - L.cyTravelled - .15;
+      if (can >= need) { const at = prev + Math.max(0, need) / sp * MIN; L.cyTravelled = j.d0Cy; L.cyEntry = at; emit({ type:'cy.arrived', job:j.id, at, detail:'Automatic, CY geofence' }); toast('Nandito ka na sa CY! Gawin ang Pick-up Check.'); }
+      else L.cyTravelled += can;
+      continue;
+    }
+    if (!L.tripStart || L.entry) continue;
+    const need = j.d0 - L.travelled - site(j).radius / 1000;
     if (can >= need) {
       const at = prev + Math.max(0, need) / sp * MIN;
       L.travelled = Math.min(j.d0, L.travelled + can); L.entry = at;
@@ -673,7 +716,7 @@ function advance(ms) {
       toast('Nandito ka na! Na-record ang oras: ' + hm12(at));
     } else L.travelled += can;
   }
-  if (S.phone.online) for (const id in S.phone.local) { const L = S.phone.local[id]; if (L.tripStart) { L.seenKm = distanceKm(job(id)); L.seenAt = S.now; } }
+  if (S.phone.online) for (const id in S.phone.local) { const L = S.phone.local[id], j = job(id); if (L.tripStart) { L.seenKm = distanceKm(j); L.seenAt = S.now; } if (L.cyStart && !L.cyEntry) { L.seenCy = cyDistanceKm(j); L.seenAt = S.now; } }
 }
 let lastSig = '';
 function tick() {
@@ -685,12 +728,12 @@ function tick() {
   if (sig !== lastSig || before !== phoneSig()) { lastSig = sig; render(); return; }
   if (S.view === 'command' && S.page === 'map' && S.auth.cc.stage === 'in' && Math.floor(S.now / 1000) % 5 === 0) { render(); return; }
   document.querySelectorAll('[data-cd]').forEach(el => el.textContent = countdown(+el.dataset.cd));
-  document.querySelectorAll('[data-dist]').forEach(el => { const j = job(el.dataset.dist); el.textContent = distanceKm(j).toFixed(1) + ' km'; });
-  const prog = j => Math.min(1, Math.max(0, 1 - distanceKm(j) / j.d0)).toFixed(3);
-  document.querySelectorAll('[data-prog]').forEach(el => { el.style.width = `calc((100% - 44px) * ${prog(job(el.dataset.prog))})`; });
-  document.querySelectorAll('[data-truck]').forEach(el => { el.style.left = `calc(23px + (100% - 64px) * ${prog(job(el.dataset.truck))})`; });
+  document.querySelectorAll('[data-dist]').forEach(el => { const j = job(el.dataset.dist); el.textContent = (el.dataset.leg === 'cy' ? cyDistanceKm(j) : distanceKm(j)).toFixed(1) + ' km'; });
+  const prog = (j, leg) => Math.min(1, Math.max(0, leg === 'cy' ? 1 - cyDistanceKm(j) / j.d0Cy : 1 - distanceKm(j) / j.d0)).toFixed(3);
+  document.querySelectorAll('[data-prog]').forEach(el => { el.style.width = `calc((100% - 44px) * ${prog(job(el.dataset.prog), el.dataset.leg)})`; });
+  document.querySelectorAll('[data-truck]').forEach(el => { el.style.left = `calc(23px + (100% - 64px) * ${prog(job(el.dataset.truck), el.dataset.leg)})`; });
 }
-const phoneSig = () => Object.values(S.phone.local).map(l => (l.entry || 0)).join();
+const phoneSig = () => Object.values(S.phone.local).map(l => `${l.entry || 0}/${l.cyEntry || 0}/${l.hold ? 1 : 0}/${l.ended || ''}`).join();
 function countdown(agreed) { const m = Math.round((agreed - S.now) / MIN); return m >= 0 ? `${minsTxt(m)} pa` : `Late na ng ${minsTxt(-m)}`; }
 let toastTimer;
 function toast(msg) { S.phone.toast = msg; clearTimeout(toastTimer); toastTimer = setTimeout(() => { S.phone.toast = null; render(); }, 4200); }
@@ -742,8 +785,8 @@ function armSplash() {
 function topbar() {
   const t = (v, l) => `<button class="tab" role="tab" aria-selected="${S.view === v}" data-act="view" data-arg="${v}">${l}</button>`;
   return `<header class="top"><div class="top-in">
-    <div class="brand">${appIcon(30)}<span><b>Trucker Visibility Platform</b><small>Version 4 prototype · container pick-up and delivery</small></span></div>
-    <nav class="tabs" role="tablist">${t('trucker','TAS · iPhone')}${t('command','Command Center · Mac')}${t('spec','How it works')}</nav>
+    <div class="brand">${appIcon(30)}<span><b>Trucker Visibility Platform</b><small>Version 5 prototype · Trucker Complement Framework v1.1</small></span></div>
+    <nav class="tabs" role="tablist">${t('trucker','TAS Mobile · iPhone')}${t('command','TAS Portal · Mac')}${t('spec','How it works')}</nav>
     <div class="clock"><span class="sample">Sample data</span><span class="live-dot" aria-hidden="true"></span><span class="muted">${dateLabel(S.now)}</span><span class="mono" data-clock>${hms(S.now)}</span></div>
   </div></header>`;
 }
@@ -777,6 +820,13 @@ const ICONS = {
   sliders:'<path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/>',
   users:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14a6 6 0 0 1 3.5 6"/>',
   tag:'<path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.5"/>',
+  server:'<rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01M3 2l18 20"/>',
+  calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  layers:'<path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/>',
+  swap:'<path d="M4 8h15l-4-4M20 16H5l4 4"/>',
+  crane:'<path d="M6 21V4M3 21h7M6 4h14l-3 3M6 4l4 4M17 7v4"/><rect x="15" y="11" width="4" height="3"/>',
+  queue:'<rect x="2" y="9" width="5" height="6" rx="1"/><rect x="9.5" y="9" width="5" height="6" rx="1"/><rect x="17" y="9" width="5" height="6" rx="1"/>',
+  route:'<circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M8 19h8a3.5 3.5 0 0 0 0-7H8a3.5 3.5 0 0 1 0-7h8"/>',
 };
 const ic = (name, size = 22, sw = 1.9) => `<svg class="ic" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]}</svg>`;
 const appIcon = n => `<span class="appicon" style="width:${n}px;height:${n}px">${pinSvg(Math.round(n * .55))}</span>`;
@@ -787,10 +837,21 @@ const hm12 = ms => { const d = local(ms); const h = d.getUTCHours(); return `${h
 const sbTime = ms => { const d = local(ms); return `${d.getUTCHours() % 12 || 12}:${pad(d.getUTCMinutes())}`; };
 const minsTxt = m => m >= 60 ? `${Math.floor(m / 60)} oras${m % 60 ? ' ' + (m % 60) + ' min' : ''}` : `${m} min`;
 const greet = () => { const h = local(S.now).getUTCHours(); return h < 12 ? 'Magandang umaga' : h < 18 ? 'Magandang hapon' : 'Magandang gabi'; };
-function pState(j) { const L = S.phone.local[j.id]; return L.confirmed ? 'done' : L.entry ? 'site' : L.tripStart ? 'road' : 'ready'; }
+function pState(j) {
+  const L = S.phone.local[j.id];
+  return L.ended ? 'ended' : L.hold ? 'hold' : L.confirmed ? 'done' : L.entry ? 'site' : L.tripStart ? 'road' : L.cyEntry ? 'cy' : L.cyStart ? 'tocy' : L.accepted ? 'accepted' : 'new';
+}
+const PRE_CY = ['new', 'accepted', 'tocy', 'cy'];
 const pHit = j => S.phone.local[j.id].entry <= j.agreed + S.config.grace * MIN;
+const pickDone = L => !!(L.pick.photo && L.pick.seal && L.pick.eir);
+const cyDistanceKm = j => Math.max(0, j.d0Cy - S.phone.local[j.id].cyTravelled);
+const cyName = j => PICKUPS[j.pickup].split(' (')[0];
+const sealNo = j => 'SL' + String(parseInt(j.id.slice(-4), 10) * 7919 % 1000000).padStart(6, '0');
+const eirNo = j => '26-' + String(parseInt(j.id.slice(-4), 10) * 4271 % 1000000).padStart(6, '0');
 function timePill(j) {
-  const L = S.phone.local[j.id], st = pState(j);
+  const st = pState(j);
+  if (st === 'ended') return '';
+  if (st === 'hold') return `<span class="ppill pp-warn">${ic('clock', 16, 2.2)}Naka-hold</span>`;
   if (st === 'done') return pHit(j) ? `<span class="ppill pp-ok">${ic('check', 16, 2.4)}On time</span>` : `<span class="ppill pp-bad">${ic('clock', 16, 2.2)}Late</span>`;
   if (st === 'site') return `<span class="ppill pp-ok">${ic('check', 16, 2.4)}Nandito ka na</span>`;
   const left = Math.round((j.agreed - S.now) / MIN);
@@ -803,8 +864,8 @@ function timePill(j) {
 function truckerView() {
   const P = S.phone, A = S.auth.phone;
   const body = phoneScreen();
-  const inApp = A.stage === 'in' && P.jobId;
-  const mode = inApp && P.screen === 'capture' ? 'cam-on' : inApp && P.screen === 'result' ? (pHit(job(P.jobId)) ? 'res-ok' : 'res-bad') : '';
+  const j = A.stage === 'in' && P.jobId ? job(P.jobId) : null;
+  const mode = !j ? '' : P.screen === 'capture' || (P.screen === 'pickup' && !pickDone(P.local[j.id])) ? 'cam-on' : P.screen === 'result' ? (pHit(j) ? 'res-ok' : 'res-bad') : '';
   const bars = `<svg width="18" height="12" viewBox="0 0 18 12" aria-hidden="true"><rect x="0" y="8" width="3" height="4" rx="1" fill="currentColor"/><rect x="5" y="5.5" width="3" height="6.5" rx="1" fill="currentColor"/><rect x="10" y="3" width="3" height="9" rx="1" fill="currentColor"/><rect x="15" y="0" width="3" height="12" rx="1" fill="currentColor"/></svg>`;
   const batt = `<svg width="27" height="13" viewBox="0 0 27 13" aria-hidden="true"><rect x=".5" y=".5" width="23" height="12" rx="3.5" fill="none" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="16" height="9" rx="2" fill="currentColor"/><rect x="25" y="4.5" width="1.6" height="4" rx=".8" fill="currentColor" opacity=".4"/></svg>`;
   return `<div class="trucker">
@@ -823,7 +884,7 @@ function phoneScreen() {
   if (P.screen === 'list' || !P.jobId) return phoneHome();
   const j = job(P.jobId);
   if (P.screen === 'job' && pState(j) === 'done') P.screen = 'result';
-  return ({ job: phoneJob, capture: phoneCapture, result: phoneResult, exception: x => phoneReasons(x, 'exception'), delay: x => phoneReasons(x, 'delay') }[P.screen] || phoneHome)(j);
+  return ({ job: phoneJob, pickup: phonePickup, capture: phoneCapture, result: phoneResult, exception: x => phoneReasons(x, 'exception'), issue: x => phoneReasons(x, 'issue') }[P.screen] || phoneHome)(j);
 }
 function phoneAuthScreen() {
   const A = S.auth.phone;
@@ -850,59 +911,133 @@ function phoneAuthScreen() {
     </div><div class="pact"><button class="pbtn" type="submit">Mag-login</button></div></form>`;
 }
 function phoneHome() {
-  const mine = S.jobs.filter(j => j.demo).sort((a, b) => a.agreed - b.agreed);
+  const mine = S.jobs.filter(j => j.demo && (j.trucker === PHONE_OWNER || S.phone.local[j.id].ended)).sort((a, b) => a.agreed - b.agreed);
   const needsReason = j => pState(j) === 'done' && !pHit(j) && !(j.exception || S.phone.local[j.id].excQueued);
-  const next = mine.find(j => needsReason(j) || pState(j) !== 'done');
-  const later = mine.filter(j => j !== next && pState(j) !== 'done');
-  const done = mine.filter(j => j !== next && pState(j) === 'done');
+  const fin = j => ['done', 'ended'].includes(pState(j)) && !needsReason(j);
+  const next = mine.find(j => !fin(j));
+  const later = mine.filter(j => j !== next && !fin(j));
+  const done = mine.filter(j => j !== next && fin(j));
+  const endChip = { reassigned:['pp-info', 'Inilipat'], rescheduled:['pp-info', 'Na-reschedule'], cancelled:['pp-bad', 'Kinansela'] };
+  const doneRow = j => {
+    const L = S.phone.local[j.id];
+    if (L.ended) return `<button class="prow" data-act="openjob" data-arg="${j.id}">${picon('swap', '#8E8E93')}<span class="grow">${esc(site(j).customer)}</span><span class="ppill ${endChip[L.ended][0]}">${endChip[L.ended][1]}</span></button>`;
+    return `<button class="prow" data-act="openjob" data-arg="${j.id}">${picon(pHit(j) ? 'check' : 'clock', pHit(j) ? '#34C759' : '#FF3B30')}<span class="grow">${esc(site(j).customer)}${j.consigneeAt ? '<span class="sub">Sarado na ang trip</span>' : ''}</span><span class="ppill ${pHit(j) ? 'pp-ok' : 'pp-bad'}">${pHit(j) ? 'On time' : 'Late'}</span></button>`;
+  };
   return `<div class="pview">
     <div class="pnav"><span></span><button data-act="plogout">Logout</button></div>
     <h2 class="ptitle">${greet()},<br>Ramon!</h2>
-    <div class="psec">Susunod na delivery</div>
+    <div class="psec">Susunod na trip</div>
     ${next ? heroCard(next) : `<div class="phero" style="align-items:center;text-align:center"><span class="bigcheck" style="width:72px;height:72px">${ic('check', 38, 2.6)}</span><b>Tapos na lahat ngayong araw. Salamat!</b></div>`}
     ${later.length ? `<div class="psec">Mamaya</div><div class="pgroup">${later.map(j => `<button class="prow" data-act="openjob" data-arg="${j.id}"><span class="ptime">${hm12(j.agreed)}</span><span class="grow">${esc(site(j).customer)}</span><span style="color:var(--p-muted)">${ic('chev', 16, 2.2)}</span></button>`).join('')}</div>` : ''}
-    ${done.length ? `<div class="psec">Tapos na</div><div class="pgroup">${done.map(j => `<button class="prow" data-act="openjob" data-arg="${j.id}">${picon(pHit(j) ? 'check' : 'clock', pHit(j) ? '#34C759' : '#FF3B30')}<span class="grow">${esc(site(j).customer)}</span><span class="ppill ${pHit(j) ? 'pp-ok' : 'pp-bad'}">${pHit(j) ? 'On time' : 'Late'}</span></button>`).join('')}</div>` : ''}
+    ${done.length ? `<div class="psec">Tapos na</div><div class="pgroup">${done.map(doneRow).join('')}</div>` : ''}
   </div>`;
 }
 function heroCard(j) {
   const st = pState(j);
-  const btn = { ready:['', 'truck', 'Simulan ang Biyahe', 'starttrip'], road:['', 'map', 'Tingnan ang Biyahe', 'openjob'], site:['green', 'camera', 'Kumpirmahin ang Pagdating', 'openjob'], done:['orange', 'alert', 'Sabihin Kung Bakit Late', 'openjob'] }[st];
+  const b = { new:['green', 'check', 'Tanggapin ang Trip', 'accept'], accepted:['', 'truck', 'Pumunta sa CY', 'tocy'], tocy:['', 'map', 'Tingnan ang Biyahe', 'openjob'], cy:['', 'camera', 'Pick-up Check', 'openjob'],
+    road:['', 'map', 'Tingnan ang Biyahe', 'openjob'], hold:['plain', 'clock', 'Naghihintay sa TMD', 'openjob'], site:['green', 'camera', 'Kumpirmahin ang Pagdating', 'openjob'], done:['orange', 'alert', 'Sabihin Kung Bakit Late', 'openjob'] }[st];
+  const first = st === 'new' || st === 'accepted' ? `<div class="hrow">${picon('box', '#30B0C7')}<div class="grow"><span class="sub">Kunin muna ang container sa</span><b>${esc(cyName(j))}</b></div></div>` : '';
   return `<div class="phero">
     <div class="hrow">${picon('building', '#5856D6')}<div class="grow"><span class="hname">${esc(site(j).customer)}</span><span class="sub">${esc(site(j).city)}</span></div></div>
-    <div><span class="sub">Dapat dumating</span><div class="pbig">${hm12(j.agreed)}</div></div>
+    ${first}
+    <div><span class="sub">Dapat dumating sa customer</span><div class="pbig">${hm12(j.agreed)}</div></div>
     ${timePill(j)}
-    <button class="pbtn ${btn[0]}" data-act="${btn[3]}" data-arg="${j.id}">${ic(btn[1], 22, 2.1)}${btn[2]}</button></div>`;
+    <button class="pbtn ${b[0]}" data-act="${b[3]}" data-arg="${j.id}">${ic(b[1], 22, 2.1)}${b[2]}</button></div>`;
+}
+function roadCard(j, leg) {
+  const cy = leg === 'cy', s = site(j);
+  const d = cy ? cyDistanceKm(j) : distanceKm(j), d0 = cy ? j.d0Cy : j.d0, p = Math.min(1, Math.max(0, 1 - d / d0)), eta = S.now + d / speedKmMin() * MIN;
+  return `<div class="proute">
+    <div class="road"><span class="line"></span><span class="done" data-prog="${j.id}" data-leg="${leg}" style="width:calc((100% - 44px) * ${p.toFixed(3)})"></span><span class="truckdot" data-truck="${j.id}" data-leg="${leg}" style="left:calc(23px + (100% - 64px) * ${p.toFixed(3)})">${ic('truck', 22, 2.1)}</span><span class="flag" style="${cy ? 'background:#30B0C7' : ''}">${ic(cy ? 'box' : 'building', 18, 2.1)}</span></div>
+    <div class="road-txt"><div><div class="pbig" data-dist="${j.id}" data-leg="${leg}">${d.toFixed(1)} km</div><span class="sub">papunta sa ${esc(cy ? cyName(j) : s.customer)}</span></div><div style="text-align:right;white-space:nowrap;flex:none"><span class="sub">Darating mga</span><span class="eta">${hm12(eta)}</span></div></div>
+    ${cy ? '' : timePill(j)}</div>`;
 }
 function phoneJob(j) {
   const L = S.phone.local[j.id], st = pState(j), s = site(j), P = S.phone;
-  const nav = `<div class="pnav"><button data-act="pscreen" data-arg="list">${ic('back', 20, 2.4)}Delivery</button><span></span></div>`;
-  const where = `<div class="pgroup"><div class="prow">${picon('pin', '#FF3B30')}<span class="grow"><b>${esc(s.addr)}</b><span class="sub">${esc(s.gateFil)}</span></span></div></div>`;
-  const details = `<details class="pgroup pdetails"><summary class="prow">${picon('doc', '#8E8E93')}<span class="grow">Detalye ng job</span><span style="color:var(--p-muted)">${ic('chev', 16, 2.2)}</span></summary>
+  const nav = `<div class="pnav"><button data-act="pscreen" data-arg="list">${ic('back', 20, 2.4)}Mga Trip</button><span></span></div>`;
+  const where = `<div class="pgroup"><div class="prow">${picon('pin', '#FF3B30')}<span class="grow"><span class="sub">Dadalhin sa</span><b>${esc(s.addr)}</b><span class="sub">${esc(s.gateFil)}</span></span></div></div>`;
+  const cyRow = `<div class="pgroup"><div class="prow">${picon('box', '#30B0C7')}<span class="grow"><span class="sub">Kukunin ang container sa</span><b>${esc(PICKUPS[j.pickup])}</b></span></div></div>`;
+  const details = `<details class="pgroup pdetails"><summary class="prow">${picon('doc', '#8E8E93')}<span class="grow">Detalye ng trip</span><span style="color:var(--p-muted)">${ic('chev', 16, 2.2)}</span></summary>
       <div class="prow"><span class="plbl">Container</span><span class="mono">${fmtCntr(j.container)}</span></div>
       <div class="prow"><span class="plbl">Laki</span><span>${j.size}</span></div></details>`;
   const fake = P.mock ? `<div class="palert">${ic('alert', 24, 2.2)}<span><b>Naka-on ang Fake GPS app.</b> Patayin muna ito para makapagpatuloy.</span></div>` : '';
-  if (st === 'ready') return `<div class="pview">${nav}<h2 class="ptitle">${esc(s.customer)}</h2>
-      <div class="phero"><div><span class="sub">Dapat dumating</span><div class="pbig">${hm12(j.agreed)}</div></div>${timePill(j)}</div>
-      ${where}${details}
-      <p class="pinstr">Pindutin ang <b>Simulan ang Biyahe</b> kapag paalis ka na.</p></div>
-    <div class="pact"><button class="pbtn" data-act="starttrip" data-arg="${j.id}">${ic('truck', 22, 2.1)}Simulan ang Biyahe</button></div>`;
-  if (st === 'road') {
-    const d = distanceKm(j), p = Math.min(1, Math.max(0, 1 - d / j.d0)), eta = S.now + d / speedKmMin() * MIN, pre = j.prealert || L.delayQueued;
-    return `<div class="pview">${nav}<h2 class="ptitle">Papunta ka na</h2>${fake}
-      <div class="proute">
-        <div class="road"><span class="line"></span><span class="done" data-prog="${j.id}" style="width:calc((100% - 44px) * ${p.toFixed(3)})"></span><span class="truckdot" data-truck="${j.id}" style="left:calc(23px + (100% - 64px) * ${p.toFixed(3)})">${ic('truck', 22, 2.1)}</span><span class="flag">${ic('building', 18, 2.1)}</span></div>
-        <div class="road-txt"><div><div class="pbig" data-dist="${j.id}">${d.toFixed(1)} km</div><span class="sub">papunta sa ${esc(s.customer)}</span></div><div style="text-align:right;white-space:nowrap;flex:none"><span class="sub">Darating mga</span><span class="eta">${hm12(eta)}</span></div></div>
-        ${timePill(j)}</div>
-      ${pre ? `<div class="pgroup"><div class="prow">${picon('clock', '#FF9500')}<span class="grow"><b>Na-report mo na ang delay</b><span class="sub">${esc(reason(pre.code).fil)}</span></span></div></div>` : ''}
+  const code = (j.exception && j.exception.stage !== 'late' && j.exception.code) || (L.excQueued && L.excQueued.code);
+  const reported = code ? `<div class="pgroup"><div class="prow">${picon(reason(code).icon, reason(code).color)}<span class="grow"><span class="sub">Na-report mo na sa TMD</span><b>${esc(reason(code).fil)}</b></span></div></div>` : '';
+  const issueBtn = label => `<button class="pbtn orange" data-act="pscreen" data-arg="issue">${ic('alert', 22, 2.1)}${label}</button>`;
+  if (st === 'new') return `<div class="pview">${nav}<h2 class="ptitle">${esc(s.customer)}</h2>
+      <div class="phero"><div><span class="sub">Dapat dumating sa customer</span><div class="pbig">${hm12(j.agreed)}</div></div>${timePill(j)}</div>
+      ${cyRow}${where}${details}
+      <p class="pinstr">Tingnan ang detalye. Pindutin ang <b>Tanggapin ang Trip</b> kung kaya mo ito.</p></div>
+    <div class="pact"><button class="pbtn green" data-act="accept" data-arg="${j.id}">${ic('check', 22, 2.4)}Tanggapin ang Trip</button></div>`;
+  if (st === 'accepted') return `<div class="pview">${nav}<h2 class="ptitle">Kunin muna ang container</h2>${cyRow}
+      <p class="pinstr">Pindutin ang <b>Pumunta sa CY</b> kapag paalis ka na.</p></div>
+    <div class="pact"><button class="pbtn" data-act="tocy" data-arg="${j.id}">${ic('truck', 22, 2.1)}Pumunta sa CY</button></div>`;
+  if (st === 'tocy') return `<div class="pview">${nav}<h2 class="ptitle">Papunta sa CY</h2>${roadCard(j, 'cy')}${reported}
+      <p class="pinstr">Kusang mare-record ang pagdating mo sa CY. Hindi mo kailangang pindutin ang kahit ano.</p></div>
+    <div class="pact">${issueBtn('May Problema? I-report')}</div>`;
+  if (st === 'cy') return `<div class="pview">${nav}
+      <div class="parrive"><span class="bigcheck" style="background:#30B0C7">${ic('box', 60, 2.2)}</span><h2 class="ptitle" style="padding:0">Nandito ka na sa CY</h2></div>${reported}
+      <p class="pinstr" style="text-align:center">Gawin ang <b>Pick-up Check</b>: litrato ng container, seal, at EIR.</p></div>
+    <div class="pact"><button class="pbtn" data-act="pscreen" data-arg="pickup">${ic('camera', 22, 2.1)}Simulan ang Pick-up Check</button>${issueBtn('May Problema? I-report')}</div>`;
+  if (st === 'road') return `<div class="pview">${nav}<h2 class="ptitle">Papunta ka na</h2>${fake}${roadCard(j, 'road')}${reported}
       <p class="pinstr">Magmaneho nang ligtas. Kusang mare-record ang oras pagdating mo. Hindi mo kailangang pindutin ang kahit ano.</p>
       ${where}</div>
-    <div class="pact"><button class="pbtn orange" data-act="pscreen" data-arg="delay">${ic('clock', 22, 2.1)}May Delay? I-report</button></div>`;
+    <div class="pact">${issueBtn('May Problema? I-report')}</div>`;
+  if (st === 'hold') {
+    const c = (j.exception && j.exception.code) || L.hold.code, ex = j.exception;
+    const msg = ex && ex.resolution === 'Reschedule / cancel' ? 'Inaayos ng Sales Support ang bagong schedule kasama ang customer.' : 'Huwag munang umalis. Sasabihan ka ng TMD kung itutuloy, ililipat, o ire-reschedule ang trip.';
+    return `<div class="pview">${nav}
+      <div class="parrive"><span class="bigcheck" style="background:var(--p-orange)">${ic('clock', 60, 2.4)}</span><h2 class="ptitle" style="padding:0">Naghihintay sa TMD</h2></div>
+      <div class="pgroup"><div class="prow">${picon(reason(c).icon, reason(c).color)}<span class="grow"><span class="sub">Na-report mo</span><b>${esc(reason(c).fil)}</b></span></div></div>
+      <p class="pinstr" style="text-align:center">${msg}</p>
+      <span class="spinner" style="margin:0 auto" aria-label="Naghihintay"></span>
+      <p class="pinstr" style="text-align:center;font-size:15px">Kailangan ng tulong? Tawagan ang TMD dispatcher.</p></div>`;
+  }
+  if (st === 'ended') {
+    const m = { reassigned:['Inilipat ang trip', 'Ibinigay ng TMD ang trip na ito sa ibang truck. Wala ka nang kailangang gawin dito.'],
+      rescheduled:['Na-reschedule ang trip', 'Inayos ng Sales Support ang bagong schedule. Hintayin ang bagong trip mula sa TMD.'],
+      cancelled:['Kinansela ang trip', 'Kinansela ng customer ang trip. Wala ka nang kailangang gawin dito.'] }[L.ended];
+    return `<div class="pview">${nav}
+      <div class="parrive"><span class="bigcheck" style="background:#8E8E93;box-shadow:none">${ic('swap', 58, 2.2)}</span><h2 class="ptitle" style="padding:0">${m[0]}</h2></div>
+      <p class="pinstr" style="text-align:center">${m[1]}</p></div>
+    <div class="pact"><button class="pbtn plain" data-act="pscreen" data-arg="list">Bumalik sa Mga Trip</button></div>`;
   }
   return `<div class="pview">${nav}
       <div class="parrive"><span class="bigcheck">${ic('check', 66, 2.6)}</span><h2 class="ptitle" style="padding:0">Nandito ka na!</h2>
         <p class="pinstr" style="padding:0">Na-record ang dating mo: <b>${hm12(L.entry)}</b></p></div>${fake}
       <p class="pinstr" style="text-align:center">Kunan ng litrato ang container, tapos i-scan ang QR code.</p></div>
     <div class="pact"><button class="pbtn green" data-act="pscreen" data-arg="capture" ${P.mock ? 'disabled' : ''}>${ic('camera', 22, 2.1)}Kumpirmahin ang Pagdating</button></div>`;
+}
+function sealArt(j) {
+  const no = sealNo(j);
+  return `<svg viewBox="0 0 400 300" role="img" aria-label="Container seal ${no}"><rect width="400" height="300" fill="#7A1B4C"/>${[50, 130, 270, 350].map(x => `<rect x="${x}" y="0" width="14" height="300" fill="#000" opacity=".22"/>`).join('')}
+    <rect x="118" y="30" width="22" height="240" rx="6" fill="#B9BCC2"/><rect x="258" y="30" width="22" height="240" rx="6" fill="#B9BCC2"/>
+    <rect x="150" y="112" width="100" height="72" rx="8" fill="#FFD60A"/><text x="200" y="140" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="14" font-weight="700" fill="#111">${no}</text>
+    ${Array.from({ length:19 }, (_, i) => `<rect x="${158 + i * 4.4}" y="150" width="${i % 3 ? 2 : 3}" height="22" fill="#111"/>`).join('')}</svg>`;
+}
+function eirArt(j) {
+  return `<svg viewBox="0 0 400 300" role="img" aria-label="EIR ${eirNo(j)}"><rect width="400" height="300" fill="#3A3A3C"/><rect x="70" y="20" width="260" height="260" rx="4" fill="#FAFAF7"/>
+    <text x="200" y="50" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="12" font-weight="700" fill="#111">EQUIPMENT INTERCHANGE RECEIPT</text>
+    <text x="90" y="78" font-family="IBM Plex Mono,monospace" font-size="11" fill="#333">EIR No. ${eirNo(j)}</text>
+    <text x="90" y="98" font-family="IBM Plex Mono,monospace" font-size="11" fill="#333">Container ${fmtCntr(j.container)}</text>
+    ${[122, 142, 162, 182, 202, 222].map(y => `<rect x="90" y="${y}" width="${150 + (y * 7) % 70}" height="6" rx="3" fill="#D5D5D0"/>`).join('')}
+    <path d="M232 252 q15 -18 30 0 t30 0" fill="none" stroke="#2E58CC" stroke-width="2"/></svg>`;
+}
+function phonePickup(j) {
+  const L = S.phone.local[j.id], pk = L.pick, step = !pk.photo ? 1 : !pk.seal ? 2 : !pk.eir ? 3 : 4;
+  const top = `<div class="camtop"><button class="camx" data-act="pscreen" data-arg="job" aria-label="Isara">${ic('x', 18, 2.4)}</button><span class="campill">Pick-up Check · ${Math.min(step, 3)} sa 3</span><span style="width:36px"></span></div>`;
+  if (step === 1) return `<div class="cam">${top}<p class="camtxt">Kunan ng litrato ang container</p><div class="finder">${containerArt(j)}</div><div class="camfoot"><button class="shutter" data-act="pkphoto" aria-label="Kunan ng litrato"></button></div></div>`;
+  if (step === 2) return `<div class="cam">${top}<p class="camtxt">I-scan ang seal</p><div class="finder">${sealArt(j)}<div class="qrframe" style="inset:30% 22%"></div><div class="scanline"></div></div><div class="camfoot"><button class="pbtn" data-act="pkseal">${ic('qr', 22, 2.1)}I-scan ang Seal</button></div></div>`;
+  if (step === 3) return `<div class="cam">${top}<p class="camtxt">Kunan ng litrato ang EIR</p><div class="finder">${eirArt(j)}</div><div class="camfoot"><button class="shutter" data-act="pkeir" aria-label="Kunan ng litrato ang EIR"></button></div></div>`;
+  const ok = `<span style="color:var(--p-green)">${ic('check', 20, 2.6)}</span>`;
+  return `<div class="pview"><div class="pnav"><button data-act="pscreen" data-arg="job">${ic('back', 20, 2.4)}Bumalik</button><span></span></div>
+      <h2 class="ptitle">OK ba ang container?</h2>
+      <p class="pinstr">Tingnan kung walang sira at tama ang container at seal.</p>
+      <div class="pgroup">
+        <div class="prow">${picon('camera', '#34C759')}<span class="grow">Litrato ng container</span>${ok}</div>
+        <div class="prow">${picon('qr', '#34C759')}<span class="grow">Seal <span class="mono">${pk.seal}</span></span>${ok}</div>
+        <div class="prow">${picon('doc', '#34C759')}<span class="grow">EIR <span class="mono">${pk.eir}</span></span>${ok}</div></div></div>
+    <div class="pact"><button class="pbtn green" data-act="gateout">${ic('truck', 22, 2.1)}Oo, OK. Gate Out Na</button><button class="pbtn orange" data-act="pscreen" data-arg="issue">${ic('alert', 22, 2.1)}May Problema</button></div>`;
 }
 function phoneCapture(j) {
   const L = S.phone.local[j.id], P = S.phone, two = !!L.photo;
@@ -922,24 +1057,25 @@ function phoneResult(j) {
       <span class="rescircle">${ic(hit ? 'check' : 'clock', 62, 2.6)}</span>
       <h2 class="restitle">${hit ? 'On Time!' : `Late ng ${minsTxt(m)}`}</h2>
       <p class="ressub">${hit ? 'Salamat, Ramon! ' : ''}${sub}</p>
-      ${!hit && exc ? `<p class="resnote">${ic('check', 18, 2.6)}Na-send na ang dahilan mo</p>` : ''}
+      ${!hit && exc ? `<p class="resnote">${ic('check', 18, 2.6)}Alam na ng TMD ang dahilan</p>` : ''}
       ${S.phone.queue.length ? `<p class="resnote">${ic('nosignal', 18, 2.2)}Ise-send pag may signal na</p>` : ''}
     </div>
     <div class="pact">${!hit && !exc ? `<p class="resinstr">Sabihin sa amin kung bakit ka na-late.</p><button class="pbtn white" data-act="pscreen" data-arg="exception">Piliin ang Dahilan</button>` : `<button class="pbtn white" data-act="pscreen" data-arg="list">Tapos Na</button>`}</div>`;
 }
-const DRIVER_REASON_ORDER = ['TRF-01', 'PRT-01', 'CUS-01', 'WTH-01', 'TRK-01', 'TRK-02', 'CUS-02', 'PRT-02', 'TRF-02', 'DOC-01', 'OTH-99'];
 function phoneReasons(j, kind) {
-  const P = S.phone, isExc = kind === 'exception', need = P.sel === 'OTH-99', mins = S.drafts.delaymin || 30;
-  const tiles = DRIVER_REASON_ORDER.map(c => { const r = reason(c); return `<button class="rtile" aria-pressed="${P.sel === c}" data-act="pickreason" data-arg="${c}"><span class="ricon" style="background:${r.color}">${ic(r.icon, 24, 2)}</span>${esc(r.fil)}</button>`; }).join('');
+  const P = S.phone, isExc = kind === 'exception';
+  const stage = isExc ? null : PRE_CY.includes(pState(j)) ? 'pickup' : 'transit';
+  const groups = stage ? [[stage, '']] : [['pickup', 'Bago o habang nasa CY'], ['transit', 'Habang nasa biyahe']];
+  const tile = r => `<button class="rtile" aria-pressed="${P.sel === r.code}" data-act="pickreason" data-arg="${r.code}"><span class="ricon" style="background:${r.color}">${ic(r.icon, 24, 2)}</span>${esc(r.fil)}</button>`;
+  const need = !!P.sel && P.sel.endsWith('-99');
   return `<div class="pview" data-keep-scroll="preason"><div class="pnav"><button data-act="pscreen" data-arg="${isExc ? 'result' : 'job'}">${ic('back', 20, 2.4)}Bumalik</button><span></span></div>
-      <h2 class="ptitle">${isExc ? 'Bakit ka na-late?' : 'Bakit ka male-late?'}</h2>
+      <h2 class="ptitle">${isExc ? 'Bakit ka na-late?' : 'Ano ang problema?'}</h2>
       <p class="pinstr">Pumili ng isa.${isExc ? '' : ' Malalaman agad ito ng TMD.'}</p>
-      <div class="rgrid">${tiles}</div>
-      ${isExc ? '' : `<div class="psec">Gaano katagal ang delay?</div><div class="pseg">${[[15, '15 min'], [30, '30 min'], [60, '1 oras'], [90, '1½ oras']].map(([n, l]) => `<button aria-pressed="${mins == n}" data-act="delaymin" data-arg="${n}">+${l}</button>`).join('')}</div>`}
+      ${groups.map(([g, title]) => `${title ? `<div class="psec">${title}</div>` : ''}<div class="rgrid">${REASONS.filter(r => r.stage === g).map(tile).join('')}</div>`).join('')}
       ${need || S.drafts.shownote ? `<div class="psec">${need ? 'Ano ang nangyari? (kailangan)' : 'Note (optional)'}</div><div class="pgroup"><textarea class="ptxt" id="remarks" data-draft="remarks" placeholder="Isulat dito">${esc(S.drafts.remarks || '')}</textarea></div>` : `<button class="plink2" data-act="shownote">+ Magdagdag ng note</button>`}
-      ${isExc ? `<div class="pgroup"><button class="prow" data-act="excphoto">${picon('camera', S.drafts.excphoto ? '#34C759' : '#8E8E93')}<span class="grow">${S.drafts.excphoto ? 'May litrato na' : 'Magdagdag ng litrato (optional)'}</span>${S.drafts.excphoto ? ic('check', 18, 2.6) : ''}</button></div>` : ''}
+      <div class="pgroup"><button class="prow" data-act="excphoto">${picon('camera', S.drafts.excphoto ? '#34C759' : '#8E8E93')}<span class="grow">${S.drafts.excphoto ? 'May litrato na' : 'Magdagdag ng litrato (optional)'}</span>${S.drafts.excphoto ? ic('check', 18, 2.6) : ''}</button></div>
       ${P.scanErr ? `<p class="perr" role="alert">${esc(P.scanErr)}</p>` : ''}</div>
-    <div class="pact"><button class="pbtn" data-act="${isExc ? 'fileexc' : 'filedelay'}" ${P.sel ? '' : 'disabled'}>I-send</button></div>`;
+    <div class="pact"><button class="pbtn" data-act="${isExc ? 'fileexc' : 'fileissue'}" ${P.sel ? '' : 'disabled'}>${isExc ? 'I-send' : 'I-report sa TMD'}</button></div>`;
 }
 const utilWin = (title, body) => `<section class="mac-window"><div class="mac-titlebar"><span class="lights" aria-hidden="true"><i></i><i></i><i></i></span><span class="mac-title">${title}</span></div><div class="util-body">${body}</div></section>`;
 function demoPanel() {
@@ -947,16 +1083,18 @@ function demoPanel() {
   return utilWin('Demo Controls', `<div class="head" style="align-items:center"><div><span class="eyebrow">Paano gamitin ang demo</span><h3>Gampanan ang driver, tapos subukang mandaya</h3></div>
       <button class="btn sm" data-act="reset">Reset demo</button></div>
     <ol class="guide">
-      <li>Mag-login bilang si Ramon. Pindutin ang <b>Fill Ramon's login</b> sa ibaba, tapos ang <b>Mag-login</b> sa phone.</li>
-      <li>Sa delivery para sa <b>Sta. Rosa Food Packers (10:30 AM)</b>, pindutin ang <b>Simulan ang Biyahe</b>.</li>
-      <li>Pabilisin ang oras hanggang makarating ang truck. Para ma-late, i-on muna ang <b>Heavy traffic</b>.</li>
-      <li>Pindutin ang <b>Kumpirmahin ang Pagdating</b>, kunan ng litrato at i-scan ang QR. Tapos buksan ang <b>Command Center</b> para makita ito nang live.</li>
+      <li>Mag-login bilang si Ramon: pindutin ang <b>Fill Ramon's login</b>, tapos ang <b>Mag-login</b> sa phone.</li>
+      <li>Sa trip ng <b>Sta. Rosa Food Packers (10:45 AM)</b>, pindutin ang <b>Tanggapin ang Trip</b>, tapos <b>Pumunta sa CY</b>. Pabilisin ang oras hanggang makarating sa CY.</li>
+      <li>Gawin ang <b>Pick-up Check</b> (litrato, seal, EIR), tapos <b>Gate Out Na</b>. Para subukan ang exception, pindutin ang <b>May Problema</b>, pumili ng dahilan, at sagutin ito sa <b>TAS Portal → Exceptions</b>.</li>
+      <li>Pabilisin ang oras hanggang makarating sa customer. Pindutin ang <b>Kumpirmahin ang Pagdating</b>, kunan ng litrato at i-scan ang QR.</li>
+      <li>Pindutin ang <b>Consignee confirms</b> sa ibaba. Kusang magsasara ang trip.</li>
     </ol>
     <div class="ctrls">
       <div class="ctrl"><span class="lbl">Login</span><div class="seg"><button data-act="pfill" data-arg="own">Fill Ramon's login</button><button data-act="pfill" data-arg="wrong">Wrong PIN</button><button class="cheat" data-act="pfill" data-arg="other">Ibang driver</button></div><p>Ramon: <span class="mono">0917 555 0142</span> · PIN <span class="mono">482100</span>. Pag 5 beses mali ang PIN, naka-lock ng 15 min. Ang ibang driver ay hindi makakapag-login sa phone ni Ramon.</p></div>
       <div class="ctrl"><span class="lbl">Oras</span><div class="seg"><button data-act="ff" data-arg="5">+5 min</button><button data-act="ff" data-arg="15">+15 min</button><button data-act="ff" data-arg="60">+1 oras</button></div><p>Tumatakbo ang oras nang live. Pabilisin para mas mabilis ang biyahe.</p></div>
-      <div class="ctrl"><span class="lbl">Daan</span><div class="seg"><button data-act="traffic" data-arg="0" ${pr(!P.traffic)}>Normal 30 km/h</button><button data-act="traffic" data-arg="1" ${pr(P.traffic)}>Heavy traffic 10 km/h</button></div><p>6.2 km papuntang Sta. Rosa. Sa heavy traffic, male-late ang 10:30 AM.</p></div>
+      <div class="ctrl"><span class="lbl">Daan</span><div class="seg"><button data-act="traffic" data-arg="0" ${pr(!P.traffic)}>Normal 30 km/h</button><button data-act="traffic" data-arg="1" ${pr(P.traffic)}>Heavy traffic 10 km/h</button></div><p>6.2 km mula Cabuyao CY papuntang Sta. Rosa. Sa heavy traffic, male-late ang 10:45 AM.</p></div>
       <div class="ctrl"><span class="lbl">Signal</span><div class="seg"><button data-act="online" data-arg="1" ${pr(P.online)}>Online</button><button data-act="online" data-arg="0" ${pr(!P.online)}>Walang signal</button></div><p>Kahit offline, tama pa rin ang oras na naka-record. Ise-send ito pagbalik ng signal.</p></div>
+      <div class="ctrl"><span class="lbl">Customer</span><div class="seg"><button data-act="consignee">Consignee confirms</button></div><p>${S.demoNote ? esc(S.demoNote) : 'Gagayahin ang pag-confirm ng consignee gamit ang SMS link. Kusang magsasara ang trip.'}</p></div>
       <div class="ctrl"><span class="lbl">Pandaraya</span><div class="seg"><button class="cheat" data-act="mock" ${pr(P.mock)}>Fake GPS app</button><button class="cheat" data-act="skew" ${pr(!!P.skew)}>Iurong ang orasan ng phone 30 min</button></div><p>Pareho itong nade-detect at nire-report sa TMD. Hindi nito mababago ang oras ng pagdating.</p></div>
     </div>`);
 }
@@ -969,8 +1107,8 @@ function logPanel() {
 /* ---------- COMMAND CENTER ---------- */
 const ROLES = { TMD:'TMD Team', SALES:'Sales Support', ADMIN:'System Admin' };
 const ROLE_NOTE = {
-  TMD:'Monitors all trips, reviews exceptions and clears integrity flags.',
-  SALES:'Read-only view for customer updates. Driver mobile numbers are hidden.',
+  TMD:'Dispatches trips, resolves exceptions within the SLA and clears integrity flags.',
+  SALES:'Notifies customers when a trip is rescheduled or cancelled. Driver mobile numbers are hidden.',
   ADMIN:'Sets rules, geofences, reason codes, devices and reviews the audit trail.',
 };
 function pagesFor(role) {
@@ -983,14 +1121,14 @@ const PAGE_ICON = { board:'list', map:'map', exceptions:'alert', analytics:'char
 const macWin = (title, inner, right = '') => `<div class="mac-window"><div class="mac-titlebar"><span class="lights" aria-hidden="true"><i></i><i></i><i></i></span><span class="mac-title">${title}</span><span class="mac-tb-right">${right}</span></div>${inner}</div>`;
 function ccAuth() {
   const A = S.auth.cc;
-  if (A.stage === 'splash') return macWin('Command Center', `<div class="cc-splash">${appIcon(88)}<h2>Command Center</h2><p class="muted" style="margin:0">Trucker Visibility Platform</p><span class="spinner" aria-label="Loading"></span></div>`);
+  if (A.stage === 'splash') return macWin('TAS Portal', `<div class="cc-splash">${appIcon(88)}<h2>TAS Portal</h2><p class="muted" style="margin:0">Trucker Visibility Platform</p><span class="spinner" aria-label="Loading"></span></div>`);
   const err = A.err ? `<div class="alert bad" role="alert">${esc(A.err)}</div>` : '';
   const card = A.stage === 'mfa'
     ? `<div class="center">${appIcon(64)}<h3>Two-step verification</h3><p class="muted" style="margin:0;font-size:13px">Enter the 6-digit code from your authenticator app. Admin accounts need this because they can change rules, geofences and devices.</p></div>
       <form data-form="ccmfa" novalidate><div class="field"><label for="ccotp">Code for ${esc(A.pending.email)}</label><input class="in mono" id="ccotp" data-draft="ccotp" inputmode="numeric" maxlength="6" autocomplete="one-time-code" value="${esc(S.drafts.ccotp || '')}" style="font-size:22px;letter-spacing:.3em;text-align:center"></div>${err}
         <button class="btn primary" type="submit" style="padding:7px">Verify and Sign In</button><button type="button" class="btn" data-act="cclogout" style="padding:7px">Cancel</button></form>
       <p class="muted" style="font-size:12px;margin:0;text-align:center">Demo code: <span class="mono">${A.pending.mfa}</span></p>`
-    : `<div class="center">${appIcon(64)}<h3>Sign in to Command Center</h3><p class="muted" style="margin:0;font-size:13px">For TMD Team, Sales Support and System Admin. Your role comes from your account.</p></div>
+    : `<div class="center">${appIcon(64)}<h3>Sign in to TAS Portal</h3><p class="muted" style="margin:0;font-size:13px">Command Center for TMD Team, Sales Support and System Admin. Your role comes from your account.</p></div>
       <form data-form="cclogin" novalidate>
         <div class="field"><label for="ccemail">Work email</label><input class="in" id="ccemail" data-draft="ccemail" type="email" autocomplete="username" placeholder="name@tmd.example" value="${esc(S.drafts.ccemail || '')}"></div>
         <div class="field"><label for="ccpw">Password</label><div class="pw"><input class="in" id="ccpw" data-draft="ccpw" type="${S.drafts.showpw ? 'text' : 'password'}" autocomplete="current-password" value="${esc(S.drafts.ccpw || '')}"><button type="button" class="btn sm" data-act="showpw" aria-label="${S.drafts.showpw ? 'Hide' : 'Show'} password">${S.drafts.showpw ? 'Hide' : 'Show'}</button></div></div>
@@ -999,19 +1137,19 @@ function ccAuth() {
       </form>
       <div class="demo-acc"><span class="eyebrow">Demo accounts · click to fill</span>${CC_USERS.map(u => `<button data-act="ccfill" data-arg="${u.email}"><span><b>${ROLES[u.role]}</b> · ${u.email}</span><span class="mono muted">${u.pw}</span></button>`).join('')}
         <span class="muted" style="font-size:11px">5 wrong passwords lock the account for 15 min. Every sign-in is written to the audit trail.</span></div>`;
-  return macWin('Command Center', `<div class="auth"><div class="auth-card">${card}</div></div>`);
+  return macWin('TAS Portal', `<div class="auth"><div class="auth-card">${card}</div></div>`);
 }
 function ccEnter(u) {
   const A = S.auth.cc;
   A.user = u; A.stage = 'in'; A.err = ''; A.fails = 0; A.pending = null;
   S.role = u.role; S.page = 'board'; S.sel = null; S.drafts.ccpw = ''; S.drafts.ccotp = '';
-  logAudit(u.name, ROLES[u.role], 'Signed in', `Command Center${u.mfa ? ' · with 2-step code' : ''}`);
+  logAudit(u.name, ROLES[u.role], 'Signed in', `TAS Portal${u.mfa ? ' · with 2-step code' : ''}`);
 }
 function commandView() {
   if (S.auth.cc.stage !== 'in') return ccAuth();
   const k = kpis(), pages = pagesFor(S.role);
   if (!pages.some(p => p[0] === S.page)) S.page = 'board';
-  const count = { exceptions: k.pend }, gov = ['rules', 'users', 'sites', 'codes', 'audit'];
+  const count = { exceptions: S.role === 'SALES' ? k.notify : k.open }, gov = ['rules', 'users', 'sites', 'codes', 'audit'];
   let grouped = false;
   const nav = pages.map(([id, l]) => {
     let h = '';
@@ -1020,7 +1158,7 @@ function commandView() {
   }).join('');
   const body = { board, map: mapPage, exceptions: exceptionsPage, analytics, rules, users, sites, codes, audit: auditPage }[S.page]();
   const title = pages.find(p => p[0] === S.page)[1];
-  return macWin(`${title} — Command Center`, `<div class="cc"><aside class="nav">
+  return macWin(`${title} — TAS Portal`, `<div class="cc"><aside class="nav">
       <span class="navgroup eyebrow" style="padding-top:2px">Monitor</span>
       <div class="navlist">${nav}</div><p class="perm">${ROLE_NOTE[S.role]}</p>
       <div class="usercard"><span class="avatar">${esc(me().name.replace(/[^A-Z]/g, '').slice(0, 2))}</span><div class="grow"><b>${esc(me().name)}</b><small>${ROLES[S.role]}</small></div><button class="btn sm" data-act="cclogout">Sign Out</button></div></aside>
@@ -1033,7 +1171,7 @@ function filteredJobs() {
   if (f === 'miss') js = js.filter(j => ['MISS', 'MISS_NA'].includes(evaluate(j)));
   if (f === 'hit') js = js.filter(j => evaluate(j) === 'HIT');
   if (f === 'flags') js = js.filter(j => j.flags.some(x => x.status === 'Open'));
-  if (f === 'exc') js = js.filter(j => j.exception && j.exception.status === 'Pending');
+  if (f === 'exc') js = js.filter(j => j.exception && exOpen(j.exception));
   if (f === 'arrived') js = js.filter(j => j.arrival);
   if (S.customer) js = js.filter(j => j.site === S.customer);
   return js;
@@ -1047,8 +1185,7 @@ function board() {
     const open = j.flags.filter(f => f.status === 'Open').length;
     const icons = [
       open ? `<span class="chip c-miss" title="Open integrity flags">⚑ ${open}</span>` : '',
-      j.exception ? `<span class="chip ${j.exception.status === 'Pending' ? 'c-risk' : 'c-neutral'}" title="Exception">${j.exception.code}</span>` : '',
-      j.prealert && !j.exception ? `<span class="chip c-info" title="Delay pre-alert">Pre-alert</span>` : '',
+      j.exception ? `<span class="chip ${exOpen(j.exception) ? 'c-risk' : 'c-neutral'}" title="${esc(reason(j.exception.code).label)}">${j.exception.code}</span>` : '',
       j.arrival && j.arrival.offline ? `<span class="chip c-neutral" title="Captured offline">Offline</span>` : '',
     ].join('');
     return `<tr class="click ${S.sel === j.id ? 'sel' : ''}" data-act="sel" data-arg="${j.id}" tabindex="0">
@@ -1068,11 +1205,11 @@ function board() {
       ${tile('hit', 'k-hit', k.raw == null ? '—' : k.raw + '%', 'On-time rate', `${k.hits} of ${k.decided} due so far on time`)}
       ${tile('miss', 'k-miss', k.misses, 'Miss', [k.notArrived ? `${k.notArrived} not arrived` : '', k.noExc ? `${k.noExc} need exception` : ''].filter(Boolean).join(' · ') || 'all have exceptions')}
       ${tile('risk', 'k-risk', k.risk, 'At risk', `due in ${S.config.atRisk} min, not arrived`)}
-      ${tile('exc', '', k.pend, 'Exceptions to review', 'TMD queue')}
+      ${tile('exc', k.slaOver ? 'k-miss' : '', k.open, 'Open exceptions', k.slaOver ? `${k.slaOver} over the ${S.config.sla}-min SLA` : `TMD SLA ${S.config.sla} min`)}
       ${tile('flags', k.flags ? 'k-miss' : '', k.flags, 'Integrity flags', 'open')}
     </div>
     <div class="boardgrid"><section style="display:flex;flex-direction:column;gap:10px;min-width:0">
-      <div class="filters">${fb('all','All')}${fb('risk','At risk')}${fb('miss','Miss')}${fb('arrived','Arrived')}${fb('flags','Flagged')}${fb('exc','Exception pending')}
+      <div class="filters">${fb('all','All')}${fb('risk','At risk')}${fb('miss','Miss')}${fb('arrived','Arrived')}${fb('flags','Flagged')}${fb('exc','Open exception')}
         <label class="muted" for="cust" style="font-size:13px;margin-left:6px">Customer</label><select id="cust" data-act="customer"><option value="">All customers</option>${custOpts}</select></div>
       <div class="tablebox"><table class="board-table"><thead><tr><th>Agreed</th><th>Customer / job</th><th>Container</th><th>Trucker</th><th>Arrived</th><th>Var min</th><th>Result</th><th>Status</th><th>Signals</th></tr></thead>
         <tbody>${rows || `<tr><td colspan="9" class="muted" style="padding:24px">No jobs match this filter.</td></tr>`}</tbody></table></div>
@@ -1082,10 +1219,37 @@ function board() {
     </div>`;
 }
 function statusText(j) {
-  const m = { 'Assigned':'c-neutral', 'En route':'c-info', 'At site':'c-info', 'Confirmed':'c-neutral' };
-  let s = j.status;
-  if (s === 'Confirmed' && evaluate(j) === 'MISS' && !j.exception) s = 'Needs exception';
-  return `<span class="chip ${s === 'Needs exception' ? 'c-risk' : m[s] || 'c-neutral'}">${s}</span>`;
+  const m = { 'Dispatched':'c-neutral', 'Accepted':'c-neutral', 'To CY':'c-info', 'At CY':'c-info', 'In transit':'c-info', 'At customer':'c-info', 'Confirmed':'c-info', 'Closed':'c-hit', 'Rescheduled':'c-neutral', 'Cancelled':'c-neutral' };
+  let s = j.status, c = m[s] || 'c-neutral';
+  if (j.hold) { s = 'On hold'; c = 'c-risk'; }
+  else if (s === 'Confirmed' && evaluate(j) === 'MISS' && !j.exception) { s = 'Needs reason'; c = 'c-risk'; }
+  else if (s === 'Confirmed') s = 'Awaiting consignee';
+  return `<span class="chip ${c}">${s}</span>`;
+}
+function exceptionPanel(j) {
+  const ex = j.exception, r = reason(ex.code), t = trk(j), tmd = S.role === 'TMD', sales = S.role === 'SALES';
+  const head = `<div class="head"><h3>Exception · ${STAGE_LABEL[ex.stage]}</h3><span class="icons">${ex.priority ? `<span class="chip ${ex.priority === 'High' ? 'c-miss' : 'c-neutral'}">${ex.priority} priority</span>` : ''}${slaChip(ex)}</span></div>`;
+  const what = `<div><b>${esc(r.label)}</b> <span class="chip ${OWNER_CHIP[r.owner]}">${r.owner}</span><div style="font-size:13px">Driver chose in TAS: “${esc(r.fil)}”</div><div class="muted" style="font-size:13px">Reported ${hm(ex.filedAt)} by ${esc(t.name)}${ex.photo ? ' · photo attached' : ''}</div></div>${ex.remarks ? `<p style="margin:0">“${esc(ex.remarks)}”</p>` : ''}`;
+  let ops = '';
+  if (ex.stage !== 'late') {
+    if (!ex.resolution) ops = tmd ? `<div class="field"><label>Priority</label><div class="seg">${['High', 'Normal'].map(x => `<button data-act="prio" data-arg="${x}" aria-pressed="${ex.priority === x}">${x}</button>`).join('')}</div></div>
+        <div class="actions"><button class="btn primary" data-act="resolve" data-arg="Resume">Resume trip</button><button class="btn" data-act="resolve" data-arg="Reschedule">Reschedule or cancel</button><button class="btn" data-act="resolve" data-arg="Reassign">Reassign &amp; re-dispatch</button></div>
+        <p class="muted" style="font-size:12px;margin:0"><b>Resume:</b> the driver continues from the step where the issue was raised. <b>Reschedule or cancel:</b> Sales Support notifies the customer. <b>Reassign:</b> a new trip goes back to dispatch.</p>`
+      : `<p class="muted" style="font-size:13px;margin:0">Waiting for TMD Dispatch to review (SLA ${S.config.sla} min).</p>`;
+    else {
+      ops = `<p style="margin:0;font-size:13px">Resolution: <b>${ex.resolution}</b> · ${esc(ex.resolvedBy || 'TMD')} at ${hm(ex.resolvedAt)}${ex.reassignedTo ? ` · to ${esc(TRUCKERS[ex.reassignedTo].name)}` : ''}</p>`;
+      if (ex.notify && ex.notify.status === 'Pending') ops += sales
+        ? `<div class="field"><label for="newslot">Notify customer: outcome</label><select class="in" id="newslot" data-draft="newslot">${[['resched:+120', 'Rescheduled to 2 hours later today'], ['resched:tom8', 'Rescheduled to tomorrow 8:00 AM'], ['resched:tom13', 'Rescheduled to tomorrow 1:00 PM'], ['cancel', 'Cancelled by the customer']].map(([v, l]) => `<option value="${v}" ${S.drafts.newslot === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div><div class="actions"><button class="btn primary" data-act="notify">Customer notified</button></div>`
+        : `<p class="muted" style="font-size:13px;margin:0">Waiting for Sales Support to notify the customer and agree a new schedule.</p>`;
+      if (ex.notify && ex.notify.status === 'Done') ops += `<p style="margin:0;font-size:13px">Customer notified by ${esc(ex.notify.by)} at ${hm(ex.notify.at)}: <b>${esc(ex.notify.outcome)}</b></p>`;
+    }
+  }
+  const canCheck = tmd && ex.status === 'Pending' && (ex.stage === 'late' || ex.resolution);
+  const check = ex.reviewer ? `<p class="muted" style="margin:0;font-size:13px">Reason ${ex.status === 'Validated' ? 'confirmed' : 'rejected'} by ${esc(ex.reviewer)} at ${hm(ex.reviewedAt)}: ${esc(ex.reviewNote)}</p>`
+    : canCheck ? `<div class="field"><label for="revnote">Reason check for analytics</label><textarea class="in" id="revnote" data-draft="revnote" placeholder="Note (required to reject)">${esc(S.drafts.revnote || '')}</textarea></div>
+      <div class="actions"><button class="btn ok" data-act="review" data-arg="Confirm">Confirm reason</button><button class="btn bad" data-act="review" data-arg="Reject">Reject reason</button></div>
+      <p class="muted" style="font-size:12px;margin:0">Confirming never changes the Miss. Port, CY and external reasons are left out of "On-time rate, excluding outside delays" only.</p>` : '';
+  return `<section class="panel">${head}${what}${ops}${check}</section>`;
 }
 function drawer() {
   const j = job(S.sel); if (!j) return '';
@@ -1095,15 +1259,8 @@ function drawer() {
   const flags = j.flags.map((f, i) => `<div class="flag ${f.status === 'Cleared' ? 'cleared' : ''}"><div class="row"><b>⚑ ${FLAGS[f.type]}</b><span class="chip ${f.status === 'Open' ? 'c-miss' : 'c-neutral'}">${f.status}</span></div>
       <span class="muted" style="font-size:13px">${esc(f.detail)} · ${hm(f.at)}</span>${f.clearedBy ? `<span style="font-size:13px">Cleared by ${esc(f.clearedBy)}: ${esc(f.note)}</span>` : ''}
       ${f.status === 'Open' && canAct ? `<div class="actions"><input class="in" id="fnote-${i}" data-draft="fnote-${i}" placeholder="Note (what you checked)" value="${esc(S.drafts['fnote-' + i] || '')}" style="flex:1;min-width:160px"><button class="btn sm" data-act="clearflag" data-arg="${i}">Clear flag</button></div>` : ''}</div>`).join('');
-  const excHtml = ex ? `<section class="panel"><div class="head"><h3>Exception · ${ex.code}</h3><span class="chip ${ex.status === 'Pending' ? 'c-risk' : ex.status === 'Validated' ? 'c-hit' : 'c-miss'}">${ex.status}${ex.cls ? ' · ' + ex.cls : ''}</span></div>
-      <div><b>${esc(reason(ex.code).label)}</b><div style="font-size:13px">Driver chose in TAS: “${esc(reason(ex.code).fil)}”</div><div class="muted" style="font-size:13px">Filed ${hm(ex.filedAt)} by ${esc(t.name)}${ex.photo ? ' · evidence photo attached' : ''} · default class ${reason(ex.code).cls}</div></div>
-      ${ex.remarks ? `<p style="margin:0">“${esc(ex.remarks)}”</p>` : ''}
-      ${ex.reviewer ? `<p class="muted" style="margin:0;font-size:13px">Reviewed by ${esc(ex.reviewer)} at ${hm(ex.reviewedAt)}: ${esc(ex.reviewNote)}</p>` : ''}
-      ${ex.status === 'Pending' && canAct ? `<textarea class="in" id="revnote" data-draft="revnote" placeholder="Review note (required to reject)">${esc(S.drafts.revnote || '')}</textarea>
-        <div class="actions"><button class="btn ok" data-act="review" data-arg="Uncontrollable">Validate · Uncontrollable</button><button class="btn" data-act="review" data-arg="Controllable">Validate · Controllable</button><button class="btn bad" data-act="review" data-arg="Reject">Reject</button></div>
-        <p class="muted" style="font-size:12px;margin:0">Validation never changes the Miss. An uncontrollable Miss is only left out of the analytics figure "On-time rate, excluding outside delays".</p>` : ''}
-      ${ex.status === 'Pending' && !canAct ? `<p class="muted" style="font-size:13px;margin:0">Waiting for TMD review.</p>` : ''}</section>` : '';
-  const update = `${s.customer}: container ${fmtCntr(j.container)} (${j.booking}) ${j.arrival ? `arrived at your site at ${hm(j.arrival.at)}, ${dateLabel(j.arrival.at)}. Agreed time was ${hm(j.agreed)}.` : j.prealert ? `is delayed. New estimated arrival ${hm(j.prealert.eta)}. Agreed time was ${hm(j.agreed)}.` : `is scheduled to arrive at ${hm(j.agreed)} today. Truck ${t.plate}.`}`;
+  const excHtml = ex ? exceptionPanel(j) : '';
+  const update = `${s.customer}: container ${fmtCntr(j.container)} (${j.booking}) ${j.arrival ? `arrived at your site at ${hm(j.arrival.at)}, ${dateLabel(j.arrival.at)}. Agreed time was ${hm(j.agreed)}.` : j.status === 'Rescheduled' ? `has been rescheduled to ${j.rescheduledTo >= BASE + 24 * 60 * MIN ? 'tomorrow ' : ''}${hm(j.rescheduledTo)}.` : j.status === 'Cancelled' ? 'has been cancelled as agreed with you.' : j.revisedEta ? `is delayed. New estimated arrival ${hm(j.revisedEta)}. Agreed time was ${hm(j.agreed)}.` : `is scheduled to arrive at ${hm(j.agreed)} today. Truck ${t.plate}.`}`;
   return `<div class="drawer-bg" data-act="close"></div><aside class="drawer" role="dialog" aria-label="Job ${j.id}">
     <div class="dhead"><div><span class="eyebrow mono">${j.id} · ${j.booking}</span><h2>${esc(s.customer)}</h2><div style="margin-top:6px">${resultChip(j)} ${statusText(j)}</div></div><button class="btn sm" data-act="close" aria-label="Close">Close ✕</button></div>
     <section class="panel"><div class="facts">
@@ -1115,7 +1272,9 @@ function drawer() {
       <div><span class="k">${S.role === 'SALES' ? 'Haulier' : 'Mobile'}</span><span class="v mono">${S.role === 'SALES' ? esc(t.haulier) : t.mobile}</span></div>
       <div><span class="k">Site</span><span class="v">${esc(s.addr)}</span></div>
       <div><span class="k">Confirmation</span><span class="v">${j.confirmedAt ? `${hm(j.confirmedAt)} · photo + ${j.scan === 'QR' ? 'QR scan' : 'typed number'}` : '—'}</span></div>
-    </div>${j.prealert ? `<div class="flag" style="border-left-color:var(--info)"><b>Delay pre-alert ${j.prealert.code} at ${hm(j.prealert.at)}</b><span class="muted" style="font-size:13px">${esc(reason(j.prealert.code).label)}. New ETA ${hm(j.prealert.eta)}.${j.prealert.remarks ? ' “' + esc(j.prealert.remarks) + '”' : ''}</span></div>` : ''}</section>
+      <div><span class="k">Pick-up check</span><span class="v">${j.pickupCheck ? `Seal ${j.pickupCheck.seal} · EIR ${j.pickupCheck.eir}` : '—'}</span></div>
+      <div><span class="k">Consignee</span><span class="v">${j.consigneeAt ? `Confirmed ${hm(j.consigneeAt)} · trip closed` : j.confirmedAt ? 'Waiting for confirmation' : '—'}</span></div>
+    </div>${j.confirmedAt && !j.consigneeAt && S.role === 'TMD' ? `<div class="actions" style="align-items:center"><button class="btn sm" data-act="consignee" data-arg="${j.id}">Record consignee confirmation</button><span class="muted" style="font-size:12px">Use when the consignee confirms by phone instead of the SMS link.</span></div>` : ''}</section>
     <div class="split"><figure class="figure" style="margin:0" title="Evidence photo">${j.photo ? containerArt(j, { watermark:[`${j.id} · ${hm(j.confirmedAt)} 21-10-2026`, `${s.lat.toFixed(4)}, ${s.lng.toFixed(4)} ±${j.arrival.acc}m`] }) : '<span class="muted" style="font-size:13px;padding:12px;text-align:center">No photo yet. Captured at arrival confirmation.</span>'}</figure>
       <figure class="figure" style="margin:0">${geofenceArt(j)}</figure></div>
     ${excHtml}
@@ -1125,16 +1284,18 @@ function drawer() {
   </aside>`;
 }
 function exceptionsPage() {
-  const list = S.jobs.filter(j => j.exception).sort((a, b) => (a.exception.status === 'Pending' ? 0 : 1) - (b.exception.status === 'Pending' ? 0 : 1) || a.exception.filedAt - b.exception.filedAt);
+  const ord = ex => (exOpen(ex) ? 0 : 2) + (ex.priority === 'High' ? 0 : 1);
+  const list = S.jobs.flatMap(j => [...(j.exHistory || []), j.exception].filter(Boolean).map(ex => ({ j, ex }))).sort((a, b) => ord(a.ex) - ord(b.ex) || a.ex.filedAt - b.ex.filedAt);
   const missing = S.jobs.filter(j => evaluate(j) === 'MISS' && !j.exception);
-  return `<div class="head"><div><span class="eyebrow">TMD review queue</span><h2>Exceptions</h2></div><span class="muted" style="font-size:13px">Review target: within 24 h of filing</span></div>
-    ${missing.length ? `<section class="panel" style="border-color:var(--risk)"><b>Late arrivals with no exception yet</b>${missing.map(j => `<div class="muted" style="font-size:14px">${j.id} · ${esc(site(j).customer)} · ${esc(trk(j).name)} · arrived ${hm(j.arrival.at)} <button class="linkish" data-act="sel" data-arg="${j.id}">Open</button></div>`).join('')}</section>` : ''}
-    <div class="tablebox"><table><thead><tr><th>Filed</th><th>Job</th><th>Reason</th><th>Late by</th><th>Trucker</th><th>Status</th><th></th></tr></thead><tbody>
-    ${list.map(j => `<tr class="click" data-act="sel" data-arg="${j.id}"><td class="mono">${hm(j.exception.filedAt)}</td><td><b>${esc(site(j).customer)}</b><div class="sub mono">${j.id}</div></td>
-      <td><span class="mono">${j.exception.code}</span> ${esc(reason(j.exception.code).label)}<div class="sub">${esc(j.exception.remarks || '')}</div></td>
-      <td class="mono var-pos">${j.arrival ? '+' + Math.round((j.arrival.at - j.agreed) / MIN) : '—'}</td><td>${esc(trk(j).name)}</td>
-      <td><span class="chip ${j.exception.status === 'Pending' ? 'c-risk' : j.exception.status === 'Validated' ? 'c-hit' : 'c-miss'}">${j.exception.status}${j.exception.cls ? ' · ' + j.exception.cls : ''}</span></td>
-      <td><span class="btn sm">${S.role === 'TMD' && j.exception.status === 'Pending' ? 'Review' : 'View'}</span></td></tr>`).join('') || `<tr><td colspan="7" class="muted" style="padding:24px">No exceptions filed today.</td></tr>`}
+  const notifyCell = ex => !ex.notify ? '<span class="muted">—</span>' : ex.notify.status === 'Pending' ? '<span class="chip c-risk">To notify</span>' : `<span class="chip c-hit">${esc(ex.notify.outcome)}</span>`;
+  const resCell = ex => ex.stage === 'late' ? '<span class="muted">—</span>' : ex.resolution ? esc(ex.resolution) : '<span class="chip c-risk">Open</span>';
+  const checkCell = ex => `<span class="chip ${ex.status === 'Pending' ? 'c-neutral' : ex.status === 'Validated' ? 'c-hit' : 'c-miss'}">${ex.status === 'Pending' ? 'To check' : ex.status === 'Validated' ? 'Confirmed' : 'Rejected'}</span>`;
+  return `<div class="head"><div><span class="eyebrow">Exception log · TMD Dispatch and Sales Support</span><h2>Exceptions</h2></div><span class="muted" style="font-size:13px">TMD reviews and resolves within ${S.config.sla} min</span></div>
+    ${missing.length ? `<section class="panel"><b>Late arrivals with no reason yet</b>${missing.map(j => `<div class="muted" style="font-size:13px">${j.id} · ${esc(site(j).customer)} · ${esc(trk(j).name)} · arrived ${hm(j.arrival.at)} <button class="linkish" data-act="sel" data-arg="${j.id}">Open</button></div>`).join('')}</section>` : ''}
+    <div class="tablebox"><table class="board-table"><thead><tr><th>Reported</th><th>Customer / job</th><th>Stage</th><th style="min-width:220px">Reason</th><th>Owner</th><th>Priority</th><th>SLA</th><th>Resolution</th><th>Customer</th><th>Reason check</th></tr></thead><tbody>
+    ${list.map(({ j, ex }) => { const r = reason(ex.code); return `<tr class="click ${S.sel === j.id ? 'sel' : ''}" data-act="sel" data-arg="${j.id}" tabindex="0"><td class="mono">${hm(ex.filedAt)}</td><td class="nw"><b>${esc(site(j).customer)}</b><div class="sub mono">${j.id} · ${esc(trk(j).name)}</div></td>
+      <td class="nw">${STAGE_LABEL[ex.stage]}</td><td>${esc(r.label)}<div class="sub">TAS: “${esc(r.fil)}”</div></td><td class="nw"><span class="chip ${OWNER_CHIP[r.owner]}">${r.owner}</span></td>
+      <td>${ex.priority ? `<span class="chip ${ex.priority === 'High' ? 'c-miss' : 'c-neutral'}">${ex.priority}</span>` : '<span class="muted">—</span>'}</td><td class="nw">${slaChip(ex)}</td><td class="nw">${resCell(ex)}</td><td class="nw">${notifyCell(ex)}</td><td>${checkCell(ex)}</td></tr>`; }).join('') || `<tr><td colspan="10" class="muted" style="padding:24px">No exceptions reported today.</td></tr>`}
     </tbody></table></div>`;
 }
 /* ---------- analytics data: sample history 1–20 Oct (deterministic) + today's live jobs ---------- */
@@ -1145,8 +1306,8 @@ const HISTORY = (() => {
   const tf = { T01:0, T02:-.04, T03:.04, T04:.01, T05:.03, T06:.10, T07:.02, T08:.05 };
   const sf = { VAL:.08, CAL:.05, GTR:.04, MEY:.02, STR:0, LIP:.02, TAG:-.03 };
   const siteW = { TAG:5, STR:4, VAL:4, MEY:3, CAL:3, GTR:3, LIP:2 };
-  const base = { 'TRF-01':30, 'PRT-01':18, 'CUS-01':12, 'TRK-02':10, 'TRK-01':7, 'TRF-02':6, 'WTH-01':4, 'CUS-02':4, 'DOC-01':3, 'PRT-02':3, 'OTH-99':2 };
-  const bias = { VAL:{ 'TRF-01':30 }, CAL:{ 'PRT-01':20 }, TAG:{ 'CUS-01':10 }, GTR:{ 'TRK-01':8 } };
+  const base = { 'IT-02':26, 'PO-09':16, 'PO-01':12, 'PO-08':8, 'IT-03':7, 'PO-07':7, 'PO-04':6, 'PO-03':5, 'PO-02':4, 'PO-05':4, 'IT-01':4, 'IT-04':4, 'PO-06':3, 'PO-10':3, 'PO-99':1, 'IT-99':1 };
+  const bias = { VAL:{ 'IT-02':20 }, CAL:{ 'PO-09':15 }, TAG:{ 'PO-04':6 }, GTR:{ 'IT-03':6 } };
   for (let d = 1; d <= 20; d++) {
     const sunday = new Date(Date.UTC(2026, 9, d)).getUTCDay() === 0, storm = d === 14;
     const n = sunday ? 8 : 20 + Math.floor(r() * 6);
@@ -1158,10 +1319,10 @@ const HISTORY = (() => {
       if (late && r() > .06) {
         const w = Object.assign({}, base);
         for (const [k, v] of Object.entries(bias[site] || {})) w[k] += v;
-        if (storm) w['WTH-01'] += 120;
+        if (storm) w['PO-10'] += 120;
         code = pickW(r, w);
         status = d === 20 && r() < .5 ? 'Pending' : r() < .9 ? 'Validated' : 'Rejected';
-        cls = status === 'Pending' ? null : status === 'Rejected' || code === 'OTH-99' ? 'Controllable' : reason(code).cls;
+        cls = status === 'Pending' ? null : status === 'Rejected' ? 'Controllable' : reason(code).cls;
       }
       out.push({ day:d, site, trucker, move, late, varMin: late ? 3 + Math.round(r() * r() * 90) : -Math.round(r() * 45), code, status, cls, flag: r() < .03 });
     }
@@ -1189,10 +1350,11 @@ function summarize(rs) {
     avgLate: late.length ? Math.round(late.reduce((a, r) => a + r.varMin, 0) / late.length) : null };
 }
 const SAMPLE_REMARKS = {
-  'TRF-01':'Accident on SLEX northbound near Alabang, one lane open.', 'PRT-01':'Two-hour queue at MICT gate-out.', 'CUS-01':'Receiving asked the truck to wait until 2 pm.',
-  'TRK-02':'Driver reported late for dispatch.', 'TRK-01':'Flat tire on CAVITEX, changed at Kawit.', 'TRF-02':'Held until the truck ban window ended.',
-  'WTH-01':'Flooding on MacArthur Hwy, road not passable.', 'CUS-02':'Gate closed, guard had no delivery schedule.', 'DOC-01':'Gate pass missing at pick-up.',
-  'PRT-02':'Container on customs hold until 9 am.', 'OTH-99':'Detour due to LGU road works.',
+  'PO-01':'Walang available na 40HC sa yard.', 'PO-02':'Down ang 2GO system, hindi ma-release ang EIR.', 'PO-03':'Down ang Northport system, nakapila lahat.',
+  'PO-04':'Late na-book, 9 AM lang na-schedule.', 'PO-05':'Staggered ang release, 3 container kada oras.', 'PO-06':'May sira ang container, pinalitan ng yard.',
+  'PO-07':'Isa lang ang gumaganang reach stacker.', 'PO-08':'Mahabang pila sa FDT, isang oras.', 'PO-09':'Siksikan sa pier, 2 oras sa gate-out.',
+  'PO-10':'Malakas ang ulan, tigil ang operasyon sa yard.', 'PO-99':'Hinintay ang gate pass.', 'IT-01':'Ni-reroute dahil sa motorcade.',
+  'IT-02':'Traffic sa SLEX northbound.', 'IT-03':'Flat tire sa CAVITEX.', 'IT-04':'Sarado ang Roxas Blvd, may road repair.', 'IT-99':'Pinahinto sa checkpoint.',
 };
 function analytics() {
   const f = S.af, rs = analyticsData(), sm = summarize(rs), isSales = S.role === 'SALES';
@@ -1216,7 +1378,7 @@ function analytics() {
     ${tile('', sm.rateEx + '%', 'On-time rate, excluding outside delays', `${sm.outside} late trip${sm.outside === 1 ? '' : 's'} not counted`)}
     ${tile('k-miss', sm.late, 'Late deliveries', `${sm.ours} within our control`)}
     ${tile('', sm.avgLate == null ? '—' : sm.avgLate + ' min', 'Average lateness', 'for late deliveries')}</div>
-    <p class="defs"><span><b>On-time rate:</b> deliveries that arrived on or before the agreed time, out of all deliveries.</span><span><b>Excluding outside delays:</b> the same, but late trips that TMD confirmed were caused by the customer, port, weather or road closures are not counted.</span></p>`;
+    <p class="defs"><span><b>On-time rate:</b> deliveries that arrived on or before the agreed time, out of all deliveries.</span><span><b>Excluding outside delays:</b> the same, but late trips that TMD confirmed were caused by the port or CY, weather, traffic, road closures or government events are not counted.</span></p>`;
 
   // trend
   const from = PERIODS[f.period][1], days = []; for (let d = from; d <= 21; d++) days.push(d);
@@ -1242,32 +1404,37 @@ function analytics() {
       <circle cx="${x(last)}" cy="${y(lp.rateEx)}" r="4" style="fill:var(--violet)"/></svg>`;
   }
 
-  // why late
-  const lateRs = rs.filter(r => r.late), groups = {};
-  for (const r of lateRs) (groups[r.code || 'NONE'] ||= []).push(r);
-  const ord = Object.entries(groups).sort((a, b) => b[1].length - a[1].length), max = ord.length ? ord[0][1].length : 1;
-  const explained = lateRs.filter(r => r.code).length;
-  const why = ord.map(([code, list]) => {
-    const none = code === 'NONE', r = none ? null : reason(code), n = list.length, pct = Math.round(n / lateRs.length * 100);
-    const tag = none ? ['c-risk', 'No reason given yet'] : r.cls === 'Uncontrollable' ? ['c-info', 'Outside our control'] : r.cls === 'Controllable' ? ['c-miss', 'Within our control'] : ['c-neutral', 'TMD decides'];
-    const color = none ? 'var(--risk)' : r.cls === 'Controllable' ? 'var(--miss)' : r.cls === 'Uncontrollable' ? 'var(--violet)' : 'var(--muted)';
-    const live = list.find(x => x.remarks), eg = none ? 'The trucker has not filed an exception for these late trips.' : `e.g. “${esc(live ? live.remarks : SAMPLE_REMARKS[code])}”`;
-    return `<div class="why-row"><div class="why-top"><b>${none ? 'Late, no exception filed yet' : esc(r.label)}</b><span class="mono">${n} · ${pct}%</span></div>
-      <div class="bar"><i style="width:${n / max * 100}%;background:${color}"></i></div>
-      <div class="why-sub"><span class="chip ${tag[0]}">${tag[1]}</span>${none ? '' : `<span class="mono">${code}</span>`}<span>${eg}</span></div></div>`;
-  }).join('');
-  const whyPanel = `<section class="panel"><div><h3>Why trucks were late</h3><p class="why-sum">${lateRs.length} late deliver${lateRs.length === 1 ? 'y' : 'ies'}: ${explained} with a reason from the trucker's exception${lateRs.length - explained ? `, ${lateRs.length - explained} with no exception yet` : ''}. Largest reason first.</p></div>
-    ${lateRs.length ? `<div class="why">${why}</div>` : '<p class="muted" style="margin:0">No late deliveries for these filters.</p>'}</section>`;
+  // why late: grouped by when the delay happened, then who caused it
+  const lateRs = rs.filter(r => r.late), explained = lateRs.filter(r => r.code).length, none = lateRs.length - explained;
+  const ownerOf = r => r.code ? reason(r.code).owner : 'Not reported';
+  const owners = ['2GO internal', 'Port / CY', 'Trucker / haulier', 'External', 'TMD decides', 'Not reported'].map(o => [o, lateRs.filter(r => ownerOf(r) === o).length]).filter(([, n]) => n);
+  const pctOf = n => Math.round(n / lateRs.length * 100);
+  const stack = `<div class="stack" role="img" aria-label="Late deliveries by who caused them">${owners.map(([o, n]) => `<i style="width:${n / lateRs.length * 100}%;background:${OWNER_COLOR[o]}" title="${o}: ${n}"></i>`).join('')}</div>
+    <div class="legend2">${owners.map(([o, n]) => `<span><i style="background:${OWNER_COLOR[o]}"></i>${o} · ${n} (${pctOf(n)}%)</span>`).join('')}</div>`;
+  const whyRow = (code, list, max) => {
+    const r = reason(code), n = list.length, live = list.find(x => x.remarks);
+    return `<div class="why-row"><div class="why-top"><b>${esc(r.label)}</b><span class="mono">${n} · ${pctOf(n)}%</span></div>
+      <div class="bar"><i style="width:${n / max * 100}%;background:${OWNER_COLOR[r.owner]}"></i></div>
+      <div class="why-sub"><span class="chip ${OWNER_CHIP[r.owner]}">${r.owner}</span><span class="mono">${code}</span><span>TAS: “${esc(r.fil)}”</span><span>e.g. “${esc(live ? live.remarks : SAMPLE_REMARKS[code])}”</span></div></div>`;
+  };
+  const whySection = (stage, title) => {
+    const g = {}; for (const r of lateRs) if (r.code && reason(r.code).stage === stage) (g[r.code] ||= []).push(r);
+    const ord = Object.entries(g).sort((a, b) => b[1].length - a[1].length); if (!ord.length) return '';
+    const n = ord.reduce((a, [, l]) => a + l.length, 0);
+    return `<div class="why-stage"><span>${title}</span><span class="mono">${n} · ${pctOf(n)}%</span></div>${ord.map(([c, l]) => whyRow(c, l, ord[0][1].length)).join('')}`;
+  };
+  const whyPanel = `<section class="panel"><div><h3>Why trucks were late</h3><p class="why-sum">${lateRs.length} late deliver${lateRs.length === 1 ? 'y' : 'ies'}: ${explained} with a reason tagged by the trucker${none ? `, ${none} with no reason yet` : ''}. Grouped by when the delay happened, largest first.</p></div>
+    ${lateRs.length ? `<div><span class="eyebrow">Who caused the delay</span>${stack}</div><div class="why">${whySection('pickup', 'A. Prior empty pull-out')}${whySection('transit', 'B. While in transit')}${none ? `<div class="why-stage"><span>No reason yet</span><span class="mono">${none} · ${pctOf(none)}%</span></div><div class="why-row"><div class="why-top"><b>Late, no reason tagged yet</b></div><div class="why-sub">The trucker has not tagged a reason for these late trips.</div></div>` : ''}</div>` : '<p class="muted" style="margin:0">No late deliveries for these filters.</p>'}</section>`;
 
   // scorecards
   const by = key => { const m = {}; for (const r of rs) (m[r[key]] ||= []).push(r); return m; };
   const pc = v => `<td class="mono ${v < 90 ? 'var-pos' : ''}">${v}%</td>`;
-  const custRows = Object.entries(by('site')).map(([k, list]) => ({ k, s: summarize(list), cus: list.filter(r => r.late && /^CUS/.test(r.code || '')).length })).sort((a, b) => a.s.rate - b.s.rate);
-  const custTable = `<section class="panel"><h3>Customer scorecard</h3><div class="tablebox" style="border:0"><table><thead><tr><th>Customer</th><th>Deliveries</th><th>On-time rate</th><th>Late</th><th>Late caused by customer</th><th>Average lateness</th></tr></thead><tbody>
+  const custRows = Object.entries(by('site')).map(([k, list]) => ({ k, s: summarize(list), cus: list.filter(r => r.late && r.code && reason(r.code).owner === '2GO internal').length })).sort((a, b) => a.s.rate - b.s.rate);
+  const custTable = `<section class="panel"><h3>Customer scorecard</h3><div class="tablebox" style="border:0"><table><thead><tr><th>Customer</th><th>Deliveries</th><th>On-time rate</th><th>Late</th><th>Late caused by 2GO (system, booking)</th><th>Average lateness</th></tr></thead><tbody>
     ${custRows.map(({ k, s: x, cus }) => `<tr class="pick" data-act="afset" data-arg="site:${k}" title="Filter by this customer"><td>${esc(SITES[k].customer)}</td><td class="mono">${x.n}</td>${pc(x.rate)}<td class="mono">${x.late}</td><td class="mono">${cus}</td><td class="mono">${x.avgLate == null ? '—' : x.avgLate + ' min'}</td></tr>`).join('')}</tbody></table></div></section>`;
-  const trkRows = Object.entries(by('trucker')).map(([k, list]) => ({ k, s: summarize(list), filed: list.filter(r => r.late && r.code).length, flags: list.filter(r => r.flag).length })).sort((a, b) => a.s.rate - b.s.rate);
-  const trkTable = isSales ? '' : `<section class="panel"><h3>Trucker scorecard</h3><div class="tablebox" style="border:0"><table><thead><tr><th>Trucker</th><th>Deliveries</th><th>On-time rate</th><th>Late</th><th>Late within our control</th><th>Exception filed</th><th>Integrity flags</th></tr></thead><tbody>
-    ${trkRows.map(({ k, s: x, filed, flags }) => `<tr class="pick" data-act="afset" data-arg="trucker:${k}" title="Filter by this trucker"><td>${esc(TRUCKERS[k].name)}<div class="sub mono">${TRUCKERS[k].plate} · ${esc(TRUCKERS[k].haulier)}</div></td><td class="mono">${x.n}</td>${pc(x.rate)}<td class="mono">${x.late}</td><td class="mono">${x.ours}</td><td class="mono">${x.late ? Math.round(filed / x.late * 100) + '%' : '—'}</td><td>${flags ? `<span class="chip c-miss">⚑ ${flags}</span>` : '<span class="muted">0</span>'}</td></tr>`).join('')}</tbody></table></div></section>`;
+  const trkRows = Object.entries(by('trucker')).map(([k, list]) => ({ k, s: summarize(list), filed: list.filter(r => r.late && r.code).length, flags: list.filter(r => r.flag).length, own: list.filter(r => r.late && r.code && reason(r.code).owner === 'Trucker / haulier').length })).sort((a, b) => a.s.rate - b.s.rate);
+  const trkTable = isSales ? '' : `<section class="panel"><h3>Trucker scorecard</h3><div class="tablebox" style="border:0"><table><thead><tr><th>Trucker</th><th>Deliveries</th><th>On-time rate</th><th>Late</th><th>Late caused by trucker</th><th>Exception filed</th><th>Integrity flags</th></tr></thead><tbody>
+    ${trkRows.map(({ k, s: x, filed, flags, own }) => `<tr class="pick" data-act="afset" data-arg="trucker:${k}" title="Filter by this trucker"><td>${esc(TRUCKERS[k].name)}<div class="sub mono">${TRUCKERS[k].plate} · ${esc(TRUCKERS[k].haulier)}</div></td><td class="mono">${x.n}</td>${pc(x.rate)}<td class="mono">${x.late}</td><td class="mono">${own}</td><td class="mono">${x.late ? Math.round(filed / x.late * 100) + '%' : '—'}</td><td>${flags ? `<span class="chip c-miss">⚑ ${flags}</span>` : '<span class="muted">0</span>'}</td></tr>`).join('')}</tbody></table></div></section>`;
 
   return head + bar + tiles + `<div class="cards2">
       <section class="panel chart"><div><h3>On-time rate by day</h3><p class="muted" style="margin:0;font-size:13px">Hover a point for the day's numbers.</p></div>
@@ -1276,7 +1443,8 @@ function analytics() {
 }
 
 /* ---------- live map (schematic, real coordinates) ---------- */
-const PICKUP_POS = { MICT:[14.605, 120.952], NH:[14.612, 120.962], VEY:[14.700, 120.985], BCT:[13.757, 121.045] };
+const PICKUP_POS = { MICT:[14.605, 120.952], NH:[14.612, 120.962], VEY:[14.700, 120.985], BCT:[13.757, 121.045], SCY:[14.255, 121.135] };
+const BASE_POS = { T01:[14.232, 121.162] };
 const ROUTES = {
   TAG:[[14.58, 120.975], [14.54, 121.02]],
   STR:[[14.58, 120.975], [14.54, 121.02], [14.42, 121.045], [14.31, 121.10]],
@@ -1308,32 +1476,38 @@ function pointBack(r, km) { // the point `km` before the end of the route, and t
   return { p:r[0], i:1 };
 }
 function currentJob(tid) {
-  const js = S.jobs.filter(j => j.trucker === tid).sort((a, b) => a.agreed - b.agreed);
-  const moving = js.find(j => !j.arrival && j.status === 'En route');
+  const js = S.jobs.filter(j => j.trucker === tid && !['Rescheduled', 'Cancelled'].includes(j.status)).sort((a, b) => a.agreed - b.agreed);
+  const moving = js.find(j => !j.arrival && ['To CY', 'At CY', 'In transit'].includes(j.status));
   if (moving) return moving;
   const lastArr = js.filter(j => j.arrival).sort((a, b) => b.arrival.at - a.arrival.at)[0], next = js.find(j => !j.arrival);
   return lastArr && (!next || S.now - lastArr.arrival.at < 45 * MIN) ? lastArr : next || lastArr;
 }
 function truckState(tid) {
   const j = currentJob(tid); if (!j) return null;
-  const s = site(j), route = routeOf(j), e = evaluate(j);
-  const st = { tid, j, e, route, kind:'waiting', km:null, eta:null, lastAt:S.now, offline:false, fake: j.flags.some(f => f.type === 'MOCK_LOCATION' && f.status === 'Open') };
+  const s = site(j), route = routeOf(j), e = evaluate(j), cyPos = PICKUP_POS[j.pickup];
+  const L = j.demo && j.trucker === PHONE_OWNER ? S.phone.local[j.id] : null;
+  const st = { tid, j, e, route, kind:'waiting', km:null, eta:null, lastAt:S.now, offline:false, hold:!!j.hold, fake: j.flags.some(f => f.type === 'MOCK_LOCATION' && f.status === 'Open') };
   if (j.arrival) { st.kind = 'site'; st.pos = [s.lat, s.lng]; st.lastAt = j.arrival.at; }
-  else if (j.status === 'En route') {
+  else if (j.status === 'To CY') {
+    st.kind = 'road'; st.toCY = true;
+    const from = BASE_POS[tid] || cyPos, km = L ? (L.seenCy ?? j.d0Cy) : 1, f = L ? Math.min(1, Math.max(0, 1 - km / j.d0Cy)) : .5;
+    st.pos = [from[0] + (cyPos[0] - from[0]) * f, from[1] + (cyPos[1] - from[1]) * f]; st.rest = [st.pos, cyPos];
+    st.km = km; st.eta = S.now + km / speedKmMin() * MIN; st.offline = !!L && !S.phone.online;
+  } else if (j.status === 'At CY') st.pos = cyPos;
+  else if (j.status === 'In transit') {
     st.kind = 'road';
-    if (j.demo) { const L = S.phone.local[j.id]; st.km = L.seenKm ?? j.d0; st.lastAt = L.seenAt ?? S.now; st.offline = !S.phone.online; st.eta = st.lastAt + st.km / speedKmMin() * MIN; }
+    if (L) { st.km = L.seenKm ?? j.d0; st.lastAt = L.seenAt ?? S.now; st.offline = !S.phone.online; st.eta = st.lastAt + st.km / speedKmMin() * MIN; }
     else {
-      const start = (j.events.find(x => x.type === 'trip.started') || {}).at || S.now, eta = j.prealert ? j.prealert.eta : j.agreed - 12 * MIN;
+      const start = (j.events.find(x => x.type === 'trip.started') || {}).at || S.now, eta = j.revisedEta || j.agreed - 12 * MIN;
       const frac = Math.min(.97, Math.max(0, (S.now - start) / Math.max(MIN, eta - start)));
       st.km = (1 - frac) * routeLen(route); st.eta = Math.max(eta, S.now + 2 * MIN);
     }
     const b = pointBack(route, st.km); st.pos = b.p; st.seg = b.i;
-  } else if (j.demo) { st.km = j.d0; st.pos = pointBack(route, j.d0).p; }
-  else st.pos = PICKUP_POS[j.pickup];
+  } else st.pos = L ? (BASE_POS[tid] || cyPos) : cyPos;
   st.color = e === 'HIT' ? 'var(--hit)' : e === 'MISS' || e === 'MISS_NA' ? 'var(--miss)' : e === 'AT_RISK' ? 'var(--risk)' : st.kind === 'road' ? 'var(--violet)' : 'var(--muted)';
-  st.label = st.kind === 'site' ? (e === 'HIT' ? 'At site · on time' : 'At site · late')
-    : st.kind === 'road' ? (e === 'MISS_NA' ? 'Late, still on the road' : e === 'AT_RISK' ? 'On the road · at risk' : 'On the road · on schedule')
-    : e === 'MISS_NA' ? 'Late, trip not started' : 'Waiting to start trip';
+  st.label = st.hold ? 'On hold · exception open' : st.kind === 'site' ? (e === 'HIT' ? 'At site · on time' : 'At site · late')
+    : st.toCY ? 'Going to the CY' : st.kind === 'road' ? (e === 'MISS_NA' ? 'Late, still on the road' : e === 'AT_RISK' ? 'On the road · at risk' : 'On the road · on schedule')
+    : j.status === 'At CY' ? 'At the CY · pick-up' : e === 'MISS_NA' ? 'Late, trip not started' : 'Waiting to start trip';
   return st;
 }
 function mapPage() {
@@ -1353,10 +1527,10 @@ function mapPage() {
   for (const [n, lat, lng] of GEO.places) if (!wide || ['Manila', 'Batangas City', 'Lipa'].includes(n)) g += text(n, lat, lng, 11);
   for (const [id, pos] of Object.entries(PICKUP_POS)) { const [x, y] = proj(...pos), r = 6 * k; g += `<rect x="${(x - r).toFixed(1)}" y="${(y - r).toFixed(1)}" width="${(2 * r).toFixed(1)}" height="${(2 * r).toFixed(1)}" transform="rotate(45 ${x.toFixed(1)} ${y.toFixed(1)})" style="fill:var(--info)"><title>${esc(PICKUPS[id])}</title></rect>`; if (!wide) g += text(PICKUPS[id].split(' (')[0].replace(', Tondo', ''), pos[0] + (id === 'NH' ? .012 : -.02), pos[1] - .06, 10); }
   for (const [id, x] of Object.entries(SITES)) { const [cx, cy] = proj(x.lat, x.lng); g += `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${(11 * k).toFixed(1)}" style="fill:var(--magenta);fill-opacity:.12;stroke:var(--magenta)" stroke-width="${(1.2 * k).toFixed(2)}" stroke-dasharray="${(3 * k).toFixed(1)} ${(2 * k).toFixed(1)}"><title>${esc(x.customer)} · geofence ${x.radius} m</title></circle><rect x="${(cx - 4 * k).toFixed(1)}" y="${(cy - 4 * k).toFixed(1)}" width="${(8 * k).toFixed(1)}" height="${(8 * k).toFixed(1)}" style="fill:var(--magenta)"/>`; g += text(x.customer.split(' ').slice(0, 2).join(' '), x.lat - .03, x.lng + .0, 10.5, 'font-weight="600"'); }
-  for (const t of shown.filter(x => x.kind === 'road')) { const rest = [t.pos, ...t.route.slice(t.seg)]; g += `<polyline points="${poly(rest)}" fill="none" style="stroke:${t.color}" stroke-width="${(2.2 * k).toFixed(2)}" stroke-dasharray="${(5 * k).toFixed(1)} ${(4 * k).toFixed(1)}" opacity=".9"/>`; }
+  for (const t of shown.filter(x => x.kind === 'road')) { const rest = t.rest || [t.pos, ...t.route.slice(t.seg)]; g += `<polyline points="${poly(rest)}" fill="none" style="stroke:${t.color}" stroke-width="${(2.2 * k).toFixed(2)}" stroke-dasharray="${(5 * k).toFixed(1)} ${(4 * k).toFixed(1)}" opacity=".9"/>`; }
   for (const t of shown.sort((a, b) => (a.j.id === S.sel) - (b.j.id === S.sel))) {
     const [x, y] = proj(...t.pos), r = (t.j.id === S.sel ? 11 : 8.5) * k, tr = TRUCKERS[t.tid];
-    const ring = t.offline ? `<circle r="${(r + 5 * k).toFixed(1)}" fill="none" style="stroke:var(--muted)" stroke-width="${(1.5 * k).toFixed(2)}" stroke-dasharray="${(2 * k).toFixed(1)} ${(2 * k).toFixed(1)}"/>` : t.fake ? `<circle r="${(r + 5 * k).toFixed(1)}" fill="none" style="stroke:var(--miss)" stroke-width="${(2 * k).toFixed(2)}"/>` : '';
+    const ring = t.offline ? `<circle r="${(r + 5 * k).toFixed(1)}" fill="none" style="stroke:var(--muted)" stroke-width="${(1.5 * k).toFixed(2)}" stroke-dasharray="${(2 * k).toFixed(1)} ${(2 * k).toFixed(1)}"/>` : t.fake ? `<circle r="${(r + 5 * k).toFixed(1)}" fill="none" style="stroke:var(--miss)" stroke-width="${(2 * k).toFixed(2)}"/>` : t.hold ? `<circle r="${(r + 5 * k).toFixed(1)}" fill="none" style="stroke:var(--risk)" stroke-width="${(2.4 * k).toFixed(2)}"/>` : '';
     g += `<g class="trk" data-act="sel" data-arg="${t.j.id}" tabindex="0" role="button" aria-label="${esc(tr.name)} ${tr.plate}, ${t.label}" transform="translate(${x.toFixed(1)} ${y.toFixed(1)})">${ring}
       <circle class="body" r="${r.toFixed(1)}" style="fill:${t.color};stroke:var(--surface)" stroke-width="${(2.2 * k).toFixed(2)}"/>
       <path d="M${(-4.5 * k).toFixed(2)} ${(-1 * k).toFixed(2)}h${(5.5 * k).toFixed(2)}v${(3.5 * k).toFixed(2)}h${(-5.5 * k).toFixed(2)}z M${(1 * k).toFixed(2)} ${(0 * k).toFixed(2)}h${(2.4 * k).toFixed(2)}l${(1.2 * k).toFixed(2)} ${(1.4 * k).toFixed(2)}v${(1.1 * k).toFixed(2)}h${(-3.6 * k).toFixed(2)}z" style="fill:var(--surface)"/>
@@ -1368,7 +1542,7 @@ function mapPage() {
   const cnt = { road: all.filter(x => x.kind === 'road').length, late: all.filter(late).length, site: all.filter(x => x.kind === 'site').length, off: all.filter(x => x.offline).length };
   const tileB = (f, cls, v, l, s) => `<button class="kpi ${cls}" data-act="mapf" data-arg="${f}" aria-pressed="${S.mapf === f}"><span class="l">${l}</span><span class="v">${v}</span><span class="s">${s}</span></button>`;
   const order = { MISS_NA:0, AT_RISK:1, ON_SCHEDULE:2, MISS:3, HIT:4 };
-  const row = t => { const tr = TRUCKERS[t.tid]; const info = t.kind === 'road' ? `${t.km.toFixed(1)} km to go · ETA ${hm(t.eta)}${t.offline ? ` · no signal since ${hm(t.lastAt)}` : ''}` : t.kind === 'site' ? `Arrived ${hm(t.j.arrival.at)} · agreed ${hm(t.j.agreed)}` : `At ${t.j.demo ? 'standby near site' : PICKUPS[t.j.pickup].split(' (')[0]} · agreed ${hm(t.j.agreed)}`;
+  const row = t => { const tr = TRUCKERS[t.tid]; const info = t.kind === 'road' ? `${t.km.toFixed(1)} km ${t.toCY ? 'to CY' : 'to go'} · ETA ${hm(t.eta)}${t.offline ? ` · no signal since ${hm(t.lastAt)}` : ''}` : t.kind === 'site' ? `Arrived ${hm(t.j.arrival.at)} · agreed ${hm(t.j.agreed)}` : `${t.j.status === 'At CY' ? (t.hold ? 'On hold at ' : 'At ') : 'Pick-up at '}${cyName(t.j)} · agreed ${hm(t.j.agreed)}`;
     return `<button class="trow" data-act="sel" data-arg="${t.j.id}" aria-current="${S.sel === t.j.id}"><span class="dot" style="background:${t.color}"></span><span><b>${esc(tr.name)}</b> <span class="mono muted">${tr.plate}</span><small>${esc(site(t.j).customer)} · ${info}</small></span><span class="chip ${RESULT_CHIP[t.e][0]}">${RESULT_CHIP[t.e][1]}</span></button>`; };
   const groupsDef = [['Late or at risk', x => late(x)], ['On the road', x => x.kind === 'road' && !late(x)], ['At customer site', x => x.kind === 'site'], ['Waiting to start', x => x.kind === 'waiting' && !late(x)]];
   const list = groupsDef.map(([title, fn]) => { const items = shown.filter(fn).sort((a, b) => order[a.e] - order[b.e] || a.j.agreed - b.j.agreed); return items.length ? `<div class="tgroup"><span class="eyebrow">${title} · ${items.length}</span>${items.map(row).join('')}</div>` : ''; }).join('') || '<p class="muted" style="margin:0">No trucks match this filter.</p>';
@@ -1395,7 +1569,8 @@ function rules() {
   return `<div class="head"><div><span class="eyebrow">System Admin</span><h2>Rules</h2></div><span class="muted" style="font-size:13px">Every change is written to the audit trail and applies immediately.</span></div>
     <section class="panel"><h3>Hit / Miss</h3><div class="formgrid">
       ${f('grace','Grace period','min','Arrival up to this long after the agreed time still counts as Hit. Default 0.',0,60)}
-      ${f('atRisk','At-risk window','min','Flag jobs not yet arrived this long before the agreed time.',5,120)}</div></section>
+      ${f('atRisk','At-risk window','min','Flag jobs not yet arrived this long before the agreed time.',5,120)}
+      ${f('sla','Exception response SLA','min','TMD Dispatch must review and resolve a reported exception within this time.',5,120)}</div></section>
     <section class="panel"><h3>Anti-cheat</h3><div class="formgrid">
       ${f('radius','Default geofence radius','m','Used for new sites. Each site can override it.',50,500)}
       ${f('acc','GPS accuracy limit','m','Confirmation is blocked if the GPS reading is less precise than this.',10,200)}
@@ -1410,7 +1585,7 @@ function users() {
     ${Object.entries(TRUCKERS).map(([id, t]) => `<tr><td><b>${esc(t.name)}</b><div class="sub mono">${t.plate} · ${t.mobile}</div></td><td>${esc(t.haulier)}</td><td>${esc(t.device)}</td><td class="mono">${t.app}${t.app !== '1.0.3' ? ' <span class="chip c-risk">Update</span>' : ''}</td>
       <td><span class="chip ${t.integrity === 'Pass' ? 'c-hit' : 'c-risk'}">${t.integrity}</span></td><td class="mono">${t.bound}</td><td><button class="btn sm" data-act="resetdev" data-arg="${id}">Reset device</button></td></tr>`).join('')}
     </tbody></table></div><p class="muted" id="devmsg" style="margin:0;font-size:13px"></p>
-    <section class="panel"><h3>Command Center users</h3><div class="tablebox" style="border:0"><table><thead><tr><th>Name</th><th>Work email</th><th>Role</th><th>Sign-in</th></tr></thead><tbody>
+    <section class="panel"><h3>TAS Portal users</h3><div class="tablebox" style="border:0"><table><thead><tr><th>Name</th><th>Work email</th><th>Role</th><th>Sign-in</th></tr></thead><tbody>
       ${CC_USERS.map(u => `<tr><td>${esc(u.name)}</td><td class="mono">${u.email}</td><td>${ROLES[u.role]}</td><td>${u.mfa ? '<span class="chip c-info">Password + 2-step code</span>' : '<span class="chip c-neutral">Password</span>'}</td></tr>`).join('')}</tbody></table></div></section>`;
 }
 function sites() {
@@ -1421,10 +1596,10 @@ function sites() {
     </tbody></table></div>`;
 }
 function codes() {
-  return `<div class="head"><div><span class="eyebrow">System Admin</span><h2>Exception reason codes</h2></div><span class="muted" style="font-size:13px">Default class guides TMD review. TMD makes the final call.</span></div>
-    <div class="tablebox"><table><thead><tr><th>Code</th><th>Reason shown to trucker</th><th>Default class</th></tr></thead><tbody>
-    ${REASONS.map(r => `<tr><td class="mono"><b>${r.code}</b></td><td>${esc(r.label)}</td><td><span class="chip ${r.cls === 'Controllable' ? 'c-miss' : r.cls === 'Uncontrollable' ? 'c-info' : 'c-neutral'}">${r.cls}</span></td></tr>`).join('')}
-    </tbody></table></div>`;
+  const g = (stage, title) => `<tr><td colspan="5" class="eyebrow" style="padding-top:14px">${title}</td></tr>` + REASONS.filter(r => r.stage === stage).map(r => `<tr><td class="mono"><b>${r.code}</b></td><td>${esc(r.label)}</td><td>${esc(r.fil)}</td><td><span class="chip ${OWNER_CHIP[r.owner]}">${r.owner}</span></td><td>${r.cls === 'Uncontrollable' ? 'Outside our control' : 'Within our control'}</td></tr>`).join('');
+  return `<div class="head"><div><span class="eyebrow">System Admin</span><h2>Delay reason codes</h2></div><span class="muted" style="font-size:13px">Tagged by the trucker in TAS. The owner drives analytics.</span></div>
+    <div class="tablebox"><table><thead><tr><th>Code</th><th>Reason in TAS Portal</th><th>Tile in TAS (Filipino)</th><th>Owner</th><th>On-time analytics</th></tr></thead><tbody>
+    ${g('pickup', 'A. Prior empty pull-out')}${g('transit', 'B. While in transit')}</tbody></table></div>`;
 }
 function auditPage() {
   return `<div class="head"><div><span class="eyebrow">Governance · BPA and DPO</span><h2>Audit trail</h2></div><span class="muted" style="font-size:13px">Records can't be edited or deleted.</span></div>
@@ -1448,19 +1623,25 @@ function specView() {
     ['Lend phone or login to another driver','One phone per trucker, SMS PIN login, Admin-only reset','DEVICE_CHANGE'],
   ];
   return `<div class="spec">
-    <div><span class="eyebrow">Version 4 design</span><h2 style="font-size:34px">How it works</h2></div>
-    <p class="lede">The trucker's phone records the arrival automatically when the truck enters the customer's site area, using server time. The trucker then proves it with a live photo and a container scan. The Command Center compares that time with the time agreed at booking and marks the job Hit or Miss.</p>
+    <div><span class="eyebrow">Version 5 design · Trucker Complement Framework v1.1</span><h2 style="font-size:34px">How it works</h2></div>
+    <p class="lede">Poseidon (TMD Haulage) dispatches the trip. The driver runs it step by step in TAS Mobile, and every step and exception reaches TMD Dispatch and Sales Support live in the TAS Portal. Arrival at the customer is recorded automatically by geofence, using server time, and compared with the agreed time for Hit or Miss.</p>
     <div class="fw">
-      <div class="step"><span class="num">1</span><h3>Capture</h3><ul><li>Live photo, camera only</li><li>Container QR scan, ISO 6346 check digit</li><li>GPS with accuracy</li><li>Server-trusted time</li><li>Works offline</li></ul><span class="who">Trucker · TAS on own smartphone</span></div>
-      <div class="step"><span class="num">2</span><h3>Arrival confirmation</h3><ul><li>Location: geofence per customer site</li><li>Time: compared with agreed time → Hit / Miss</li><li>Notifications to TMD, Sales Support and customer</li><li>Exception required on every Miss</li></ul><span class="who">System · Branch Ops · Customer</span></div>
-      <div class="step"><span class="num">3</span><h3>Integrate</h3><ul><li>Jobs imported from TMD-Haulage</li><li>Arrival events sent back by API webhook</li><li>No re-encoding by dispatch or sales</li></ul><span class="who">IT</span></div>
-      <div class="step"><span class="num">4</span><h3>Govern</h3><ul><li>KPIs: on-time rate, with and without outside delays</li><li>Exceptions and integrity flags reviewed by TMD</li><li>Audit trail of every change</li><li>Data privacy: tracking only during active jobs</li></ul><span class="who">BPA · DPO</span></div>
+      <div class="step"><span class="num">1</span><h3>Dispatch</h3><ul><li>TMD dispatches the trip from Poseidon (TMD Haulage)</li><li>Driver receives and accepts the trip in TAS</li><li>TAS creates the trip record</li></ul><span class="who">TMD Dispatch · Driver</span></div>
+      <div class="step"><span class="num">2</span><h3>Pick-up at CY</h3><ul><li>Start trip to CY, arrival detected by geofence</li><li>CY staff release and mount the container (EIR, seal no.)</li><li>Pick-up check in TAS: photo, seal scan, EIR photo</li><li>Not OK? Report a pull-out exception</li></ul><span class="who">Driver · CY yard staff</span></div>
+      <div class="step"><span class="num">3</span><h3>In transit</h3><ul><li>Gate out and start trip to customer</li><li>Live GPS and ETA in the TAS Portal</li><li>Issue on the road? Report an in-transit exception</li></ul><span class="who">Driver · TAS</span></div>
+      <div class="step"><span class="num">4</span><h3>Delivery at customer</h3><ul><li>Arrival tagged by geofence → Hit or Miss</li><li>Arrival confirmation: photo + QR scan</li><li>Consignee confirms arrival</li><li>TAS auto-closes the trip</li></ul><span class="who">Driver · Consignee · TAS</span></div>
     </div>
+    <section class="rule"><div><span class="eyebrow">Exception flow</span><h3 style="font-size:22px">Report, review, resolve</h3></div>
+      <div style="font-size:14px"><b>1. Driver reports</b> in TAS with one tap: pull-out reasons at the CY, in-transit reasons on the road. A pull-out issue or a truck breakdown puts the trip on hold.</div>
+      <div style="font-size:14px"><b>2. TMD Dispatch reviews</b> and sets the priority within ${S.config.sla} min. The exception log keeps the category, photo, SLA timer and alerts.</div>
+      <div style="font-size:14px"><b>3. Resolution:</b> <b>Resume</b> (driver re-enters the step), <b>Reschedule or cancel</b> (Sales Support notifies the customer), or <b>Reassign</b> the truck or driver and re-dispatch.</div></section>
     <section class="rule"><div><span class="eyebrow">The rule</span><h3 style="font-size:22px">Hit or Miss</h3></div>
       <div class="formula">HIT  if arrival ≤ agreed + grace (${S.config.grace} min)<br>MISS if arrival &gt; agreed + grace<br>MISS if not arrived and agreed time has passed</div>
       <div style="font-size:14px">Arrival = first entry into the site geofence, timed by the server. Exceptions explain a Miss. They never turn it into a Hit. Late trips TMD confirms were outside our control are left out of the <b>on-time rate excluding outside delays</b> only.</div></section>
     <section class="panel"><div><span class="eyebrow">Integrity</span><h3>How each workaround is stopped</h3></div><div class="tablebox" style="border:0"><table><thead><tr><th>If a trucker tries to…</th><th>The platform…</th><th>TMD sees</th></tr></thead><tbody>
       ${anti.map(([a, b, c]) => `<tr><td>${a}</td><td>${b}</td><td>${c.includes('_') ? `<span class="chip c-miss">${c}</span>` : `<span class="chip c-neutral">${c}</span>`}</td></tr>`).join('')}</tbody></table></div></section>
+    <section class="panel"><div><span class="eyebrow">Delay reasons tagged by the trucker</span><h3>A. Prior empty pull-out · B. While in transit</h3></div><div class="tablebox" style="border:0"><table><thead><tr><th>Code</th><th>Reason</th><th>Tile in TAS</th><th>Owner</th></tr></thead><tbody>
+      ${REASONS.map(r => `<tr><td class="mono">${r.code}</td><td>${esc(r.label)}</td><td>${esc(r.fil)}</td><td><span class="chip ${OWNER_CHIP[r.owner]}">${r.owner}</span></td></tr>`).join('')}</tbody></table></div></section>
     <section class="panel"><div><span class="eyebrow">Version 4 · Driver usability</span><h3>How TAS stays simple</h3></div><div class="tablebox" style="border:0"><table><thead><tr><th>Rule</th><th>In TAS</th></tr></thead><tbody>
       <tr><td><b>One task per screen</b></td><td>Home shows only the next delivery and one button. Every screen has one main action at the bottom, in thumb reach.</td></tr>
       <tr><td><b>Pictures before words</b></td><td>Delay reasons are big tiles with an icon. The result is a full green or red screen.</td></tr>
@@ -1468,7 +1649,7 @@ function specView() {
       <tr><td><b>Nothing the driver doesn't need</b></td><td>No booking refs, reason codes, GPS accuracy or check lists. Container details fold under “Detalye ng job”. Integrity checks still run and still reach TMD.</td></tr>
       <tr><td><b>No typing in the normal flow</b></td><td>The arrival time records itself. Photo, scan and tap only. Typing is needed only for a damaged QR or “Iba pa”.</td></tr>
     </tbody></table></div></section>
-    <section class="panel"><div><span class="eyebrow">Access</span><h3>Sign-in for both apps</h3></div><div class="tablebox" style="border:0"><table><thead><tr><th></th><th>TAS (trucker app)</th><th>Command Center</th></tr></thead><tbody>
+    <section class="panel"><div><span class="eyebrow">Access</span><h3>Sign-in for both apps</h3></div><div class="tablebox" style="border:0"><table><thead><tr><th></th><th>TAS (trucker app)</th><th>TAS Portal</th></tr></thead><tbody>
       <tr><td><b>Splash</b></td><td>Brand screen while the app checks phone security (rooted phone, fake GPS, app version)</td><td>Brand screen while the session loads</td></tr>
       <tr><td><b>Credentials</b></td><td>Mobile number + 6-digit PIN</td><td>Work email + password</td></tr>
       <tr><td><b>Extra check</b></td><td>Phone must be the driver's registered phone. Other drivers are blocked and flagged</td><td>System Admin also enters a 6-digit authenticator code</td></tr>
@@ -1476,7 +1657,7 @@ function specView() {
       <tr><td><b>Role</b></td><td>Trucker sees only own jobs</td><td>Role comes from the account (TMD Team, Sales Support or System Admin), not chosen at sign-in</td></tr>
       <tr><td><b>First sign-in</b></td><td>Privacy consent for location, camera and data use (RA 10173)</td><td>Password reset link from System Admin</td></tr>
     </tbody></table></div></section>
-    <section class="panel"><div><span class="eyebrow">Integrate</span><h3>Event sent to TMD-Haulage and customers</h3><p class="muted" style="margin:4px 0 0;font-size:13px">${S.lastPayload ? 'This is the payload from your demo confirmation.' : 'Sample from job HJ-2610-0411. Confirm an arrival in TAS to see your own.'}</p></div>
+    <section class="panel"><div><span class="eyebrow">Integrate</span><h3>Event sent to Poseidon and customers</h3><p class="muted" style="margin:4px 0 0;font-size:13px">${S.lastPayload ? 'This is the payload from your demo confirmation.' : 'Sample from job HJ-2610-0411. Confirm an arrival in TAS to see your own.'}</p></div>
       <pre class="payload">${esc(JSON.stringify(p, null, 2))}</pre></section>
   </div>`;
 }
@@ -1485,9 +1666,20 @@ function specView() {
 const ACT = {
   view: v => { S.view = v; try { history.replaceState(null, '', '#' + v); } catch (_) {} window.scrollTo(0, 0); },
   openjob: id => { S.phone.jobId = id; S.phone.screen = job(id).demo && S.phone.local[id].confirmed ? 'result' : 'job'; },
-  pscreen: s => { S.phone.screen = s; S.phone.scanErr = ''; S.phone.toast = null; if (s === 'exception' || s === 'delay') { S.phone.sel = null; S.drafts.remarks = ''; S.drafts.excphoto = false; S.drafts.shownote = false; } if (s === 'capture') { S.phone.manual = false; } },
+  pscreen: s => { S.phone.screen = s; S.phone.scanErr = ''; S.phone.toast = null; if (s === 'exception' || s === 'issue') { S.phone.sel = null; S.drafts.remarks = ''; S.drafts.excphoto = false; S.drafts.shownote = false; } if (s === 'capture') { S.phone.manual = false; } },
   shownote: () => { S.drafts.shownote = true; },
-  starttrip: id => { if (id) S.phone.jobId = id; S.phone.screen = 'job'; const j = job(S.phone.jobId), L = S.phone.local[j.id]; L.tripStart = S.now; emit({ type:'trip.started', job:j.id, at:S.now, detail:'Location tracking on for this job' }); if (S.phone.mock) mockFlag(j); },
+  accept: id => { S.phone.jobId = id; S.phone.screen = 'job'; S.phone.local[id].accepted = S.now; emit({ type:'trip.accepted', job:id, at:S.now, detail:'Driver accepted the trip' }); },
+  tocy: id => { S.phone.jobId = id; S.phone.screen = 'job'; S.phone.local[id].cyStart = S.now; emit({ type:'cy.started', job:id, at:S.now, detail:'Location tracking on for this trip' }); },
+  pkphoto: () => { S.phone.local[S.phone.jobId].pick.photo = S.now; plog('pickup.photo', S.now, 'Container photo at the CY'); },
+  pkseal: () => { const j = job(S.phone.jobId); S.phone.local[j.id].pick.seal = sealNo(j); plog('pickup.seal', S.now, 'Seal ' + sealNo(j)); },
+  pkeir: () => { const j = job(S.phone.jobId); S.phone.local[j.id].pick.eir = eirNo(j); plog('pickup.eir', S.now, 'EIR ' + eirNo(j)); },
+  gateout: () => {
+    const j = job(S.phone.jobId), L = S.phone.local[j.id];
+    emit({ type:'pickup.checked', job:j.id, at:S.now, seal:L.pick.seal, eir:L.pick.eir, detail:`Seal ${L.pick.seal} · EIR ${L.pick.eir}` });
+    L.tripStart = S.now; emit({ type:'trip.started', job:j.id, at:S.now, detail:'Gate out, trip to customer' });
+    if (S.phone.mock) mockFlag(j);
+    S.phone.screen = 'job';
+  },
   photo: () => { const L = S.phone.local[S.phone.jobId]; L.photo = S.now; plog('photo.captured', S.now, 'Camera, stamped with time and GPS'); },
   scan: () => { S.phone.local[S.phone.jobId].scan = 'QR'; ACT.submitarrival(); },
   showmanual: () => { S.phone.manual = true; },
@@ -1508,18 +1700,19 @@ const ACT = {
   excphoto: () => { S.drafts.excphoto = !S.drafts.excphoto; },
   fileexc: () => {
     const j = job(S.phone.jobId);
-    if (S.phone.sel === 'OTH-99' && !(S.drafts.remarks || '').trim()) { S.phone.scanErr = 'Isulat kung ano ang nangyari.'; return; }
+    if (S.phone.sel.endsWith('-99') && !(S.drafts.remarks || '').trim()) { S.phone.scanErr = 'Isulat kung ano ang nangyari.'; return; }
     S.phone.local[j.id].excQueued = { code:S.phone.sel };
     emit({ type:'exception.filed', job:j.id, at:S.now, code:S.phone.sel, remarks:(S.drafts.remarks || '').trim(), photo:!!S.drafts.excphoto, detail:S.phone.sel });
     S.phone.screen = 'result'; toast('Na-send na ang dahilan mo sa TMD.');
   },
-  filedelay: () => {
-    const j = job(S.phone.jobId);
-    if (S.phone.sel === 'OTH-99' && !(S.drafts.remarks || '').trim()) { S.phone.scanErr = 'Isulat kung ano ang nangyari.'; return; }
-    const mins = S.drafts.delaymin || 30;
-    emit({ type:'delay.prealert', job:j.id, at:S.now, code:S.phone.sel, eta:j.agreed + mins * MIN, remarks:(S.drafts.remarks || '').trim(), detail:`${S.phone.sel}, +${mins} min` });
-    S.phone.local[j.id].delayQueued = { code:S.phone.sel };
-    S.phone.screen = 'job'; toast('Na-send na. Alam na ng TMD at Sales Support.');
+  fileissue: () => {
+    const j = job(S.phone.jobId), L = S.phone.local[j.id], code = S.phone.sel, r = reason(code);
+    if (code.endsWith('-99') && !(S.drafts.remarks || '').trim()) { S.phone.scanErr = 'Isulat kung ano ang nangyari.'; return; }
+    const hold = r.stage === 'pickup' || code === 'IT-03';
+    if (hold) L.hold = { code, stage:r.stage, at:S.now };
+    L.excQueued = { code };
+    emit({ type:'exception.reported', job:j.id, at:S.now, code, stage:r.stage, remarks:(S.drafts.remarks || '').trim(), photo:!!S.drafts.excphoto, hold, detail:`${code} · ${r.label}` });
+    S.phone.screen = 'job'; toast(hold ? 'Na-report na. Hintayin ang sagot ng TMD.' : 'Na-report na. Alam na ng TMD.');
   },
   ff: m => advance(+m * MIN),
   traffic: v => { S.phone.traffic = v === '1'; },
@@ -1581,11 +1774,11 @@ const ACT = {
     S.drafts.ccpw = '';
     if (!u || u.pw !== pw) {
       A.fails++;
-      logAudit(u ? u.name : email, 'Command Center', 'Failed sign-in', `Wrong email or password (${A.fails} of ${MAX_FAILS})`);
+      logAudit(u ? u.name : email, 'TAS Portal', 'Failed sign-in', `Wrong email or password (${A.fails} of ${MAX_FAILS})`);
       if (A.fails >= MAX_FAILS) {
         A.lockUntil = S.now + LOCK_MIN * MIN; A.fails = 0;
         A.err = `Too many wrong tries. Sign-in is locked until ${hm(A.lockUntil)}.`;
-        logAudit(u ? u.name : email, 'Command Center', 'Sign-in locked', `${MAX_FAILS} wrong tries, locked ${LOCK_MIN} min`);
+        logAudit(u ? u.name : email, 'TAS Portal', 'Sign-in locked', `${MAX_FAILS} wrong tries, locked ${LOCK_MIN} min`);
       } else A.err = `Email or password is wrong. ${MAX_FAILS - A.fails} ${MAX_FAILS - A.fails === 1 ? 'try' : 'tries'} left.`;
       return;
     }
@@ -1597,14 +1790,14 @@ const ACT = {
     const A = S.auth.cc;
     if (digits(S.drafts.ccotp) !== A.pending.mfa) {
       A.err = 'That code is wrong or expired. Enter the current code from your authenticator app.'; S.drafts.ccotp = '';
-      logAudit(A.pending.name, ROLES[A.pending.role], 'Failed 2-step code', 'Command Center');
+      logAudit(A.pending.name, ROLES[A.pending.role], 'Failed 2-step code', 'TAS Portal');
       return;
     }
     ccEnter(A.pending);
   },
   cclogout: () => {
     const A = S.auth.cc;
-    if (A.user) logAudit(A.user.name, ROLES[A.user.role], 'Signed out', 'Command Center');
+    if (A.user) logAudit(A.user.name, ROLES[A.user.role], 'Signed out', 'TAS Portal');
     A.user = null; A.pending = null; A.err = ''; A.stage = 'login'; S.sel = null; S.page = 'board'; S.drafts.ccotp = '';
   },
   ccfill: email => { const u = CC_USERS.find(x => x.email === email); S.drafts.ccemail = u.email; S.drafts.ccpw = u.pw; S.auth.cc.err = ''; },
@@ -1617,11 +1810,47 @@ const ACT = {
   review: kind => {
     const j = job(S.sel), note = (S.drafts.revnote || '').trim();
     if (kind === 'Reject' && !note) { const e = document.getElementById('revnote'); e.placeholder = 'Add a note to explain the rejection'; e.focus(); return 'noop'; }
-    Object.assign(j.exception, { status: kind === 'Reject' ? 'Rejected' : 'Validated', cls: kind === 'Reject' ? 'Controllable' : kind, reviewer:'TMD · ' + me().name, reviewNote: note || 'No note.', reviewedAt:S.now });
+    Object.assign(j.exception, { status: kind === 'Reject' ? 'Rejected' : 'Validated', cls: kind === 'Reject' ? 'Controllable' : reason(j.exception.code).cls, reviewer:'TMD · ' + me().name, reviewNote: note || 'No note.', reviewedAt:S.now });
     j.events.push({ type:'exception.reviewed', at:S.now, label:`${j.exception.status} · ${j.exception.cls} by ${me().name}` });
     S.audit.unshift({ at:S.now, who:me().name, role:ROLES[S.role], action:`${j.exception.status} exception`, detail:`${j.id} · ${j.exception.code} → ${j.exception.cls}${note ? ' · ' + note : ''}` });
     feed('info', `<b>Exception ${j.exception.status.toLowerCase()}</b> · ${j.id} ${j.exception.code} → ${j.exception.cls}`, j.id);
     S.drafts.revnote = '';
+  },
+  prio: x => { const j = job(S.sel); j.exception.priority = x; logAudit(me().name, ROLES[S.role], 'Set exception priority', `${j.id} · ${x}`); },
+  resolve: kind => {
+    const j = job(S.sel), ex = j.exception, L = j.demo && j.trucker === PHONE_OWNER ? S.phone.local[j.id] : null;
+    Object.assign(ex, { resolvedAt:S.now, resolvedBy:me().name });
+    if (kind === 'Resume') { ex.resolution = 'Resume'; j.hold = false; if (L) { L.hold = null; toast('Tuloy na ang trip. Sabi ng TMD, ituloy mo na.'); } }
+    if (kind === 'Reschedule') { ex.resolution = 'Reschedule / cancel'; ex.notify = { status:'Pending' }; if (L) toast('Inaayos ng Sales Support ang bagong schedule. Hintayin muna.'); feed('risk', `<b>Customer to notify</b> · ${j.id} ${esc(site(j).customer)}. Sales Support to agree a new schedule`, j.id); }
+    if (kind === 'Reassign') {
+      const busy = t => S.jobs.some(x => x !== j && x.trucker === t && !x.arrival && !['Rescheduled', 'Cancelled'].includes(x.status));
+      const from = j.trucker, to = Object.keys(TRUCKERS).find(t => t !== from && !busy(t)) || 'T05';
+      Object.assign(ex, { resolution:'Reassign & re-dispatch', reassignedTo:to }); j.hold = false; j.trucker = to; j.status = 'Dispatched';
+      j.events.push({ type:'trip.dispatched', at:S.now, label:`Re-dispatched from Poseidon to ${TRUCKERS[to].name} (${TRUCKERS[to].plate})` });
+      if (L) { L.ended = 'reassigned'; L.hold = null; toast('Inilipat ng TMD ang trip na ito sa ibang truck.'); }
+      logAudit(me().name, ROLES[S.role], 'Reassigned trip', `${j.id} · ${TRUCKERS[from].name} → ${TRUCKERS[to].name}`);
+    }
+    j.events.push({ type:'exception.resolved', at:S.now, label:`Exception resolved: ${ex.resolution} (${me().name})` });
+    logAudit(me().name, ROLES[S.role], 'Resolved exception', `${j.id} · ${reason(ex.code).label} → ${ex.resolution}`);
+    feed('info', `<b>Exception resolved · ${ex.resolution}</b> · ${j.id} ${esc(reason(ex.code).label)}`, j.id);
+  },
+  notify: () => {
+    const j = job(S.sel), ex = j.exception, v = S.drafts.newslot || 'resched:+120', L = j.demo && j.trucker === PHONE_OWNER ? S.phone.local[j.id] : null;
+    let outcome;
+    if (v === 'cancel') { j.status = 'Cancelled'; outcome = 'Cancelled by the customer'; }
+    else { const t = v === 'resched:+120' ? S.now + 120 * MIN : (v === 'resched:tom8' ? T(8, 0) : T(13, 0)) + 24 * 60 * MIN; j.status = 'Rescheduled'; j.rescheduledTo = t; outcome = `Rescheduled to ${t >= BASE + 24 * 60 * MIN ? 'tomorrow ' : ''}${hm(t)}`; }
+    ex.notify = { status:'Done', outcome, by:me().name, at:S.now }; j.hold = false;
+    if (L) { L.hold = null; L.ended = j.status === 'Cancelled' ? 'cancelled' : 'rescheduled'; toast(j.status === 'Cancelled' ? 'Kinansela ang trip.' : 'Na-reschedule ang trip.'); }
+    j.events.push({ type:'customer.notified', at:S.now, label:`Customer notified by ${me().name}: ${outcome}` });
+    logAudit(me().name, ROLES[S.role], 'Notified customer', `${j.id} · ${outcome}`);
+    feed('info', `<b>Customer notified</b> · ${j.id} ${esc(site(j).customer)}: ${outcome}`, j.id);
+  },
+  consignee: id => {
+    const j = id ? job(id) : S.jobs.filter(x => x.demo && x.trucker === PHONE_OWNER && x.confirmedAt && !x.consigneeAt).sort((a, b) => b.confirmedAt - a.confirmedAt)[0];
+    if (!j) { S.demoNote = 'Wala pang delivery na naghihintay sa consignee. Kumpirmahin muna ang pagdating sa TAS.'; return; }
+    j.consigneeAt = S.now; j.status = 'Closed'; S.demoNote = '';
+    j.events.push({ type:'consignee.confirmed', at:S.now, label:id ? `Consignee confirmed arrival by phone (recorded by ${me().name})` : 'Consignee confirmed arrival (SMS link)' }, { type:'trip.closed', at:S.now, label:'Trip auto-closed' });
+    feed('hit', `<b>Trip closed</b> · ${j.id} ${esc(site(j).customer)} confirmed arrival`, j.id);
   },
   clearflag: i => {
     const j = job(S.sel), f = j.flags[+i], note = (S.drafts['fnote-' + i] || '').trim();

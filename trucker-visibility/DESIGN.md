@@ -1,9 +1,9 @@
-# Trucker Visibility Platform — Design (Version 4)
+# Trucker Visibility Platform — Design (Version 5)
 
 Container pick-up and delivery visibility and compliance platform. It has two
 parts: **TAS (Trucker Application System)**, the mobile app that drivers use on their own smartphones to
-confirm arrival, and a **web Command Center** for the TMD Team, Sales Support
-and System Admin.
+confirm arrival, and the **TAS Portal** (web Command Center) for the TMD Team, Sales Support
+and System Admin. The process follows the **Trucker Complement Framework v1.1** (section 16).
 
 An interactive prototype of both parts is in [`prototype.html`](./prototype.html).
 It runs on its own in a browser, with simulated data and a demo control panel.
@@ -14,6 +14,7 @@ It runs on its own in a browser, with simulated data and a demo control panel.
 | 2 | Splash screen and credential sign-in for both apps (section 12) |
 | 3 | Live map in the Command Center (section 13). Analytics: global filters, plain-language on-time rates, late reasons spelled out (section 14). "Hit rate (adjusted)" tile removed from the live board. Trucker app named **TAS** |
 | 4 | TAS redesigned for drivers: one task per screen, Taglish labels, Filipino instructions and delay reasons. Both apps restyled to iOS (TAS) and macOS (Command Center) (section 15) |
+| 5 | Process aligned to Trucker Complement Framework v1.1: dispatch from Poseidon, pick-up check at the CY, exception review with SLA and resolution, Sales Support notification, consignee confirmation and auto-close. New delay reason list (prior empty pull-out, in transit). Command Center named **TAS Portal** (section 16) |
 
 ---
 
@@ -88,6 +89,8 @@ common workarounds:
 | BR-10 | Pick-up leg (port/depot) is captured the same way for visibility. V1 KPI is measured on the customer stop only. |
 
 ### Exception reason codes (starter list, admin-maintained)
+
+> Replaced in Version 5 by the reason list in section 16.
 
 | Code | Reason | Default class |
 |---|---|---|
@@ -471,3 +474,101 @@ best.
   translucent sidebar with icons, macOS tables, buttons and segmented controls,
   light and dark mode.
 - **Fonts:** the system font (SF Pro) on Apple devices, Inter on others.
+
+---
+
+## 16. Version 5: Trucker Complement Framework v1.1
+
+The process now follows the swimlane framework (Final v1.1, 29 Oct 2026).
+Naming follows the framework: **TAS** is the whole system, **TAS Mobile** is
+the driver app and **TAS Portal** is the web Command Center.
+
+### Process in TAS
+
+| Phase | Step | Who | In TAS |
+|---|---|---|---|
+| Dispatch | Dispatch trip from Poseidon (TMD Haulage) | TMD Dispatch | Trip appears in TAS Mobile, status *Dispatched* |
+| Dispatch | Receive and accept trip | Driver | **Tanggapin ang Trip** → *Accepted* |
+| Pick-up at CY | Start trip to CY | Driver | **Pumunta sa CY** → *To CY*. Arrival at the CY detected by geofence |
+| Pick-up at CY | Release and mount container (EIR, seal no.) | CY yard staff | Outside TAS |
+| Pick-up at CY | Pick-up check: photo, seal no., EIR | Driver | 3 camera steps: container photo, seal scan, EIR photo |
+| Pick-up at CY | Pick-up OK? | Driver | **Oo, OK. Gate Out Na**, or **May Problema** → pull-out exception |
+| In transit | Gate out and start trip to customer | Driver | *In transit*, live GPS and ETA in the TAS Portal |
+| In transit | Report in-transit exception | Driver | **May Problema? I-report** → in-transit reasons |
+| Delivery | Arrive at customer: geofence tag | TAS | Arrival time recorded automatically → Hit or Miss |
+| Delivery | Arrival confirmation: photo + QR scan | Driver | Unchanged from Version 4 |
+| Delivery | Consignee confirms arrival | Consignee | SMS link. TMD can also record a phone confirmation |
+| Delivery | Auto-close trip | TAS | Status *Closed* |
+
+### Exception handling
+
+1. **Driver reports** with one tap. The list shown depends on where the trip
+   is: pull-out reasons before gate-out, in-transit reasons after.
+2. **Hold:** a pull-out exception or a truck breakdown puts the trip on hold.
+   The driver sees "Naghihintay sa TMD" and the truck stops on the map. Other
+   in-transit reasons (traffic, rerouting, road closure) alert TMD while the
+   driver keeps driving.
+3. **TMD Dispatch reviews** and sets the priority (High or Normal). **SLA: 15
+   min** from report to decision (System Admin can change it). The exception
+   log shows the SLA timer, and the live board counts exceptions over SLA.
+4. **Resolution:**
+   - **Resume:** the driver re-enters the step where the exception was raised.
+   - **Reschedule or cancel:** Sales Support gets a task to notify the
+     customer and record the outcome (rescheduled date and time, or
+     cancelled). Rescheduled and cancelled trips are left out of today's Hit
+     or Miss, because the old agreed time no longer applies.
+   - **Reassign and re-dispatch:** the trip moves to a free truck as a new
+     dispatch. The original driver sees "Inilipat ang trip".
+5. **Reason check (analytics):** after resolution, TMD confirms or rejects the
+   reason. Only confirmed Port / CY and External reasons are left out of
+   "On-time rate, excluding outside delays".
+6. Every exception stays in the log, including earlier exceptions on the same
+   trip.
+
+### Delay reasons tagged by the trucker
+
+| Code | Reason | Tile in TAS (Filipino) | Owner (proposed) |
+|---|---|---|---|
+| **A. Prior empty pull-out** | | | |
+| PO-01 | Container availability | Walang available na container | Port / CY |
+| PO-02 | 2GO system downtime | Down ang system ng 2GO | 2GO internal |
+| PO-03 | Northport system downtime | Down ang system ng Northport | Port / CY |
+| PO-04 | Late scheduling / booking by Sales Support | Late ang schedule o booking | 2GO internal |
+| PO-05 | Staggered basis | Staggered ang release | Port / CY (to confirm) |
+| PO-06 | Replacement of container | Pinalitan ang container | Port / CY (to confirm) |
+| PO-07 | CHE availability | Walang available na CHE | Port / CY |
+| PO-08 | FDT queuing | Mahabang pila sa FDT | Port / CY |
+| PO-09 | Pier congestion | Siksikan sa pier | Port / CY |
+| PO-10 | Weather condition | Masamang panahon | External |
+| PO-99 | Others (remarks required) | Iba pa | TMD decides |
+| **B. While in transit** | | | |
+| IT-01 | Rerouting (gov't event, etc.) | Iniba ang ruta (event ng gobyerno, atbp.) | External |
+| IT-02 | Traffic jam | Traffic | External |
+| IT-03 | Truck breakdown | Nasira ang truck | Trucker / haulier |
+| IT-04 | Road closure | Sarado ang daan | External |
+| IT-99 | Others (remarks required) | Iba pa | TMD decides |
+
+**Why an owner:** analytics now shows *who* caused each delay: 2GO internal,
+Port / CY, Trucker / haulier or External. Truckers are scored only on delays
+they caused (the trucker scorecard column "Late caused by trucker"), and Sales
+Support sees delays caused by 2GO's own system and booking (the customer
+scorecard column "Late caused by 2GO").
+
+### Changes I added beyond the list (please confirm)
+
+| # | Item | Reason |
+|---|---|---|
+| 1 | **Others** in each group, remarks required | Without it, drivers pick the nearest wrong reason and the data gets worse |
+| 2 | **Owner** per reason | Needed for fair trucker scores and for the "excluding outside delays" rate |
+| 3 | No customer-side reasons (customer not ready, gate closed) | Arrival is measured at geofence entry, so delays inside the customer's gate don't affect Hit or Miss |
+
+### Open questions
+
+| # | Question |
+|---|---|
+| 1 | What does **FDT** stand for? It is shown to drivers as "FDT" until confirmed |
+| 2 | Is **Staggered basis** a CY release practice or a customer request? This decides the owner |
+| 3 | Is **Replacement of container** caused by the CY or shipping line, or by 2GO equipment? |
+| 4 | Should **weather** also be an in-transit reason (flooding on the road)? It is only under pull-out in the given list |
+| 5 | Is a **15-minute** TMD SLA right, and should it differ by priority? |
+| 6 | Should Sales Support also notify customers of a revised ETA when TMD chooses **Resume**? The framework sends only reschedule or cancel to Sales Support |
