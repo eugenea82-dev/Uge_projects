@@ -478,7 +478,7 @@ const TRUCKERS = {
   T07:{ name:'Allan Mendoza', plate:'DAK 5527', mobile:'0921 555 0384', haulier:'Garcia Brothers', device:'Infinix Hot 40 · Android 13', app:'1.0.3', integrity:'Pass', bound:'04 Oct 2026' },
   T08:{ name:'Noel Aquino', plate:'NCF 8806', mobile:'0939 555 0651', haulier:'Bautista Haulers', device:'Samsung A25 · Android 14', app:'1.0.3', integrity:'Pass', bound:'06 Oct 2026' },
 };
-const PICKUPS = { MICT:'MICT, Tondo (laden)', NH:'North Harbor, Tondo (laden)', VEY:'Valenzuela empty yard', BCT:'Batangas Container Terminal (laden)', SCY:'Cabuyao CY (empty yard)' };
+const PICKUPS = { MICT:'MICT, Tondo (laden)', NH:'North Harbor, Tondo (laden)', VEY:'Valenzuela empty yard', BCT:'Batangas Container Terminal (laden)', SCY:'Tondo 2GO CY3 (empty yard)' };
 
 /* ---------- sign-in accounts (demo credentials, sample only) ---------- */
 const PINS = { T01:'482100', T02:'220913', T03:'771405', T04:'104512', T05:'663201', T06:'330819', T07:'905517', T08:'418260' };
@@ -531,12 +531,12 @@ function seed() {
         exception:{ code:'PO-01', stage:'pickup', remarks:'Walang available na 40HC sa yard, hinihintay pa ang release.', filedAt:T(9,52), status:'Pending', photo:true, priority:'High', resolution:null },
         flags:[{ type:'DEVICE_CHANGE', detail:'Login from a new phone on 19 Oct. Admin reset approved by IT.', at:T(5,41), status:'Open' }],
         events:[ev('trip.dispatched',T(5,40),DISP), ev('trip.accepted',T(7,55),'Trip accepted in TAS'), ev('cy.started',T(8,0),'Trip to Batangas Container Terminal started'), ev('cy.arrived',T(9,30),'Arrived at Batangas Container Terminal (geofence)'), ev('exception.reported',T(9,52),'Exception reported (Prior empty pull-out): Container availability. Trip on hold',{bad:true})] }),
-    J({ id:'HJ-2610-0418', booking:'BKG-551820', container:cntr('TMDU','202645'), size:"40' HC", move:'Export empty', site:'STR', pickup:'SCY', agreed:T(10,45), trucker:'T01', demo:true, d0Cy:3.5, d0:6.2,
+    J({ id:'HJ-2610-0418', booking:'BKG-551820', container:cntr('TMDU','202645'), size:"40' HC", move:'Export empty', site:'STR', pickup:'SCY', agreed:T(12,0), trucker:'T01', demo:true, d0Cy:3.5, d0:42,
         events:[ev('trip.dispatched',T(5,50),DISP)] }),
     J({ id:'HJ-2610-0419', booking:'BKG-551826', container:cntr('TMDU','845120'), size:"20' GP", move:'Import delivery', site:'TAG', pickup:'MICT', agreed:T(11,0), trucker:'T02', status:'In transit',
         events:[ev('trip.dispatched',T(6,0),DISP), ev('trip.started',T(9,40),'Gate out at MICT. Trip to customer started')] }),
     J({ id:'HJ-2610-0420', booking:'BKG-551830', container:cntr('PHCU','229861'), size:"40' GP", move:'Export empty', site:'VAL', pickup:'VEY', agreed:T(13,0), trucker:'T03', events:[ev('trip.dispatched',T(6,5),DISP)] }),
-    J({ id:'HJ-2610-0421', booking:'BKG-551834', container:cntr('TMDU','390576'), size:"20' GP", move:'Export empty', site:'CAL', pickup:'SCY', agreed:T(14,30), trucker:'T01', demo:true, d0Cy:3.0, d0:12.0, events:[ev('trip.dispatched',T(6,10),DISP)] }),
+    J({ id:'HJ-2610-0421', booking:'BKG-551834', container:cntr('TMDU','390576'), size:"20' GP", move:'Export empty', site:'CAL', pickup:'SCY', agreed:T(16,30), trucker:'T01', demo:true, d0Cy:40, d0:55, events:[ev('trip.dispatched',T(6,10),DISP)] }),
     J({ id:'HJ-2610-0422', booking:'BKG-551839', container:cntr('TMDU','118053'), size:"40' HC", move:'Import delivery', site:'MEY', pickup:'NH', agreed:T(15,0), trucker:'T04', events:[ev('trip.dispatched',T(6,12),DISP)] }),
   ];
   const feed = [
@@ -936,7 +936,7 @@ function heroCard(j) {
   const st = pState(j);
   const b = { new:['green', 'check', 'Tanggapin ang Trip', 'accept'], accepted:['', 'truck', 'Pumunta sa CY', 'tocy'], tocy:['', 'map', 'Tingnan ang Biyahe', 'openjob'], cy:['', 'camera', 'Pick-up Check', 'openjob'],
     road:['', 'map', 'Tingnan ang Biyahe', 'openjob'], hold:['plain', 'clock', 'Naghihintay sa TMD', 'openjob'], site:['green', 'camera', 'Kumpirmahin ang Pagdating', 'openjob'], done:['orange', 'alert', 'Sabihin Kung Bakit Late', 'openjob'] }[st];
-  const first = st === 'new' || st === 'accepted' ? `<div class="hrow">${picon('box', '#30B0C7')}<div class="grow"><span class="sub">Kunin muna ang container sa</span><b>${esc(cyName(j))}</b></div></div>` : '';
+  const first = st === 'new' || st === 'accepted' ? `<div class="hrow">${picon('box', '#30B0C7')}<div class="grow"><span class="sub">Kunin ang container sa</span><b>${esc(cyName(j))}</b></div></div>` : '';
   return `<div class="phero">
     <div class="hrow">${picon('building', '#5856D6')}<div class="grow"><span class="hname">${esc(site(j).customer)}</span><span class="sub">${esc(site(j).city)}</span></div></div>
     ${first}
@@ -956,7 +956,7 @@ function phoneJob(j) {
   const L = S.phone.local[j.id], st = pState(j), s = site(j), P = S.phone;
   const nav = `<div class="pnav"><button data-act="pscreen" data-arg="list">${ic('back', 20, 2.4)}Mga Trip</button><span></span></div>`;
   const where = `<div class="pgroup"><div class="prow">${picon('pin', '#FF3B30')}<span class="grow"><span class="sub">Dadalhin sa</span><b>${esc(s.addr)}</b><span class="sub">${esc(s.gateFil)}</span></span></div></div>`;
-  const cyRow = `<div class="pgroup"><div class="prow">${picon('box', '#30B0C7')}<span class="grow"><span class="sub">Kukunin ang container sa</span><b>${esc(PICKUPS[j.pickup])}</b></span></div></div>`;
+  const cyRow = `<div class="pgroup"><div class="prow">${picon('box', '#30B0C7')}<span class="grow"><span class="sub">Kunin ang container sa</span><b>${esc(cyName(j))}</b></span></div></div>`;
   const details = `<details class="pgroup pdetails"><summary class="prow">${picon('doc', '#8E8E93')}<span class="grow">Detalye ng trip</span><span style="color:var(--p-muted)">${ic('chev', 16, 2.2)}</span></summary>
       <div class="prow"><span class="plbl">Container</span><span class="mono">${fmtCntr(j.container)}</span></div>
       <div class="prow"><span class="plbl">Laki</span><span>${j.size}</span></div></details>`;
@@ -969,7 +969,7 @@ function phoneJob(j) {
       ${cyRow}${where}${details}
       <p class="pinstr">Tingnan ang detalye. Pindutin ang <b>Tanggapin ang Trip</b> kung kaya mo ito.</p></div>
     <div class="pact"><button class="pbtn green" data-act="accept" data-arg="${j.id}">${ic('check', 22, 2.4)}Tanggapin ang Trip</button></div>`;
-  if (st === 'accepted') return `<div class="pview">${nav}<h2 class="ptitle">Kunin muna ang container</h2>${cyRow}
+  if (st === 'accepted') return `<div class="pview">${nav}<h2 class="ptitle">Kunin ang container</h2>${cyRow}
       <p class="pinstr">Pindutin ang <b>Pumunta sa CY</b> kapag paalis ka na.</p></div>
     <div class="pact"><button class="pbtn" data-act="tocy" data-arg="${j.id}">${ic('truck', 22, 2.1)}Pumunta sa CY</button></div>`;
   if (st === 'tocy') return `<div class="pview">${nav}<h2 class="ptitle">Papunta sa CY</h2>${roadCard(j, 'cy')}${reported}
@@ -1084,7 +1084,7 @@ function demoPanel() {
       <button class="btn sm" data-act="reset">Reset demo</button></div>
     <ol class="guide">
       <li>Mag-login bilang si Ramon: pindutin ang <b>Fill Ramon's login</b>, tapos ang <b>Mag-login</b> sa phone.</li>
-      <li>Sa trip ng <b>Sta. Rosa Food Packers (10:45 AM)</b>, pindutin ang <b>Tanggapin ang Trip</b>, tapos <b>Pumunta sa CY</b>. Pabilisin ang oras hanggang makarating sa CY.</li>
+      <li>Sa trip ng <b>Sta. Rosa Food Packers (12:00 PM)</b>, pindutin ang <b>Tanggapin ang Trip</b>, tapos <b>Pumunta sa CY</b>. Pabilisin ang oras hanggang makarating sa CY.</li>
       <li>Gawin ang <b>Pick-up Check</b> (litrato, seal, EIR), tapos <b>Gate Out Na</b>. Para subukan ang exception, pindutin ang <b>May Problema</b>, pumili ng dahilan, at sagutin ito sa <b>TAS Portal → Exceptions</b>.</li>
       <li>Pabilisin ang oras hanggang makarating sa customer. Pindutin ang <b>Kumpirmahin ang Pagdating</b>, kunan ng litrato at i-scan ang QR.</li>
       <li>Pindutin ang <b>Consignee confirms</b> sa ibaba. Kusang magsasara ang trip.</li>
@@ -1092,7 +1092,7 @@ function demoPanel() {
     <div class="ctrls">
       <div class="ctrl"><span class="lbl">Login</span><div class="seg"><button data-act="pfill" data-arg="own">Fill Ramon's login</button><button data-act="pfill" data-arg="wrong">Wrong PIN</button><button class="cheat" data-act="pfill" data-arg="other">Ibang driver</button></div><p>Ramon: <span class="mono">0917 555 0142</span> · PIN <span class="mono">482100</span>. Pag 5 beses mali ang PIN, naka-lock ng 15 min. Ang ibang driver ay hindi makakapag-login sa phone ni Ramon.</p></div>
       <div class="ctrl"><span class="lbl">Oras</span><div class="seg"><button data-act="ff" data-arg="5">+5 min</button><button data-act="ff" data-arg="15">+15 min</button><button data-act="ff" data-arg="60">+1 oras</button></div><p>Tumatakbo ang oras nang live. Pabilisin para mas mabilis ang biyahe.</p></div>
-      <div class="ctrl"><span class="lbl">Daan</span><div class="seg"><button data-act="traffic" data-arg="0" ${pr(!P.traffic)}>Normal 30 km/h</button><button data-act="traffic" data-arg="1" ${pr(P.traffic)}>Heavy traffic 10 km/h</button></div><p>6.2 km mula Cabuyao CY papuntang Sta. Rosa. Sa heavy traffic, male-late ang 10:45 AM.</p></div>
+      <div class="ctrl"><span class="lbl">Daan</span><div class="seg"><button data-act="traffic" data-arg="0" ${pr(!P.traffic)}>Normal 30 km/h</button><button data-act="traffic" data-arg="1" ${pr(P.traffic)}>Heavy traffic 10 km/h</button></div><p>42 km mula Tondo 2GO CY3 papuntang Sta. Rosa. Sa heavy traffic, male-late ang 12:00 PM.</p></div>
       <div class="ctrl"><span class="lbl">Signal</span><div class="seg"><button data-act="online" data-arg="1" ${pr(P.online)}>Online</button><button data-act="online" data-arg="0" ${pr(!P.online)}>Walang signal</button></div><p>Kahit offline, tama pa rin ang oras na naka-record. Ise-send ito pagbalik ng signal.</p></div>
       <div class="ctrl"><span class="lbl">Customer</span><div class="seg"><button data-act="consignee">Consignee confirms</button></div><p>${S.demoNote ? esc(S.demoNote) : 'Gagayahin ang pag-confirm ng consignee gamit ang SMS link. Kusang magsasara ang trip.'}</p></div>
       <div class="ctrl"><span class="lbl">Pandaraya</span><div class="seg"><button class="cheat" data-act="mock" ${pr(P.mock)}>Fake GPS app</button><button class="cheat" data-act="skew" ${pr(!!P.skew)}>Iurong ang orasan ng phone 30 min</button></div><p>Pareho itong nade-detect at nire-report sa TMD. Hindi nito mababago ang oras ng pagdating.</p></div>
@@ -1443,8 +1443,8 @@ function analytics() {
 }
 
 /* ---------- live map (schematic, real coordinates) ---------- */
-const PICKUP_POS = { MICT:[14.605, 120.952], NH:[14.612, 120.962], VEY:[14.700, 120.985], BCT:[13.757, 121.045], SCY:[14.255, 121.135] };
-const BASE_POS = { T01:[14.232, 121.162] };
+const PICKUP_POS = { MICT:[14.605, 120.952], NH:[14.612, 120.962], VEY:[14.700, 120.985], BCT:[13.757, 121.045], SCY:[14.625, 120.968] };
+const BASE_POS = { T01:[14.650, 120.990] };
 const ROUTES = {
   TAG:[[14.58, 120.975], [14.54, 121.02]],
   STR:[[14.58, 120.975], [14.54, 121.02], [14.42, 121.045], [14.31, 121.10]],
