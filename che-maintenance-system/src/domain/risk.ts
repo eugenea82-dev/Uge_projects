@@ -5,7 +5,8 @@
 // and is shown to the user as a contributing factor. A trained model can
 // replace this only after it beats the rules in backtesting (NFR-M05/M06).
 
-import { DAY, MODEL_VERSION, PARAMS, PARAM_BY_KEY, REPEAT_WINDOW_WEEKS, RISK_META, WEEK } from './constants.ts'
+import { COMPARTMENT_LABEL, DAILY, dailyBaseline, evaluate } from './catalog.ts'
+import { DAY, MODEL_VERSION, REPEAT_WINDOW_WEEKS, RISK_META, WEEK } from './constants.ts'
 import { risingTrend } from './detection.ts'
 import type { Episode } from './kpi.ts'
 import type { DataSufficiency, NdtFinding, OilSample, ParamKey, Reading, RiskFactor, RiskLevel, RiskScore, Threshold, Unit } from './types.ts'
@@ -24,6 +25,7 @@ const OIL_COMPONENT: Record<OilSample['compartment'], string> = {
   Engine: 'Engine',
   Transmission: 'Transmission',
   Hydraulic: 'Hydraulic system',
+  Gear: 'Final drive',
 }
 
 export function levelFor(score: number): RiskLevel {
@@ -48,32 +50,30 @@ export function scoreUnit(i: RiskInputs): RiskScore {
   // 1. Limit breaches in the last 7 days (worst per parameter). A critical breach
   //    alone lifts the unit to at least Medium so it is never reported as Low.
   let readingPts = 0
-  for (const p of PARAMS) {
-    const lim = i.limits[p.key]
+  for (const p of DAILY) {
+    const th = i.limits[p.key]
+    const base = dailyBaseline(sorted, p.key)
     let worst: 'critical' | 'warning' | null = null
     for (const r of recent) {
-      const v = r.values[p.key]
-      if (v === undefined) continue
-      const crit = p.direction === 'high' ? v >= lim.critical : v <= lim.critical
-      const warn = p.direction === 'high' ? v >= lim.warning : v <= lim.warning
-      if (crit) worst = 'critical'
-      else if (warn && worst !== 'critical') worst = 'warning'
+      const lvl = evaluate(p, th, r.values[p.key], base)
+      if (lvl === 'critical') worst = 'critical'
+      else if (lvl === 'warning' && worst !== 'critical') worst = 'warning'
     }
     if (worst && readingPts < 45) {
       const pts = Math.min(worst === 'critical' ? 35 : 10, 45 - readingPts)
       readingPts += pts
-      factors.push({ label: `${p.label} beyond ${worst} limit in last 7 days`, points: pts, component: p.component })
+      factors.push({ label: `${p.label} at ${worst === 'critical' ? 'STOP' : 'CHECK'} level in last 7 days`, points: pts, component: p.component })
     }
   }
 
   // 2. Sustained deterioration trend
   let trendPts = 0
-  for (const p of PARAMS) {
+  for (const p of DAILY) {
     if (trendPts >= 20) break
     if (risingTrend(sorted, p.key)) {
       const pts = Math.min(15, 20 - trendPts)
       trendPts += pts
-      factors.push({ label: `${p.label} rising over consecutive readings`, points: pts, component: PARAM_BY_KEY[p.key].component })
+      factors.push({ label: `${p.label} worsening over consecutive readings`, points: pts, component: p.component })
     }
   }
 
@@ -92,8 +92,9 @@ export function scoreUnit(i: RiskInputs): RiskScore {
     if (!prev || o.sampledAt > prev.sampledAt) latestOil.set(o.compartment, o)
   }
   for (const o of latestOil.values()) {
-    if (o.severity === 'Critical') factors.push({ label: `${o.compartment} oil analysis Critical (Fe ${o.ironPpm} ppm, water ${o.waterPct}%)`, points: 25, component: OIL_COMPONENT[o.compartment] })
-    else if (o.severity === 'Caution') factors.push({ label: `${o.compartment} oil analysis Caution`, points: 10, component: OIL_COMPONENT[o.compartment] })
+    const top = o.findings[0] ? ` — ${o.findings[0]}` : ''
+    if (o.severity === 'Critical') factors.push({ label: `${COMPARTMENT_LABEL[o.compartment]} analysis Critical${top}`, points: 25, component: OIL_COMPONENT[o.compartment] })
+    else if (o.severity === 'Caution') factors.push({ label: `${COMPARTMENT_LABEL[o.compartment]} analysis Caution${top}`, points: 10, component: OIL_COMPONENT[o.compartment] })
   }
 
   // 5. NDT findings (180 days)

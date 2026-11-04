@@ -1,15 +1,12 @@
 import type {
   ArmCategory,
   Cause,
-  EquipmentType,
   ExternalReason,
-  ParamDef,
   ParamKey,
   RejectReason,
   RiskLevel,
   Role,
   StatusCode,
-  ThresholdTable,
 } from './types.ts'
 
 export const HOUR = 3_600_000
@@ -114,53 +111,23 @@ export const DECISION_SLA_HOURS: Record<RiskLevel, number> = {
   Critical: 4,
 }
 
-export const PARAMS: ParamDef[] = [
-  { key: 'engineTemp', label: 'Engine temperature', unit: '°C', kind: 'temperature', component: 'Engine', direction: 'high' },
-  { key: 'transmissionTemp', label: 'Transmission temperature', unit: '°C', kind: 'temperature', component: 'Transmission', direction: 'high' },
-  { key: 'hydraulicOilTemp', label: 'Hydraulic oil temperature', unit: '°C', kind: 'temperature', component: 'Hydraulic system', direction: 'high' },
-  { key: 'coolantTemp', label: 'Coolant temperature', unit: '°C', kind: 'temperature', component: 'Cooling system', direction: 'high' },
-  { key: 'hydraulicPressure', label: 'Hydraulic pressure', unit: 'bar', kind: 'pressure', component: 'Hydraulic system', direction: 'low' },
-  { key: 'engineOilPressure', label: 'Engine oil pressure', unit: 'bar', kind: 'pressure', component: 'Engine', direction: 'low' },
-  { key: 'transmissionPressure', label: 'Transmission pressure', unit: 'bar', kind: 'pressure', component: 'Transmission', direction: 'low' },
-]
-
-export const PARAM_BY_KEY = Object.fromEntries(PARAMS.map((p) => [p.key, p])) as Record<ParamKey, ParamDef>
-
 export const BAR_PER_PSI = 0.0689476
 
-/** Nominal operating value per parameter (used by the simulator and as a baseline seed). */
-export const NOMINAL: Record<ParamKey, number> = {
-  engineTemp: 88,
-  transmissionTemp: 82,
-  hydraulicOilTemp: 60,
-  coolantTemp: 85,
-  hydraulicPressure: 190,
-  engineOilPressure: 3.8,
-  transmissionPressure: 17,
+/** Nominal operating value per daily parameter, used only by the simulator. Pressures and fuel use the per-type reference. */
+export const NOMINAL: Partial<Record<ParamKey, number>> = {
+  engineOilTemp: 92,
+  engineOilPressure: 3.6,
+  coolantTemp: 84,
+  engineRpm: 2150,
+  transOilTemp: 82,
+  transOilPressure: 17,
+  hydOilTemp: 58,
+  batteryVoltage: 25.2,
+  chargingVoltage: 28,
 }
 
-const BASE_THRESHOLDS: Record<ParamKey, { warning: number; critical: number; min: number; max: number }> = {
-  engineTemp: { warning: 98, critical: 105, min: 0, max: 150 },
-  transmissionTemp: { warning: 95, critical: 110, min: 0, max: 160 },
-  hydraulicOilTemp: { warning: 75, critical: 85, min: 0, max: 130 },
-  coolantTemp: { warning: 96, critical: 103, min: 0, max: 140 },
-  hydraulicPressure: { warning: 170, critical: 155, min: 0, max: 350 },
-  engineOilPressure: { warning: 2.5, critical: 1.8, min: 0, max: 10 },
-  transmissionPressure: { warning: 14, critical: 12, min: 0, max: 40 },
-}
-
-/** Default (OEM-derived) thresholds per type — placeholders until OEM manuals are loaded (A-06). */
-export function defaultThresholds(): ThresholdTable {
-  const types: EquipmentType[] = ['Reach Stacker', 'Forklift', 'Empty Container Handler', 'Yard Tractor']
-  const out = {} as ThresholdTable
-  for (const t of types) {
-    out[t] = structuredClone(BASE_THRESHOLDS)
-    if (t === 'Yard Tractor') {
-      out[t].hydraulicPressure = { warning: 120, critical: 105, min: 0, max: 250 }
-    }
-  }
-  return out
-}
+// Thresholds now live in the parameter catalog (catalog.ts), quantified from the CHE Data Entry sheet.
+export { defaultThresholds, defaultLabThresholds } from './catalog.ts'
 
 /** Baseline deviation tolerance in standard deviations (FR-12). */
 export const BASELINE_TOLERANCE_SD = 3
@@ -175,6 +142,9 @@ export const FAILURE_CODES: { code: string; label: string; component: string }[]
   { code: 'TRN-SLIP', label: 'Transmission slipping', component: 'Transmission' },
   { code: 'CLG-RAD', label: 'Radiator / cooling fault', component: 'Cooling system' },
   { code: 'ELE-STR', label: 'Starter / electrical fault', component: 'Electrical' },
+  { code: 'ELE-CHG', label: 'Alternator / charging fault', component: 'Electrical' },
+  { code: 'FUE-INJ', label: 'Fuel pump / injector fault', component: 'Fuel system' },
+  { code: 'AXL-GEAR', label: 'Axle / differential gear wear', component: 'Final drive' },
   { code: 'BRK-WEAR', label: 'Brake wear / failure', component: 'Brakes' },
   { code: 'TYR-DMG', label: 'Tyre damage', component: 'Tyres' },
   { code: 'SPR-TWL', label: 'Spreader twistlock fault', component: 'Spreader / attachment' },
@@ -187,6 +157,9 @@ export const ACTION_LIBRARY: Record<string, string> = {
   Transmission: 'Check transmission fluid level and condition; inspect cooler lines; schedule transmission pressure test.',
   'Hydraulic system': 'Inspect hydraulic hoses, seals and pump; take hydraulic oil sample; replace filter if differential pressure is high.',
   'Cooling system': 'Pressure-test radiator and hoses; clean radiator core; verify fan and thermostat operation.',
+  'Fuel system': 'Replace fuel filters; check fuel rail pressure and injector balance with the diagnostic tool; review operator idling.',
+  Electrical: 'Load-test batteries; check alternator output and regulator; clean and tighten terminals and earth straps.',
+  'Final drive': 'Take a gear-oil sample; inspect axle breathers and seals for dirt and water ingress; check differential for play and noise.',
   Structure: 'Remove from lifting duty; perform confirmatory NDT on the flagged weld/boom section before return to service.',
   'Whole unit': 'Review recent failure history with the Supervisor; plan a combined inspection at next PM opportunity.',
   'PM schedule': 'Schedule the overdue preventive maintenance service per LBE-SOP-2026-001.',

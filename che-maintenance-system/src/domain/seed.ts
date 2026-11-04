@@ -12,10 +12,9 @@ import {
   HOUR,
   LOCATIONS,
   NOMINAL,
-  PARAMS,
   WEEK,
-  defaultThresholds,
 } from './constants.ts'
+import { DAILY, DAILY_BY_KEY, LAB, defaultLabThresholds, defaultThresholds, direction, evaluateOilReport, resolveLimits } from './catalog.ts'
 import { episodes, weekStart } from './kpi.ts'
 import { scoreUnit } from './risk.ts'
 import type {
@@ -23,6 +22,8 @@ import type {
   AuditEntry,
   EquipmentType,
   NdtFinding,
+  LabKey,
+  OilCompartment,
   OilSample,
   OutcomeType,
   ParamKey,
@@ -30,6 +31,7 @@ import type {
   StatusCode,
   StatusEvent,
   SyncInfo,
+  Threshold,
   ThresholdTable,
   Unit,
   WorkOrder,
@@ -48,6 +50,8 @@ export interface AppData {
   /** failure-event IDs that were preceded by an alert ≥ 7 days before (alert recall) */
   precededEpisodes: string[]
   thresholds: ThresholdTable
+  /** oil-analysis thresholds per lab parameter (one set for the fleet) */
+  labThresholds: Record<LabKey, Threshold>
   audit: AuditEntry[]
   sync: SyncInfo
   /** start of hour-level capture; earlier history is migrated from YardPulse (week-granular) */
@@ -55,7 +59,7 @@ export interface AppData {
   workedExampleAssetId: string
 }
 
-export const DATA_VERSION = 4
+export const DATA_VERSION = 5
 
 function mulberry32(seed: number) {
   let a = seed >>> 0
@@ -107,6 +111,7 @@ export function generate(now: number, seed = 20261023): AppData {
   const nid = (p: string) => `${p}-${(++idc).toString(36).toUpperCase().padStart(5, '0')}`
 
   const thresholds = defaultThresholds()
+  const labThresholds = defaultLabThresholds()
   const curWeek = weekStart(now)
   const simStart = curWeek - 22 * WEEK
   const cutover = curWeek - 8 * WEEK
@@ -148,7 +153,7 @@ export function generate(now: number, seed = 20261023): AppData {
     const degrading = rnd() < 0.2
     profile.set(u.assetId, {
       rate: between(0.06, 0.3) + (old > 10 ? 0.1 : 0) + (degrading ? 0.1 : 0), // failures per week
-      drift: degrading ? pick(PARAMS).key : null,
+      drift: degrading ? pick(DRIFTABLE) : null,
       driftStrength: between(0.5, 1.2),
       sparse: rnd() < 0.04,
     })
@@ -197,13 +202,14 @@ export function generate(now: number, seed = 20261023): AppData {
   }
 
   const driftCode: Partial<Record<ParamKey, string>> = {
-    engineTemp: 'ENG-OVH',
+    engineOilTemp: 'ENG-OVH',
     engineOilPressure: 'ENG-OIL',
-    hydraulicOilTemp: 'HYD-PUMP',
-    hydraulicPressure: 'HYD-LEAK',
-    transmissionTemp: 'TRN-SLIP',
-    transmissionPressure: 'TRN-SLIP',
     coolantTemp: 'CLG-RAD',
+    transOilTemp: 'TRN-SLIP',
+    transOilPressure: 'TRN-SLIP',
+    hydOilTemp: 'HYD-PUMP',
+    hydOilPressure: 'HYD-LEAK',
+    batteryVoltage: 'ELE-STR',
   }
 
   // A handful of units are deliberately down right now, some stalled on parts/PO (FR-39).
@@ -316,7 +322,17 @@ export function generate(now: number, seed = 20261023): AppData {
       if (at > now) break
       dayList.push(at)
     }
-    const offset = Object.fromEntries(PARAMS.map((p) => [p.key, (rnd() - 0.5) * (p.kind === 'temperature' ? 6 : NOMINAL[p.key] * 0.06)]))
+    const th = thresholds[u.type]
+    const nominalOf = (key: ParamKey): number => {
+      const ref = th[key].ref
+      if (key === 'hydOilPressure') return (ref ?? 190) * 0.99
+      if (key === 'hydPumpPressure') return (ref ?? 190) * 0.98
+      if (key === 'fuelRate' || key === 'fuelRailPressure') return ref ?? 10
+      return NOMINAL[key] ?? 0
+    }
+    // Unit-to-unit offset and day-to-day noise. Voltages are regulated, so they vary far less than pressures.
+    const spread = (p: (typeof DAILY)[number]) => (p.unit === '°C' ? 6 : p.unit === 'V' ? 0.3 : nominalOf(p.key) * 0.03)
+    const offset = Object.fromEntries(DAILY.map((p) => [p.key, (rnd() - 0.5) * spread(p)])) as Record<ParamKey, number>
     dayList.forEach((at, idx) => {
       let st: StatusEvent | undefined
       for (const e of evs) if (e.at <= at) st = e
@@ -326,16 +342,20 @@ export function generate(now: number, seed = 20261023): AppData {
       hm += Math.round(between(7, 19) * 10) / 10
       const values: Partial<Record<ParamKey, number>> = {}
       const progress = Math.max(0, (idx - (dayList.length - 14)) / 14) // drift over the last 2 weeks
-      for (const p of PARAMS) {
-        const nominal = NOMINAL[p.key] + offset[p.key]
-        const noiseAmp = p.kind === 'temperature' ? 1.6 : nominal * 0.025
+      for (const p of DAILY) {
+        if (!p.required && rnd() < 0.65) continue // diagnostic-tool readings are taken only some days
+        const nominal = nominalOf(p.key) + offset[p.key]
+        const noiseAmp = p.unit === '°C' ? 1.6 : p.unit === 'V' ? 0.12 : nominal * 0.02
         let v = nominal + (rnd() - 0.5) * 2 * noiseAmp
         if (prof.drift === p.key && progress > 0) {
-          const lim = thresholds[u.type][p.key]
-          const span = Math.abs(lim.critical - nominal) * 1.05 * prof.driftStrength
-          v = nominal + (p.direction === 'high' ? 1 : -1) * span * progress ** 1.4 + (rnd() - 0.5) * noiseAmp * 0.4
+          const lim = resolveLimits(p, th[p.key])
+          const high = direction(p) === 'high'
+          const crit = (high ? lim.highCrit : lim.lowCrit) ?? nominal
+          const span = Math.abs(crit - nominal) * 1.05 * prof.driftStrength
+          v = nominal + (high ? 1 : -1) * span * progress ** 1.4 + (rnd() - 0.5) * noiseAmp * 0.4
         }
-        values[p.key] = p.kind === 'temperature' ? Math.round(v * 10) / 10 : Math.round(v * 100) / 100
+        const f = 10 ** (p.decimals + 1)
+        values[p.key] = Math.round(v * f) / f
       }
       readings.push({ id: nid('RD'), assetId: u.assetId, at, user: pick(TECHS), hourMeter: Math.round(hm * 10) / 10, values })
     })
@@ -352,25 +372,31 @@ export function generate(now: number, seed = 20261023): AppData {
     const prof = profile.get(u.assetId)!
     const n = rnd() < 0.5 ? 1 : 2
     for (let k = 0; k < n; k++) {
-      const compartment = pick(['Engine', 'Transmission', 'Hydraulic'] as const)
-      const related =
-        prof.drift &&
-        ((compartment === 'Engine' && prof.drift.startsWith('engine')) ||
-          (compartment === 'Hydraulic' && prof.drift.startsWith('hydraulic')) ||
-          (compartment === 'Transmission' && prof.drift.startsWith('transmission')))
-      const sev = related ? (rnd() < 0.5 ? 'Critical' : 'Caution') : rnd() < 0.08 ? 'Caution' : 'Normal'
+      const compartment: OilCompartment = rnd() < 0.15 ? 'Gear' : pick(['Engine', 'Transmission', 'Hydraulic'] as const)
+      const sys = prof.drift ? DAILY_BY_KEY[prof.drift].system : null
+      const related = (compartment === 'Engine' && sys === 'Engine') || (compartment === 'Hydraulic' && sys === 'Hydraulic') || (compartment === 'Transmission' && sys === 'Transmission')
+      const target = related ? (rnd() < 0.5 ? 'Critical' : 'Caution') : rnd() < 0.08 ? 'Caution' : 'Normal'
+      const values = normalOil(compartment, between)
+      if (target !== 'Normal') {
+        const numeric = LAB.filter((d) => d.compartment === compartment && !d.text)
+        const def = numeric[Math.floor(rnd() * numeric.length)]
+        const lim = resolveLimits(def, labThresholds[def.key])
+        const high = lim.highWarn !== undefined
+        const warnV = high ? lim.highWarn! : lim.lowWarn!
+        const critV = high ? lim.highCrit! : lim.lowCrit!
+        const v = target === 'Caution' ? (warnV + critV) / 2 : high ? critV * 1.15 : critV * 0.85
+        values[def.key] = Math.round(v * 100) / 100
+      }
+      const evaluated = evaluateOilReport(compartment, values, labThresholds, [])
       oil.push({
         id: nid('OA'),
         assetId: u.assetId,
         sampledAt: now - Math.floor(between(3, 80)) * DAY,
         lab: pick(labs),
         compartment,
-        viscosity: Math.round(between(sev === 'Normal' ? 13 : 10, 15.5) * 10) / 10,
-        waterPct: Math.round(between(0, sev === 'Critical' ? 0.6 : 0.08) * 100) / 100,
-        fuelDilutionPct: Math.round(between(0, sev === 'Normal' ? 1.2 : 4.5) * 10) / 10,
-        ironPpm: Math.round(between(sev === 'Critical' ? 110 : 8, sev === 'Normal' ? 45 : 180)),
-        particleCode: sev === 'Normal' ? '18/16/13' : sev === 'Caution' ? '20/18/15' : '23/21/18',
-        severity: sev,
+        values,
+        severity: evaluated.severity,
+        findings: evaluated.findings.map((f) => f.message),
         attachment: `lab-report-${u.assetId}-${k + 1}.pdf`,
         user: 'Maintenance Planner',
       })
@@ -539,6 +565,7 @@ export function generate(now: number, seed = 20261023): AppData {
     alerts,
     precededEpisodes,
     thresholds,
+    labThresholds,
     audit,
     sync: {
       mode: 'mock',
@@ -559,6 +586,25 @@ function closedAtFor(past: boolean, r: number, due: number, early: number, lateD
   if (!past) return undefined
   const t = r < 0.88 ? due - early * DAY : r < 0.98 ? due + lateDays * DAY : undefined
   return t !== undefined && t <= now ? t : undefined
+}
+
+/** Daily parameters that can drift towards a limit in the simulation (required, one-directional). */
+const DRIFTABLE: ParamKey[] = ['engineOilTemp', 'engineOilPressure', 'coolantTemp', 'transOilTemp', 'transOilPressure', 'hydOilTemp', 'hydOilPressure', 'batteryVoltage']
+
+/** A healthy lab result for each compartment, around the catalog's reference values. */
+function normalOil(c: OilCompartment, between: (a: number, b: number) => number): Record<LabKey, number | string> {
+  const r2 = (v: number) => Math.round(v * 100) / 100
+  const ox = r2(between(8, 11.5))
+  switch (c) {
+    case 'Engine':
+      return { 'eng.visc100': r2(14.5 * between(0.95, 1.05)), 'eng.water': r2(between(0, 0.06)), 'eng.fuel': r2(between(0, 1.2)), 'eng.soot': r2(between(0.3, 1.8)), 'eng.tbn': r2(between(6, 9)), 'eng.tan': r2(between(2.2, 3.5)), 'eng.oxid': ox, 'eng.glycol': 'Negative' }
+    case 'Transmission':
+      return { 'trn.visc100': r2(11 * between(0.96, 1.04)), 'trn.water': r2(between(0, 0.03)), 'trn.tan': r2(between(1.1, 1.6)), 'trn.oxid': ox, 'trn.fe': Math.round(between(20, 50)) }
+    case 'Hydraulic':
+      return { 'hyd.visc40': r2(46 * between(0.96, 1.04)), 'hyd.water': r2(between(0, 0.03)), 'hyd.tan': r2(between(0.5, 0.8)), 'hyd.oxid': ox, 'hyd.iso': between(0, 1) < 0.5 ? '17/15/12' : '18/16/13', 'hyd.fe': Math.round(between(4, 12)) }
+    case 'Gear':
+      return { 'gear.visc40': r2(135 * between(0.96, 1.04)), 'gear.water': r2(between(0, 0.03)), 'gear.tan': r2(between(1.0, 1.6)), 'gear.oxid': ox, 'gear.fe': Math.round(between(80, 180)), 'gear.si': Math.round(between(5, 15)) }
+  }
 }
 
 export function groupBy<T>(xs: T[], key: (x: T) => string): Map<string, T[]> {

@@ -154,7 +154,7 @@ describe('Holt damped-trend forecast (FR-42)', () => {
 
 describe('Reading validation and detection (FR-04, FR-10, FR-12, FR-13)', () => {
   const limits = defaultThresholds()['Reach Stacker']
-  const base = { engineTemp: 88, transmissionTemp: 82, hydraulicOilTemp: 60, coolantTemp: 85, hydraulicPressure: 190, engineOilPressure: 3.8, transmissionPressure: 17 }
+  const base = { engineOilTemp: 92, engineOilPressure: 3.6, coolantTemp: 84, transOilTemp: 82, transOilPressure: 17, hydOilTemp: 58, hydOilPressure: 218, batteryVoltage: 25.2, chargingVoltage: 28 }
   const prev: Reading = { id: 'r0', assetId: 'A', at: MON, user: 't', hourMeter: 1000, values: base }
 
   it('rejects an hour meter lower than the previous reading or > 24 h/day', () => {
@@ -166,31 +166,39 @@ describe('Reading validation and detection (FR-04, FR-10, FR-12, FR-13)', () => 
     assert.equal(ok.length, 0)
   })
 
+  it('requires the mechanic’s core readings but lets diagnostic-tool readings stay blank', () => {
+    const { coolantTemp: _c, ...missing } = base
+    const errs = validateReading({ at: MON + DAY, hourMeter: 1015, values: missing }, prev, limits, MON + 2 * DAY)
+    assert.deepEqual(errs.map((e) => e.field), ['coolantTemp'])
+    const optionalBlank = validateReading({ at: MON + DAY, hourMeter: 1015, values: { ...base, engineRpm: null, fuelRailPressure: null } }, prev, limits, MON + 2 * DAY)
+    assert.equal(optionalBlank.length, 0)
+  })
+
   it('flags critical limit breaches, including low-is-bad pressures', () => {
-    const r: Reading = { ...prev, id: 'r1', at: MON + DAY, values: { ...base, engineTemp: 107, engineOilPressure: 1.5 } }
+    const r: Reading = { ...prev, id: 'r1', at: MON + DAY, values: { ...base, engineOilTemp: 121, engineOilPressure: 1.4 } }
     const f = detectFindings(r, [prev], limits)
-    assert.ok(f.some((x) => x.param === 'engineTemp' && x.severity === 'critical'))
+    assert.ok(f.some((x) => x.param === 'engineOilTemp' && x.severity === 'critical' && x.indication?.includes('engine heat')))
     assert.ok(f.some((x) => x.param === 'engineOilPressure' && x.severity === 'critical'))
   })
 
   it('detects sustained deterioration below the limit', () => {
-    const hist: Reading[] = [80, 81, 82, 83, 84, 85].map((t, i) => ({ ...prev, id: `h${i}`, at: MON + i * DAY, values: { ...base, engineTemp: t } }))
-    const r: Reading = { ...prev, id: 'new', at: MON + 7 * DAY, values: { ...base, engineTemp: 86 } }
+    const hist: Reading[] = [80, 81, 82, 83, 84, 85].map((t, i) => ({ ...prev, id: `h${i}`, at: MON + i * DAY, values: { ...base, engineOilTemp: t } }))
+    const r: Reading = { ...prev, id: 'new', at: MON + 7 * DAY, values: { ...base, engineOilTemp: 86 } }
     const f = detectFindings(r, hist, limits)
-    assert.ok(f.some((x) => x.param === 'engineTemp' && x.kind === 'trend'))
+    assert.ok(f.some((x) => x.param === 'engineOilTemp' && x.kind === 'trend'))
   })
 })
 
 describe('Risk scoring (FR-15, FR-16)', () => {
   const limits = defaultThresholds()['Reach Stacker']
-  const base = { engineTemp: 88, transmissionTemp: 82, hydraulicOilTemp: 60, coolantTemp: 85, hydraulicPressure: 190, engineOilPressure: 3.8, transmissionPressure: 17 }
+  const base = { engineOilTemp: 92, engineOilPressure: 3.6, coolantTemp: 84, transOilTemp: 82, transOilPressure: 17, hydOilTemp: 58, hydOilPressure: 218, batteryVoltage: 25.2, chargingVoltage: 28 }
   const now = MON + 30 * DAY
   const daily = (n: number, last: Partial<typeof base> = {}): Reading[] =>
     Array.from({ length: n }, (_, i) => ({ id: `r${i}`, assetId: 'A', at: now - (n - 1 - i) * DAY, user: 't', hourMeter: 1000 + i * 10, values: i === n - 1 ? { ...base, ...last } : base }))
   const score = (readings: Reading[]) => scoreUnit({ unit: unit('A'), readings, episodes: [], oil: [], ndt: [], limits, now })
 
   it('a reading beyond a critical limit is never scored Low', () => {
-    const s = score(daily(25, { engineTemp: 108 }))
+    const s = score(daily(25, { engineOilTemp: 121 }))
     assert.ok(s.level && s.level !== 'Low', `got ${s.level}`)
     assert.equal(s.component, 'Engine')
   })

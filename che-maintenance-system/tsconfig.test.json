@@ -25,6 +25,7 @@
     "src/integration/emms/contract.ts",
     "src/integration/emms/mapper.ts",
     "src/integration/emms/client.ts",
-    "src/integration/emms/emms.test.ts"
+    "src/integration/emms/emms.test.ts",
+    "scripts"
   ]
 }

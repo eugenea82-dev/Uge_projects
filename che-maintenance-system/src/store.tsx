@@ -6,6 +6,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { alertFromScore } from './domain/alerts.ts'
 import { DAY, HOUR, PERMISSIONS, STALLED_LIMIT_HOURS, STATUSES } from './domain/constants.ts'
+import { evaluateOilReport, type LabFinding } from './domain/catalog.ts'
 import { detectFindings, validateReading, type ValidationError } from './domain/detection.ts'
 import { completeWeeks, episodes as buildEpisodes, rollup, unitReliability, type Episode, type Rollup, type UnitReliability } from './domain/kpi.ts'
 import { scoreUnit } from './domain/risk.ts'
@@ -19,6 +20,7 @@ import type {
   Cause,
   EquipmentType,
   ExternalReason,
+  LabKey,
   NdtFinding,
   OilSample,
   ParamKey,
@@ -27,7 +29,6 @@ import type {
   RiskScore,
   StatusCode,
   StatusEvent,
-  Threshold,
   Unit,
   User,
 } from './domain/types.ts'
@@ -52,6 +53,18 @@ function withMode(d: AppData): AppData {
 }
 
 const emms = createEmmsClient()
+
+/** An oil lab report as entered: severity and findings are computed from the catalog on save. */
+export interface OilReportInput {
+  assetId: string
+  sampledAt: number
+  lab: string
+  compartment: OilSample['compartment']
+  values: OilSample['values']
+  attachment?: string
+}
+
+type NumericField = 'warning' | 'critical' | 'ref' | 'min' | 'max'
 
 export interface BatchResult {
   scored: number
@@ -83,10 +96,11 @@ interface Ctx {
   rollupFor: (units: Unit[], key: string) => Rollup
   addReading: (input: { assetId: string; at: number; hourMeter: number | null; values: Partial<Record<ParamKey, number | null>> }) => { errors: ValidationError[]; findings?: ReadingFinding[]; alert?: Alert }
   changeStatus: (input: { assetId: string; at: number; status: StatusCode; cause: Cause | null; externalReason?: ExternalReason; failureCode?: string; note?: string }) => string | null
-  addOil: (o: Omit<OilSample, 'id' | 'user'>) => Alert | undefined
+  addOil: (o: OilReportInput) => { severity: OilSample['severity']; findings: LabFinding[]; alert?: Alert }
   addNdt: (n: Omit<NdtFinding, 'id' | 'user'>) => Alert | undefined
   updateAlert: (id: string, label: string, fn: (a: Alert) => Alert) => string | null
-  setThreshold: (type: EquipmentType, key: ParamKey, field: keyof Threshold, value: number) => void
+  setThreshold: (type: EquipmentType, key: ParamKey, field: NumericField, value: number) => void
+  setLabThreshold: (key: LabKey, field: NumericField | 'refCode', value: number | string) => void
   runBatch: () => Promise<BatchResult>
   importEmmsFile: (dtos: EmmsWorkOrderDto[], fileName: string) => { added: number; updated: number; skipped: number; rejected: number }
   testEmms: () => Promise<EmmsHealth | { ok: false; detail: string }>
@@ -282,8 +296,11 @@ export function StoreProvider({ user, children }: { user: User; children: ReactN
   const addOil: Ctx['addOil'] = useCallback(
     (o) => {
       const cur = dataRef.current
-      const rec: OilSample = { ...o, id: uid('OA'), user: user.displayName }
-      const alert = o.severity === 'Critical' ? immediateAlert({ ...cur, oil: [...cur.oil, rec] }, o.assetId, Date.now()) : undefined
+      // Baselines for "above the unit's baseline" rules come from this unit's earlier reports for the same compartment.
+      const previous = cur.oil.filter((x) => x.assetId === o.assetId && x.compartment === o.compartment && x.sampledAt < o.sampledAt).sort((a, b) => a.sampledAt - b.sampledAt)
+      const result = evaluateOilReport(o.compartment, o.values, cur.labThresholds, previous)
+      const rec: OilSample = { ...o, id: uid('OA'), user: user.displayName, severity: result.severity, findings: result.findings.map((f) => f.message) }
+      const alert = result.severity === 'Critical' ? immediateAlert({ ...cur, oil: [...cur.oil, rec] }, o.assetId, Date.now()) : undefined
       commit(
         (draft) => {
           draft.oil.push(rec)
@@ -292,9 +309,9 @@ export function StoreProvider({ user, children }: { user: User; children: ReactN
             draft.audit.push(raisedAudit(alert))
           }
         },
-        [{ action: 'Oil analysis uploaded', entity: o.assetId, after: `${o.compartment} · ${o.severity} · ${o.lab}` }],
+        [{ action: 'Oil analysis entered', entity: o.assetId, after: `${o.compartment} · ${result.severity} · ${o.lab}${result.findings.length ? ` · ${result.findings.map((f) => f.message).join('; ')}` : ''}` }],
       )
-      return alert
+      return { severity: result.severity, findings: result.findings, alert }
     },
     [commit, user],
   )
@@ -354,6 +371,21 @@ export function StoreProvider({ user, children }: { user: User; children: ReactN
           draft.thresholds[type][key][field] = value
         },
         [{ action: 'Threshold changed', entity: `${type} · ${key} · ${field}`, before: String(before), after: String(value) }],
+      )
+    },
+    [commit],
+  )
+
+  const setLabThreshold: Ctx['setLabThreshold'] = useCallback(
+    (key, field, value) => {
+      const before = dataRef.current.labThresholds[key]?.[field]
+      if (before === value || (typeof value === 'number' && !Number.isFinite(value))) return
+      commit(
+        (draft) => {
+          draft.labThresholds = structuredClone(draft.labThresholds)
+          ;(draft.labThresholds[key] as unknown as Record<string, number | string>)[field] = value
+        },
+        [{ action: 'Oil-analysis threshold changed', entity: `${key} · ${field}`, before: String(before), after: String(value) }],
       )
     },
     [commit],
@@ -489,7 +521,7 @@ export function StoreProvider({ user, children }: { user: User; children: ReactN
     setData(generate(Date.now()))
   }, [])
 
-  const value: Ctx = { data, now, user, d, can, inScope, scopedUnits, rollupFor, addReading, changeStatus, addOil, addNdt, updateAlert, setThreshold, runBatch, importEmmsFile, testEmms, emms: { mode: emmsConfig.mode, baseUrl: emmsConfig.baseUrl }, resetDemo }
+  const value: Ctx = { data, now, user, d, can, inScope, scopedUnits, rollupFor, addReading, changeStatus, addOil, addNdt, updateAlert, setThreshold, setLabThreshold, runBatch, importEmmsFile, testEmms, emms: { mode: emmsConfig.mode, baseUrl: emmsConfig.baseUrl }, resetDemo }
   return <StoreCtx.Provider value={value}>{children}</StoreCtx.Provider>
 }
 

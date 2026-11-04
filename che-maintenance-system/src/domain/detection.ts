@@ -1,14 +1,16 @@
-// Reading validation (FR-04, FR-10) and abnormal-condition detection (FR-12, FR-13).
+// Reading validation (FR-04, FR-10) and abnormal-condition detection (FR-12, FR-13),
+// driven by the quantified parameter catalog (catalog.ts).
 
-import { BASELINE_TOLERANCE_SD, DAY, PARAMS, PARAM_BY_KEY, TREND_CONSECUTIVE } from './constants.ts'
-import type { ParamKey, Reading, ReadingFinding, Threshold, ThresholdTable, Unit } from './types.ts'
+import { BASELINE_TOLERANCE_SD, DAY, TREND_CONSECUTIVE } from './constants.ts'
+import { DAILY, DAILY_BY_KEY, bands, dailyBaseline, direction, evaluate, fmtValue } from './catalog.ts'
+import type { ParamKey, Reading, ReadingFinding, Threshold } from './types.ts'
 
 export interface ValidationError {
   field: ParamKey | 'hourMeter' | 'at'
   message: string
 }
 
-/** Plain-language validation messages that name the field and how to fix it (NFR-U02). */
+/** Plain-language validation messages that name the field and how to fix it (NFR-U02). Optional readings may be left blank. */
 export function validateReading(
   r: { at: number; hourMeter: number | null; values: Partial<Record<ParamKey, number | null>> },
   prev: Reading | undefined,
@@ -30,67 +32,81 @@ export function validateReading(
       }
     }
   }
-  for (const p of PARAMS) {
+  for (const p of DAILY) {
     const v = r.values[p.key]
-    if (v === null || v === undefined || !Number.isFinite(v)) {
-      errs.push({ field: p.key, message: `${p.label} is required (${p.unit}).` })
+    if (v === null || v === undefined) {
+      if (p.required) errs.push({ field: p.key, message: `${p.label} is required (${p.unit}).` })
+      continue
+    }
+    if (!Number.isFinite(v)) {
+      errs.push({ field: p.key, message: `${p.label}: enter a number.` })
       continue
     }
     const lim = limits[p.key]
     if (v < lim.min || v > lim.max) {
-      errs.push({ field: p.key, message: `${p.label} of ${v} ${p.unit} is outside the possible range ${lim.min}–${lim.max} ${p.unit}. Check the gauge and unit of measure.` })
+      errs.push({ field: p.key, message: `${p.label} of ${v} ${p.unit} is outside the possible range ${lim.min}–${lim.max} ${p.unit}. Check the gauge and the unit of measure.` })
     }
   }
   return errs
 }
 
-function worse(direction: 'high' | 'low', v: number, limit: number) {
-  return direction === 'high' ? v >= limit : v <= limit
-}
-
-/** Compare a saved reading with limits, the unit's own baseline, and its recent trend. */
+/** Compare a saved reading with its quantified limits, the unit's own baseline, and its recent trend. */
 export function detectFindings(reading: Reading, history: Reading[], limits: Record<ParamKey, Threshold>): ReadingFinding[] {
   const out: ReadingFinding[] = []
   const prior = history.filter((h) => h.at < reading.at).sort((a, b) => a.at - b.at)
-  for (const p of PARAMS) {
+  for (const p of DAILY) {
     const v = reading.values[p.key]
     if (v === undefined) continue
-    const lim = limits[p.key]
-    if (worse(p.direction, v, lim.critical)) {
-      out.push({ param: p.key, kind: 'limit', severity: 'critical', message: `${p.label} ${fmt(v)} ${p.unit} is beyond the critical limit (${lim.critical} ${p.unit}).` })
-    } else if (worse(p.direction, v, lim.warning)) {
-      out.push({ param: p.key, kind: 'limit', severity: 'warning', message: `${p.label} ${fmt(v)} ${p.unit} is beyond the warning limit (${lim.warning} ${p.unit}).` })
+    const th = limits[p.key]
+    const base = dailyBaseline(prior, p.key)
+    const level = evaluate(p, th, v, base)
+    const shown = `${fmtValue(v, p.decimals)} ${p.unit}`
+    if (level === 'critical' || level === 'warning') {
+      const b = bands(p, th, base)
+      out.push({
+        param: p.key,
+        kind: 'limit',
+        severity: level,
+        message: level === 'critical' ? `${p.label} ${shown} — STOP level (${b.stop}).` : `${p.label} ${shown} — CHECK level (${b.check}; OK is ${b.ok}).`,
+        indication: p.indication,
+      })
     }
-    const base = baseline(prior, p.key)
-    if (base && base.sd > 0) {
-      const z = (v - base.mean) / base.sd
-      const adverse = p.direction === 'high' ? z : -z
-      if (adverse > BASELINE_TOLERANCE_SD && !out.some((f) => f.param === p.key)) {
-        out.push({ param: p.key, kind: 'baseline', severity: 'warning', message: `${p.label} ${fmt(v)} ${p.unit} deviates ${adverse.toFixed(1)}σ from this unit’s baseline (${fmt(base.mean)} ${p.unit}).` })
+    // Statistical deviation from the unit's own history, for absolute-limit parameters only
+    // (relative rules already compare against the baseline).
+    const dir = direction(p)
+    if ((p.rule === 'above' || p.rule === 'below') && !out.some((f) => f.param === p.key)) {
+      const stats = baseline(prior, p.key)
+      if (stats && stats.sd > 0) {
+        const z = (v - stats.mean) / stats.sd
+        const adverse = dir === 'high' ? z : -z
+        if (adverse > BASELINE_TOLERANCE_SD) {
+          out.push({ param: p.key, kind: 'baseline', severity: 'warning', message: `${p.label} ${shown} is ${adverse.toFixed(1)}σ from this unit’s normal (${fmtValue(stats.mean, p.decimals)} ${p.unit}).`, indication: p.indication })
+        }
       }
     }
     if (risingTrend([...prior, reading], p.key)) {
-      out.push({ param: p.key, kind: 'trend', severity: 'warning', message: `${p.label} has worsened over ${TREND_CONSECUTIVE} consecutive readings — sustained deterioration.` })
+      out.push({ param: p.key, kind: 'trend', severity: 'warning', message: `${p.label} has got worse over ${TREND_CONSECUTIVE} readings in a row — early sign of deterioration.`, indication: p.indication })
     }
   }
   return out
 }
 
-/** Baseline from the unit's own history: the first 30 readings, needs ≥ 10. */
+/** Mean and spread of the unit's first 30 readings; needs ≥ 10. */
 export function baseline(history: Reading[], key: ParamKey): { mean: number; sd: number } | null {
   const vals = history
-    .slice(0, 30)
     .map((h) => h.values[key])
     .filter((v): v is number => v !== undefined)
+    .slice(0, 30)
   if (vals.length < 10) return null
   const mean = vals.reduce((s, v) => s + v, 0) / vals.length
   const sd = Math.sqrt(vals.reduce((s, v) => s + (v - mean) ** 2, 0) / vals.length)
   return { mean, sd }
 }
 
-/** True when the last N readings each worsen on the previous one (FR-13). */
+/** True when the last N readings each worsen on the previous one (FR-13). Two-sided parameters have no single "worse" direction. */
 export function risingTrend(sorted: Reading[], key: ParamKey, n = TREND_CONSECUTIVE): boolean {
-  const dir = PARAM_BY_KEY[key].direction
+  const dir = direction(DAILY_BY_KEY[key])
+  if (dir !== 'high' && dir !== 'low') return false
   const vals = sorted.map((r) => r.values[key]).filter((v): v is number => v !== undefined)
   if (vals.length < n + 1) return false
   const tail = vals.slice(-(n + 1))
@@ -98,12 +114,4 @@ export function risingTrend(sorted: Reading[], key: ParamKey, n = TREND_CONSECUT
     if (dir === 'high' ? tail[i] <= tail[i - 1] : tail[i] >= tail[i - 1]) return false
   }
   return true
-}
-
-export function limitsFor(unit: Unit, table: ThresholdTable) {
-  return table[unit.type]
-}
-
-function fmt(v: number) {
-  return Math.abs(v) < 10 ? v.toFixed(1) : Math.round(v).toString()
 }

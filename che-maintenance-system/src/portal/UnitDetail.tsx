@@ -2,7 +2,8 @@
 // decisions and KPIs, plus the risk explanation (FR-16) and trend charts (FR-13).
 
 import { useMemo, useState, type ReactNode } from 'react'
-import { MTTR_BUCKETS, PARAMS, STATUSES } from '../domain/constants.ts'
+import { COMPARTMENT_LABEL, DAILY, DAILY_BY_KEY, dailyBaseline, resolveLimits } from '../domain/catalog.ts'
+import { MTTR_BUCKETS, STATUSES } from '../domain/constants.ts'
 import { detectFindings } from '../domain/detection.ts'
 import { holtDamped } from '../domain/forecast.ts'
 import { isoWeek } from '../domain/kpi.ts'
@@ -20,7 +21,7 @@ export function UnitDetail({ assetId }: { assetId?: string }) {
   const { d, data, now, can, inScope, user } = useStore()
   const nav = useNav()
   const u = assetId ? d.unitById.get(assetId) : undefined
-  const [param, setParam] = useState<ParamKey>('engineTemp')
+  const [param, setParam] = useState<ParamKey>('engineOilTemp')
   const [tl, setTl] = useState<'all' | 'status' | 'alerts' | 'wo' | 'lab'>('all')
 
   const readings = useMemo(() => (assetId ? d.readingsByUnit.get(assetId) ?? [] : []), [d, assetId])
@@ -45,9 +46,15 @@ export function UnitDetail({ assetId }: { assetId?: string }) {
   const labels = [...d.weeks.map((w) => `W${isoWeek(w)}`), ...fc.forecast.map((_, i) => `W${isoWeek(d.weeks[d.weeks.length - 1] + (i + 1) * 7 * 86_400_000)}`)]
   const nHist = weekly.length
 
-  const p = PARAMS.find((x) => x.key === param)!
-  const lim = limits[param]
-  const tail = readings.slice(-45)
+  const p = DAILY_BY_KEY[param]
+  const lim = resolveLimits(p, limits[param], dailyBaseline(readings, param))
+  const limitLines = [
+    lim.highWarn !== undefined && { value: lim.highWarn, label: `Check ${+lim.highWarn.toFixed(p.decimals)}`, color: 'var(--risk-medium)' },
+    lim.highCrit !== undefined && { value: lim.highCrit, label: `Stop ${+lim.highCrit.toFixed(p.decimals)}`, color: 'var(--risk-critical)' },
+    lim.lowWarn !== undefined && { value: lim.lowWarn, label: `Check ${+lim.lowWarn.toFixed(p.decimals)}`, color: 'var(--risk-medium)' },
+    lim.lowCrit !== undefined && { value: lim.lowCrit, label: `Stop ${+lim.lowCrit.toFixed(p.decimals)}`, color: 'var(--risk-critical)' },
+  ].filter((x): x is { value: number; label: string; color: string } => !!x)
+  const tail = readings.filter((r) => r.values[param] !== undefined).slice(-45)
   const lastReading = readings[readings.length - 1]
   const lastFindings = lastReading ? detectFindings(lastReading, readings.slice(0, -1), limits) : []
 
@@ -82,7 +89,7 @@ export function UnitDetail({ assetId }: { assetId?: string }) {
       title: `${w.woNumber} · ${w.kind} work order`,
       detail: [w.description, w.failureCode, w.closedAt ? `closed ${fmtDate(w.closedAt)}` : w.dueAt && w.dueAt < now ? 'OVERDUE' : 'open', w.cost ? fmtPhp(w.cost) : null].filter(Boolean).join(' · '),
     })),
-    ...oil.map((o) => ({ at: o.sampledAt, kind: 'lab' as const, icon: 'flask', title: `Oil analysis · ${o.compartment} · ${o.severity}`, detail: `${o.lab} · Fe ${o.ironPpm} ppm · water ${o.waterPct}% · ISO ${o.particleCode}` })),
+    ...oil.map((o) => ({ at: o.sampledAt, kind: 'lab' as const, icon: 'flask', title: `${COMPARTMENT_LABEL[o.compartment]} analysis · ${o.severity}`, detail: `${o.lab} · ${o.findings.length ? o.findings.join('; ') : 'all results within limits'}` })),
     ...ndt.map((n) => ({ at: n.inspectedAt, kind: 'lab' as const, icon: 'search', title: `NDT · ${n.method} · ${n.severity}`, detail: `${n.location} — ${n.finding}${n.defectSizeMm ? ` (${n.defectSizeMm} mm)` : ''}` })),
   ]
     .filter((i) => tl === 'all' || i.kind === tl)
@@ -215,10 +222,10 @@ export function UnitDetail({ assetId }: { assetId?: string }) {
 
           <ChartCard
             title="Condition trend"
-            subtitle={`${p.label} (${p.unit}) — last ${tail.length} readings with warning and critical limits (FR-13)`}
+            subtitle={`${p.label} (${p.unit}) — last ${tail.length} readings with the Check and Stop limits from the CHE data-entry sheet (FR-13)`}
             actions={
               <select className="field !w-auto" value={param} onChange={(e) => setParam(e.target.value as ParamKey)} aria-label="Parameter">
-                {PARAMS.map((x) => (
+                {DAILY.map((x) => (
                   <option key={x.key} value={x.key}>
                     {x.label}
                   </option>
@@ -233,11 +240,8 @@ export function UnitDetail({ assetId }: { assetId?: string }) {
               <LineChart
                 labels={tail.map((r) => new Date(r.at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }))}
                 height={220}
-                format={(v) => (p.unit === 'bar' && v < 10 ? v.toFixed(1) : v.toFixed(0))}
-                refLines={[
-                  { value: lim.warning, label: `Warning ${lim.warning}`, color: 'var(--risk-medium)' },
-                  { value: lim.critical, label: `Critical ${lim.critical}`, color: 'var(--risk-critical)' },
-                ]}
+                format={(v) => v.toFixed(p.decimals)}
+                refLines={limitLines}
                 series={[{ name: p.label, color: 'var(--c1)', values: tail.map((r) => r.values[param] ?? null) }]}
               />
             )}

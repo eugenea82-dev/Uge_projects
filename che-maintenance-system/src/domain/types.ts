@@ -53,34 +53,40 @@ export interface StatusEvent {
   migrated?: boolean // week-granular YardPulse history (C-05, NFR-U07)
 }
 
+/** Daily gauge readings captured by mechanics (source: CHE Data Entry sheet). */
 export type ParamKey =
-  | 'engineTemp'
-  | 'transmissionTemp'
-  | 'hydraulicOilTemp'
-  | 'coolantTemp'
-  | 'hydraulicPressure'
+  | 'engineOilTemp'
   | 'engineOilPressure'
-  | 'transmissionPressure'
+  | 'coolantTemp'
+  | 'engineRpm'
+  | 'transOilTemp'
+  | 'transOilPressure'
+  | 'hydOilTemp'
+  | 'hydOilPressure'
+  | 'hydPumpPressure'
+  | 'fuelRate'
+  | 'fuelRailPressure'
+  | 'batteryVoltage'
+  | 'chargingVoltage'
 
-export interface ParamDef {
-  key: ParamKey
-  label: string
-  unit: '°C' | 'bar'
-  kind: 'temperature' | 'pressure'
-  component: string
-  /** 'high' = higher is worse; 'low' = lower is worse */
-  direction: 'high' | 'low'
-}
-
+/**
+ * Editable numbers behind one parameter's rule (FR-11). What `warning` and
+ * `critical` mean depends on the rule kind in the catalog: an absolute value,
+ * a percentage, a delta or a ratio. `ref` is the reference the rule is
+ * measured against (OEM target, new-oil value, or fleet default baseline).
+ */
 export interface Threshold {
   warning: number
   critical: number
+  ref?: number
+  /** ISO 4406 target code for cleanliness rules, e.g. "18/16/13" */
+  refCode?: string
   /** plausible input range for validation (FR-10) */
   min: number
   max: number
 }
 
-/** Thresholds per equipment type and parameter (FR-11). */
+/** Daily-reading thresholds per equipment type and parameter. */
 export type ThresholdTable = Record<EquipmentType, Record<ParamKey, Threshold>>
 
 export interface Reading {
@@ -89,32 +95,38 @@ export interface Reading {
   at: number
   user: string
   hourMeter: number
-  values: Partial<Record<ParamKey, number>> // stored in standard units (°C, bar)
+  values: Partial<Record<ParamKey, number>> // stored in standard units (°C, bar, rpm, L/h, V)
 }
 
 export type FindingSeverity = 'warning' | 'critical'
 
 export interface ReadingFinding {
-  param: ParamKey | 'hourMeter'
+  param: ParamKey | 'hourMeter' | string
   kind: 'limit' | 'baseline' | 'trend' | 'hourMeter'
   severity: FindingSeverity
   message: string
+  /** "Possible indication" from the data-entry sheet */
+  indication?: string
 }
 
 export type OilSeverity = 'Normal' | 'Caution' | 'Critical'
+
+export type OilCompartment = 'Engine' | 'Transmission' | 'Hydraulic' | 'Gear'
+
+/** Oil-analysis parameter key, e.g. "eng.water" (see catalog.ts). */
+export type LabKey = string
 
 export interface OilSample {
   id: string
   assetId: string
   sampledAt: number
   lab: string
-  compartment: 'Engine' | 'Transmission' | 'Hydraulic'
-  viscosity: number
-  waterPct: number
-  fuelDilutionPct: number
-  ironPpm: number
-  particleCode: string
+  compartment: OilCompartment
+  /** numeric results, plus text for ISO code ("18/16/13") and glycol (Negative/Suspected/Confirmed) */
+  values: Record<LabKey, number | string>
+  /** computed from the catalog thresholds when the report is saved */
   severity: OilSeverity
+  findings: string[]
   attachment?: string
   user: string
 }

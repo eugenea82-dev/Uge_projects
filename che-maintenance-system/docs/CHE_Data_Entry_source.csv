@@ -1,0 +1,40 @@
+Location,Data entry,Warning threshold,Critical threshold,Possible indication
+Engine Health,Engine Temperature (oil temperature),110°C,120°C,"Excessive engine heat, oil degradation, inadequate cooling, or excessive engine load"
+Engine Health,Engine Oil Pressure,TBA / As per OEM,TBA / As per OEM,"Low oil level, worn bearings, failing oil pump, clogged oil filter, or internal engine wear"
+Engine Health,Coolant Temperature,95°C,105°C,"Cooling system failure, low coolant, radiator blockage, defective thermostat, or water pump malfunction"
+Engine Health,Engine RPM,TBA / As per OEM,TBA / As per OEM,"Over-revving, incorrect operation, or engine control problem"
+Transmission Health,Transmission Oil Temperature,Above 100°C,Above 120°C,"Overheating, transmission overload, oil cooler blockage, or internal clutch slippage"
+Transmission Health,Transmission Oil Pressure,Below OEM minimum,Below OEM shutdown limit,"Low oil level, worn transmission pump, clogged filter, or internal leakage"
+Hydraulic System Health,Hydraulic Oil Temperature,Above 70°C,Above 80°C,"Hydraulic overheating, oil cooler blockage, excessive internal leakage, or continuous heavy operation"
+Hydraulic System Health,Hydraulic Oil Pressure,More than 10% below OEM,More than 20% below OEM target,"Pump wear, internal leakage, pressure relief valve malfunction, or hydraulic system failure"
+Hydraulic System Health,Hydraulic Pump Pressure,TBA / As per OEM,More than 10% below baseline,Pump wear or internal leakage
+Fuel Consumption and Engine Efficiency,Fuel Consumption,15% above baseline,25% above baseline,"Increased fuel consumption, engine inefficiency, or abnormal operating load"
+Fuel Consumption and Engine Efficiency,Fuel Rail Pressure,More than 10% deviation from target,More than 20% deviation,"Fuel pump deterioration, clogged fuel filter, or injector problems"
+Electrical and Battery System Health,Battery Voltage (24V system),Below 24V with engine off,Below 23V with engine off,Low battery charge
+Electrical and Battery System Health,Charging Voltage,,Below 27V or above 29V while running,Alternator or voltage regulator problem
+Engine Oil Analysis,Viscosity @ 100°C,±15% from new oil,±25%,Oil thickening or thinning; possible oxidation or fuel dilution
+Engine Oil Analysis,Water Content,Above 0.10%,Above 0.20%,"Water contamination, condensation, or coolant leakage"
+Engine Oil Analysis,Fuel Dilution,Above 2%,Above 5%,"Injector leakage, incomplete combustion, or excessive idling"
+Engine Oil Analysis,Soot Content,Above 2.5%,Above 5%,"Poor combustion, excessive idling, or restricted air intake"
+Engine Oil Analysis,TBN,Below 4 mg KOH/g,Below 3 mg KOH/g,Reduced oil reserve against acidic combustion products
+Engine Oil Analysis,TAN,Increase of 2 mg KOH/g from fresh oil,Increase of 3 mg KOH/g,Oil oxidation and acid formatio
+Engine Oil Analysis,Oxidation,20% above fresh oil baseline,30% above baseline,Oil degradation due to excessive heat
+Engine Oil Analysis,Glycol,Any confirmed detection,Confirmed detection,Coolant entering engine oil
+Transmission Oil Analysis,Viscosity @ 100°C,±10% from new oil,±15%,Oil degradation or incorrect lubricant
+Transmission Oil Analysis,Water Content,Above 0.05%,Above 0.10%,"Water ingress, condensation, or cooler leakage"
+Transmission Oil Analysis,TAN,Increase of 1 mg KOH/g,Increase of 2 mg KOH/g,Oxidation and lubricant deterioration
+Transmission Oil Analysis,Oxidation,20% above baseline,30% above baseline,Overheating and oil deterioration
+Transmission Oil Analysis,Ferrous Wear Debris,Above established baseline,Rapid increase from baseline,"Gear, clutch, bearing, or shaft deterioration"
+Hydraulic Oil Analysis,Viscosity @ 40°C,±10% from new oil,±15%,"Oil degradation, overheating, or cross-contamination"
+Hydraulic Oil Analysis,Water Content,Above 0.05%,Above 0.10%,"Water contamination, corrosion, and reduced lubrication"
+Hydraulic Oil Analysis,TAN,Increase of 0.5 mg KOH/g,Increase of 1 mg KOH/g,Oil oxidation and degradation
+Hydraulic Oil Analysis,Oxidation,20% above baseline,30% above baseline,Excessive heat and oil deterioration
+Hydraulic Oil Analysis,ISO Cleanliness Code,Above OEM target,2 or more ISO code increases from target,Dirt contamination and accelerated pump/valve wear
+Hydraulic Oil Analysis,Ferrous Wear Debris,Above established baseline,Rapid increase from baseline,"Hydraulic pump, cylinder rod, or valve wear"
+Gear Oil / Differential Oil Analysis,Parameter,Warning threshold,Critical threshold,Possible indication
+Gear Oil / Differential Oil Analysis,Viscosity @ 40°C,±10% from new oil,±15%,Oil degradation or incorrect lubricant
+Gear Oil / Differential Oil Analysis,Water Content,Above 0.05%,Above 0.10%,"Water ingress, condensation, or seal failure"
+Gear Oil / Differential Oil Analysis,TAN,Increase of 1 mg KOH/g,Increase of 2 mg KOH/g,Oxidation and lubricant deterioration
+Gear Oil / Differential Oil Analysis,Oxidation,20% above baseline,30% above baseline,Excessive heat and lubricant breakdown
+Gear Oil / Differential Oil Analysis,Ferrous Wear Debris,Above established baseline,Rapid increase from baseline,"Gear teeth, pinion, or bearing deterioration"
+Gear Oil / Differential Oil Analysis,Silicon,Above baseline by 10 ppm,Above baseline by 20 ppm,Possible dirt or dust ingress

@@ -39,12 +39,27 @@ Credentials are prefilled on the sign-in screen; use **Switch demo user** to cha
 ### Suggested demo script (≈ 10 min)
 
 1. Sign in as **Ernick Borres**. On **Today**, open a Medium or High alert, **Accept** it, link `WO-123456`, **Start work**, then **Record outcome**. (Critical alerts first need the manager's authorization.)
-2. **Capture Readings** → pick a unit → enter an engine temperature of `108` °C → **Save**. The reading is flagged against the critical limit and an alert is raised immediately, unless one is already open for that unit and component.
+2. **Capture Readings › Daily check** → pick a unit → enter an engine oil temperature of `121` °C (Stop is 120) and fill the other required fields → **Save readings**. The result says *STOP — hold the unit*, shows the likely cause from the sheet, and raises an alert unless one is already open for that unit and component. Then try **Oil lab report** → Engine oil → water `0.25` %.
 3. **Update Status** → set a unit **Down / Critical** (technical, failure code required), then later **Operational**. The failure event and MTTR update straight away.
 4. Open **RS-001** (Manila CY1): it's *Operational* now, but last week's availability is **57.1%**, the BRD's worked example (AC-02).
 5. Sign out (red traffic light) → sign in as **Mark Anthony Palacay**. Review the **Command Center**, then approve a Critical removal under **Alerts & Approvals**.
 6. **Reliability** → switch the Pareto between failure code, unit, model and location. Every chart has a **Table** toggle.
 7. **Data & Sync** → **Test connection**, then **Run nightly batch now**. This pulls from (simulated) EMMS, re-scores the fleet and raises new or stalled-restoration alerts. Download the **Sample export file** and load it with **Import EMMS export** to watch one record merge and one land on the exception list.
+
+## CHE data-entry sheet → Capture Readings
+
+The 38 parameters in `docs/CHE_Data_Entry_source.csv` (the CHE Data Entry sheet, converted to UTF-8) are all entered through **Capture Readings**:
+
+| Sheet location | Entered in | Who | Count |
+|---|---|---|---|
+| Engine, Transmission, Hydraulic System, Fuel, Electrical & Battery health | Capture Readings › **Daily check** — one card per system; diagnostic-tool readings under *Extra readings* | Mechanic / LBE Specialist | 13 (9 required, 4 optional) |
+| Engine, Transmission, Hydraulic, Gear/Differential oil analysis | Capture Readings › **Oil lab report** — one tab per compartment (bulk CSV on *NDT & Bulk Upload*) | Planner / engineer | 25 |
+
+**Every parameter is quantified** in `src/domain/catalog.ts`: each row becomes a rule (absolute limit, % of an OEM target, % or × of the unit's own baseline, ± band around a new-oil value, ISO code steps, or a lab category) with concrete Check and Stop numbers. Where the sheet says *TBA / As per OEM*, gives no warning level, or needs a value we don't have (OEM target, new-oil viscosity, fresh-oil TAN), a number was assumed and flagged — **26 of 38** carry an *Assumed* note on the Thresholds page. The Asset Maintenance Manager can change any number there; changes are audited.
+
+`docs/CHE_Data_Entry_quantified.csv` lists every row with its screen, field, rule, OK / Check / Stop limits per equipment type and the assumption to confirm. Regenerate it after changing the catalog with `npm run export:mapping`. Tests check that every sheet row maps to exactly one field with its wording unchanged (one typo in the sheet, “acid formatio”, is corrected).
+
+**For mechanics:** large fields, the unit and the OK / Check / Stop numbers on every field, a live status as they type, a progress bar for required readings, units still to check listed first, and a plain result — *All good*, *Needs a check*, or *STOP — hold the unit* — with the sheet's “Possible indication” shown as the likely cause. Statistical early warnings (unusual for this unit, worsening trend) go to the engineer as notes and don't change the mechanic's result.
 
 ## EMMS integration
 
@@ -77,7 +92,8 @@ The app reads EMMS only through `src/integration/emms/`, so going live is a conf
 cd che-maintenance-system
 npm install
 npm run dev        # http://localhost:5173
-npm test           # 37 domain, acceptance and EMMS integration tests (Node test runner)
+npm test           # 51 domain, data-entry catalog, acceptance and EMMS tests (Node test runner)
+npm run export:mapping  # regenerate docs/CHE_Data_Entry_quantified.csv from the catalog
 npm run lint       # oxlint
 npm run build      # type-check + static build in dist/ (any static host)
 ```
@@ -97,7 +113,9 @@ src/
     risk.ts            Rule-based failure-risk scoring with explanations
     alerts.ts          Alert creation + decision workflow state machine
     seed.ts            Deterministic fleet simulator
+    catalog.ts         CHE data-entry parameters, quantified rules, OK/Check/Stop limits
     kpi.test.ts        Acceptance tests (AC-02 to AC-06, AC-08, …)
+    catalog.test.ts    Sheet coverage and boundary tests
   integration/emms/  EMMS contract, mapper, clients (mock + HTTP), config, tests
   auth/              Demo accounts, splash, sign-in
   shell/             macOS desktop: menu bar, window, sidebar, dock, routing
