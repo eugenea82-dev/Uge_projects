@@ -62,6 +62,8 @@ describe('CSV coverage', () => {
   })
   it('routes gauge readings to the daily check and lab results to the oil report', () => {
     assert.equal(DAILY.length, 13)
+    assert.equal(DAILY.filter((d) => d.required).length, 10) // fuel consumption required since v0.3
+    assert.ok(DAILY_BY_KEY.fuelRate.required)
     assert.ok(DAILY.every((d) => !d.csvLocation.includes('Oil Analysis')))
     assert.ok(LAB.every((d) => d.csvLocation.includes('Oil Analysis') || d.csvLocation.includes('Oil /')))
   })

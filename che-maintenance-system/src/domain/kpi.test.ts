@@ -154,7 +154,7 @@ describe('Holt damped-trend forecast (FR-42)', () => {
 
 describe('Reading validation and detection (FR-04, FR-10, FR-12, FR-13)', () => {
   const limits = defaultThresholds()['Reach Stacker']
-  const base = { engineOilTemp: 92, engineOilPressure: 3.6, coolantTemp: 84, transOilTemp: 82, transOilPressure: 17, hydOilTemp: 58, hydOilPressure: 218, batteryVoltage: 25.2, chargingVoltage: 28 }
+  const base = { engineOilTemp: 92, engineOilPressure: 3.6, coolantTemp: 84, transOilTemp: 82, transOilPressure: 17, hydOilTemp: 58, hydOilPressure: 218, fuelRate: 13.5, batteryVoltage: 25.2, chargingVoltage: 28 }
   const prev: Reading = { id: 'r0', assetId: 'A', at: MON, user: 't', hourMeter: 1000, values: base }
 
   it('rejects an hour meter lower than the previous reading or > 24 h/day', () => {
@@ -191,7 +191,7 @@ describe('Reading validation and detection (FR-04, FR-10, FR-12, FR-13)', () => 
 
 describe('Risk scoring (FR-15, FR-16)', () => {
   const limits = defaultThresholds()['Reach Stacker']
-  const base = { engineOilTemp: 92, engineOilPressure: 3.6, coolantTemp: 84, transOilTemp: 82, transOilPressure: 17, hydOilTemp: 58, hydOilPressure: 218, batteryVoltage: 25.2, chargingVoltage: 28 }
+  const base = { engineOilTemp: 92, engineOilPressure: 3.6, coolantTemp: 84, transOilTemp: 82, transOilPressure: 17, hydOilTemp: 58, hydOilPressure: 218, fuelRate: 13.5, batteryVoltage: 25.2, chargingVoltage: 28 }
   const now = MON + 30 * DAY
   const daily = (n: number, last: Partial<typeof base> = {}): Reading[] =>
     Array.from({ length: n }, (_, i) => ({ id: `r${i}`, assetId: 'A', at: now - (n - 1 - i) * DAY, user: 't', hourMeter: 1000 + i * 10, values: i === n - 1 ? { ...base, ...last } : base }))

@@ -52,10 +52,10 @@ The 38 parameters in `docs/CHE_Data_Entry_source.csv` (the CHE Data Entry sheet,
 
 | Sheet location | Entered in | Who | Count |
 |---|---|---|---|
-| Engine, Transmission, Hydraulic System, Fuel, Electrical & Battery health | Capture Readings › **Daily check** — one card per system; diagnostic-tool readings under *Extra readings* | Mechanic / LBE Specialist | 13 (9 required, 4 optional) |
+| Engine, Transmission, Hydraulic System, Fuel, Electrical & Battery health | Capture Readings › **Daily check** — one card per system; diagnostic-tool readings under *Extra readings* | Mechanic / LBE Specialist | 13 (10 required incl. fuel consumption, 3 optional) |
 | Engine, Transmission, Hydraulic, Gear/Differential oil analysis | Capture Readings › **Oil lab report** — one tab per compartment (bulk CSV on *NDT & Bulk Upload*) | Planner / engineer | 25 |
 
-**Every parameter is quantified** in `src/domain/catalog.ts`: each row becomes a rule (absolute limit, % of an OEM target, % or × of the unit's own baseline, ± band around a new-oil value, ISO code steps, or a lab category) with concrete Check and Stop numbers. Where the sheet says *TBA / As per OEM*, gives no warning level, or needs a value we don't have (OEM target, new-oil viscosity, fresh-oil TAN), a number was assumed and flagged — **26 of 38** carry an *Assumed* note on the Thresholds page. The Asset Maintenance Manager can change any number there; changes are audited.
+**Every parameter is quantified** in `src/domain/catalog.ts`: each row becomes a rule (absolute limit, % of an OEM target, % or × of the unit's own baseline, ± band around a new-oil value, ISO code steps, or a lab category) with concrete Check and Stop numbers. Where the sheet says *TBA / As per OEM*, gives no warning level, or needs a value we don't have (OEM target, new-oil viscosity, fresh-oil TAN), a number was assumed and flagged — **25 of 38** carry an *Assumed* note on the Thresholds page. The Asset Maintenance Manager can change any number there; changes are audited.
 
 `docs/CHE_Data_Entry_quantified.csv` lists every row with its screen, field, rule, OK / Check / Stop limits per equipment type and the assumption to confirm. Regenerate it after changing the catalog with `npm run export:mapping`. Tests check that every sheet row maps to exactly one field with its wording unchanged (one typo in the sheet, “acid formatio”, is corrected).
 

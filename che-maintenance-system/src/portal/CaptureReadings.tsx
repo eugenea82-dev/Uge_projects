@@ -417,7 +417,7 @@ function DailyForm({ assetId, onBack, onSaved }: { assetId: string; onBack: () =
         <button type="button" className="w-full flex items-center justify-between gap-2 min-h-[44px] text-left" aria-expanded={showExtra} onClick={() => setShowExtra((v) => !v)}>
           <span>
             <span className="block text-[16px] font-semibold">Extra readings</span>
-            <span className="block text-[12.5px] text-ink-3">Only if you have the diagnostic tool or a fuel display — engine speed, pump pressure, fuel use, rail pressure</span>
+            <span className="block text-[12.5px] text-ink-3">Only if you have the diagnostic tool — engine speed, pump pressure, fuel rail pressure</span>
           </span>
           <Icon name={showExtra ? 'minus' : 'plus'} size={18} />
         </button>
