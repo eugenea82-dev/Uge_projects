@@ -18,6 +18,7 @@ import {
   DAILY_SYSTEMS,
   LAB,
   bands,
+  labGroups,
   dailyBaseline,
   evaluate,
   labBaseline,
@@ -592,6 +593,50 @@ function OilForm({ assetId, onBack, onSaved }: { assetId: string; onBack: () => 
     onSaved({ ...r, compartment })
   }
 
+  const groups = labGroups(compartment)
+  const fieldRow = (p: LabDef) => {
+          const th = data.labThresholds[p.key]
+          const b = bands(p, th, labBaseline(previous, p.key))
+          const err = errors[p.key]
+          return (
+            <div key={p.key} className="py-3 border-b border-line last:border-0 flex flex-col gap-2">
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex-1 min-w-[200px]">
+                  <label htmlFor={`o-${p.key}`} className="block text-[15px] font-semibold">
+                    {p.label}
+                  </label>
+                  <div className="text-[12.5px] text-ink-3">{p.sources ? `${p.unit} · ${p.sources}` : p.unit === 'result' ? 'Lab result' : p.unit}</div>
+                </div>
+                {p.rule === 'category' ? (
+                  <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label={p.label}>
+                    {p.options!.map((o) => (
+                      <button key={o.value} type="button" role="radio" aria-checked={vals[p.key] === o.value} className={`btn btn-touch ${vals[p.key] === o.value ? 'btn-primary' : ''}`} onClick={() => setVals((v) => ({ ...v, [p.key]: o.value }))}>
+                        {o.value}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="relative w-[170px]">
+                    <input
+                      id={`o-${p.key}`}
+                      className="field tnum !h-[48px] !text-[19px] !font-semibold !pr-16"
+                      inputMode={p.text ? 'text' : 'decimal'}
+                      placeholder={p.rule === 'isoAboveRef' ? 'e.g. 18/16/13' : ''}
+                      value={vals[p.key] ?? ''}
+                      onChange={(e) => setVals((v) => ({ ...v, [p.key]: e.target.value }))}
+                      aria-invalid={!!err}
+                      aria-describedby={`ob-${p.key}`}
+                    />
+                    {!p.text && <span className="absolute right-3 top-[15px] text-ink-3 text-[12.5px]">{p.unit}</span>}
+                  </div>
+                )}
+                <LevelPill level={live(p)} />
+              </div>
+              <div id={`ob-${p.key}`}>{err ? <div className="text-[13px] text-danger font-medium">{err}</div> : <BandLine b={b} />}</div>
+            </div>
+          )
+  }
+
   return (
     <form onSubmit={submit} className="flex flex-col gap-4 max-w-[860px]" noValidate>
       <Steps step={2} />
@@ -646,50 +691,14 @@ function OilForm({ assetId, onBack, onSaved }: { assetId: string; onBack: () => 
         </div>
       </section>
       <section className="card px-4 pt-3 pb-1">
-        <h3 className="text-[17px] font-semibold pb-1">{COMPARTMENT_LABEL[compartment]} — lab results</h3>
+        <h3 className="text-[17px] font-semibold pb-1">{COMPARTMENT_LABEL[compartment]} — oil condition</h3>
         <div className="text-[12.5px] text-ink-3 pb-1">Copy each value from the lab report. Leave blank what the lab did not test.</div>
-        {defs.map((p) => {
-          const th = data.labThresholds[p.key]
-          const b = bands(p, th, labBaseline(previous, p.key))
-          const err = errors[p.key]
-          return (
-            <div key={p.key} className="py-3 border-b border-line last:border-0 flex flex-col gap-2">
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="flex-1 min-w-[200px]">
-                  <label htmlFor={`o-${p.key}`} className="block text-[15px] font-semibold">
-                    {p.label}
-                  </label>
-                  <div className="text-[12.5px] text-ink-3">{p.unit === 'result' ? 'Lab result' : p.unit}</div>
-                </div>
-                {p.rule === 'category' ? (
-                  <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label={p.label}>
-                    {p.options!.map((o) => (
-                      <button key={o.value} type="button" role="radio" aria-checked={vals[p.key] === o.value} className={`btn btn-touch ${vals[p.key] === o.value ? 'btn-primary' : ''}`} onClick={() => setVals((v) => ({ ...v, [p.key]: o.value }))}>
-                        {o.value}
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="relative w-[170px]">
-                    <input
-                      id={`o-${p.key}`}
-                      className="field tnum !h-[48px] !text-[19px] !font-semibold !pr-16"
-                      inputMode={p.text ? 'text' : 'decimal'}
-                      placeholder={p.rule === 'isoAboveRef' ? 'e.g. 18/16/13' : ''}
-                      value={vals[p.key] ?? ''}
-                      onChange={(e) => setVals((v) => ({ ...v, [p.key]: e.target.value }))}
-                      aria-invalid={!!err}
-                      aria-describedby={`ob-${p.key}`}
-                    />
-                    {!p.text && <span className="absolute right-3 top-[15px] text-ink-3 text-[12.5px]">{p.unit}</span>}
-                  </div>
-                )}
-                <LevelPill level={live(p)} />
-              </div>
-              <div id={`ob-${p.key}`}>{err ? <div className="text-[13px] text-danger font-medium">{err}</div> : <BandLine b={b} />}</div>
-            </div>
-          )
-        })}
+        {groups.condition.map(fieldRow)}
+      </section>
+      <section className="card px-4 pt-3 pb-1">
+        <h3 className="text-[17px] font-semibold pb-1">Wear &amp; contamination metals</h3>
+        <div className="text-[12.5px] text-ink-3 pb-1">From the elemental (ICP) part of the report, in ppm. Each metal shows the parts it wears from in the {COMPARTMENT_LABEL[compartment].toLowerCase()}.</div>
+        {groups.metals.map(fieldRow)}
       </section>
       <div className="flex justify-end">
         <button type="submit" className="btn btn-primary !h-[52px] !px-8 !text-[17px] !rounded-[12px]">

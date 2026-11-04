@@ -61,6 +61,16 @@ The 38 parameters in `docs/CHE_Data_Entry_source.csv` (the CHE Data Entry sheet,
 
 **For mechanics:** large fields, the unit and the OK / Check / Stop numbers on every field, a live status as they type, a progress bar for required readings, units still to check listed first, and a plain result — *All good*, *Needs a check*, or *STOP — hold the unit* — with the sheet's “Possible indication” shown as the likely cause. Statistical early warnings (unusual for this unit, worsening trend) go to the engineer as notes and don't change the mechanic's result.
 
+### Oil analysis — wear-source map (Command Center)
+
+The oil-analysis element table (`docs/CHE_Oil_Elements_source.csv`) lists 10 metals — Fe, Cu, Cr, Al, Pb, Sn, Si, Na, Ni, Mo — and the parts each comes from in engine, transmission, hydraulic and gear/differential oil. They are entered in the oil lab report (*Wear & contamination metals*) and drive **Command Center › Oil Analysis**:
+
+* headline tiles (reports, units Critical / Caution, most-flagged metal) and an *Oil condition* tile on the Command Center overview;
+* the element table as a **wear-source map** — each cell keeps the table's source text and shows how many units are at Check or Stop in their latest report; select a cell to list them;
+* flagged results with the likely worn part, CSV export, and each unit's **report history** graded report by report.
+
+The table gives no numbers, so metals are quantified like the sheet's iron and silicon rules — against each unit's own baseline (fleet default until 3 reports): iron Check > 1.5 × / Stop > 2 ×, other metals ppm above baseline (e.g. Cu +15 / +30, Cr +5 / +10, Na +20 / +40). Molybdenum is trended only (often an additive). All 36 are flagged *Assumed* on the Thresholds page; the 4 metals already in the sheet keep the sheet's rule.
+
 ## EMMS integration
 
 The app reads EMMS only through `src/integration/emms/`, so going live is a configuration change.
@@ -92,7 +102,7 @@ The app reads EMMS only through `src/integration/emms/`, so going live is a conf
 cd che-maintenance-system
 npm install
 npm run dev        # http://localhost:5173
-npm test           # 51 domain, data-entry catalog, acceptance and EMMS tests (Node test runner)
+npm test           # 53 domain, data-entry catalog, acceptance and EMMS tests (Node test runner)
 npm run export:mapping  # regenerate docs/CHE_Data_Entry_quantified.csv from the catalog
 npm run lint       # oxlint
 npm run build      # type-check + static build in dist/ (any static host)

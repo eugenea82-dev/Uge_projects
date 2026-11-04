@@ -14,7 +14,7 @@ import {
   NOMINAL,
   WEEK,
 } from './constants.ts'
-import { DAILY, DAILY_BY_KEY, LAB, defaultLabThresholds, defaultThresholds, direction, evaluateOilReport, resolveLimits } from './catalog.ts'
+import { DAILY, DAILY_BY_KEY, LAB, defaultLabThresholds, labBaseline, labGroups, defaultThresholds, direction, evaluateOilReport, resolveLimits } from './catalog.ts'
 import { episodes, weekStart } from './kpi.ts'
 import { scoreUnit } from './risk.ts'
 import type {
@@ -370,36 +370,47 @@ export function generate(now: number, seed = 20261023): AppData {
   for (const u of units) {
     if (disposal.has(u.assetId)) continue
     const prof = profile.get(u.assetId)!
-    const n = rnd() < 0.5 ? 1 : 2
-    for (let k = 0; k < n; k++) {
-      const compartment: OilCompartment = rnd() < 0.15 ? 'Gear' : pick(['Engine', 'Transmission', 'Hydraulic'] as const)
-      const sys = prof.drift ? DAILY_BY_KEY[prof.drift].system : null
+    // Two compartments per unit, 3–4 reports each about 6 weeks apart, so units build their own baseline.
+    // Any problem shows up in the latest report, as it would in practice.
+    const sys = prof.drift ? DAILY_BY_KEY[prof.drift].system : null
+    const compartments: OilCompartment[] = rnd() < 0.2 ? ['Engine', 'Gear'] : rnd() < 0.5 ? ['Engine', 'Hydraulic'] : ['Engine', 'Transmission']
+    if (sys === 'Hydraulic' && !compartments.includes('Hydraulic')) compartments[1] = 'Hydraulic'
+    if (sys === 'Transmission' && !compartments.includes('Transmission')) compartments[1] = 'Transmission'
+    for (const compartment of compartments) {
       const related = (compartment === 'Engine' && sys === 'Engine') || (compartment === 'Hydraulic' && sys === 'Hydraulic') || (compartment === 'Transmission' && sys === 'Transmission')
-      const target = related ? (rnd() < 0.5 ? 'Critical' : 'Caution') : rnd() < 0.08 ? 'Caution' : 'Normal'
-      const values = normalOil(compartment, between)
-      if (target !== 'Normal') {
-        const numeric = LAB.filter((d) => d.compartment === compartment && !d.text)
-        const def = numeric[Math.floor(rnd() * numeric.length)]
-        const lim = resolveLimits(def, labThresholds[def.key])
-        const high = lim.highWarn !== undefined
-        const warnV = high ? lim.highWarn! : lim.lowWarn!
-        const critV = high ? lim.highCrit! : lim.lowCrit!
-        const v = target === 'Caution' ? (warnV + critV) / 2 : high ? critV * 1.15 : critV * 0.85
-        values[def.key] = Math.round(v * 100) / 100
+      const n = rnd() < 0.5 ? 3 : 4
+      const last = now - Math.floor(between(3, 40)) * DAY
+      const history: OilSample[] = []
+      for (let k = n - 1; k >= 0; k--) {
+        const latest = k === 0
+        const target = !latest ? 'Normal' : related ? (rnd() < 0.5 ? 'Critical' : 'Caution') : rnd() < 0.1 ? 'Caution' : 'Normal'
+        const values = normalOil(compartment, between, labThresholds)
+        if (target !== 'Normal') {
+          const numeric = LAB.filter((d) => d.compartment === compartment && !d.text && d.rule !== 'monitor')
+          const def = numeric[Math.floor(rnd() * numeric.length)]
+          const lim = resolveLimits(def, labThresholds[def.key], labBaseline(history, def.key))
+          const high = lim.highWarn !== undefined
+          const warnV = high ? lim.highWarn! : lim.lowWarn!
+          const critV = high ? lim.highCrit! : lim.lowCrit!
+          const v = target === 'Caution' ? (warnV + critV) / 2 : high ? critV * 1.15 : critV * 0.85
+          values[def.key] = Math.round(v * 100) / 100
+        }
+        const evaluated = evaluateOilReport(compartment, values, labThresholds, history)
+        const sample: OilSample = {
+          id: nid('OA'),
+          assetId: u.assetId,
+          sampledAt: last - k * Math.round(between(38, 48)) * DAY,
+          lab: pick(labs),
+          compartment,
+          values,
+          severity: evaluated.severity,
+          findings: evaluated.findings.map((f) => f.message),
+          attachment: `lab-report-${u.assetId}-${compartment.toLowerCase()}-${n - k}.pdf`,
+          user: 'Maintenance Planner',
+        }
+        history.push(sample)
+        oil.push(sample)
       }
-      const evaluated = evaluateOilReport(compartment, values, labThresholds, [])
-      oil.push({
-        id: nid('OA'),
-        assetId: u.assetId,
-        sampledAt: now - Math.floor(between(3, 80)) * DAY,
-        lab: pick(labs),
-        compartment,
-        values,
-        severity: evaluated.severity,
-        findings: evaluated.findings.map((f) => f.message),
-        attachment: `lab-report-${u.assetId}-${k + 1}.pdf`,
-        user: 'Maintenance Planner',
-      })
     }
     if ((u.type === 'Reach Stacker' || u.type === 'Empty Container Handler') && rnd() < 0.5) {
       ndt.push({
@@ -592,7 +603,16 @@ function closedAtFor(past: boolean, r: number, due: number, early: number, lateD
 const DRIFTABLE: ParamKey[] = ['engineOilTemp', 'engineOilPressure', 'coolantTemp', 'transOilTemp', 'transOilPressure', 'hydOilTemp', 'hydOilPressure', 'batteryVoltage']
 
 /** A healthy lab result for each compartment, around the catalog's reference values. */
-function normalOil(c: OilCompartment, between: (a: number, b: number) => number): Record<LabKey, number | string> {
+function normalOil(c: OilCompartment, between: (a: number, b: number) => number, th: Record<LabKey, Threshold>): Record<LabKey, number | string> {
+  return { ...metals(c, between, th), ...conditionOil(c, between) }
+}
+
+/** Healthy wear/contamination metals: around the fleet default baseline (Mo around its new-oil level). */
+function metals(c: OilCompartment, between: (a: number, b: number) => number, th: Record<LabKey, Threshold>): Record<LabKey, number> {
+  return Object.fromEntries(labGroups(c).metals.map((d) => [d.key, Math.round((th[d.key].ref ?? 5) * (d.rule === 'monitor' ? between(0.85, 1.1) : between(0.5, 1.1)))]))
+}
+
+function conditionOil(c: OilCompartment, between: (a: number, b: number) => number): Record<LabKey, number | string> {
   const r2 = (v: number) => Math.round(v * 100) / 100
   const ox = r2(between(8, 11.5))
   switch (c) {

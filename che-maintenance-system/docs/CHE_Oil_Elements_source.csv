@@ -1,0 +1,11 @@
+Element,Engine,Transmission,Hydraulic,Gear / Differential
+Iron (Fe),"Cylinder liner, crankshaft, camshaft, gears","Gears, bearings, shafts, clutch components","Pump, cylinder rods, valves","Ring and pinion gears, bearings"
+Copper (Cu),"Bearings, bushings, oil cooler","Clutch plates, bushings, oil cooler","Pump bushings, bearings, oil cooler","Bushings, thrust washers"
+Chromium (Cr),"Piston rings, cylinder liners","Roller bearings, shafts","Cylinder rods, plated surfaces",Roller bearings
+Aluminum (Al),"Pistons, bearings, housing","Pump, thrust washers, housing","Pump housing, bearings","Housing, thrust washers"
+Lead (Pb),Engine bearings,"Bearing materials, some friction components",Certain bearing materials,Certain bearing materials
+Tin (Sn),"Bearings, bushings",Bushings and bearings,Certain bearing materials,Certain bearing materials
+Silicon (Si),"Dust ingestion, sealant, contamination","Dust, dirt, sealant",Dirt ingress and sealant,Dirt ingress and sealant
+Sodium (Na),Possible coolant contamination,Possible water or external contamination,Possible water or external contamination,Possible water or external contamination
+Nickel (Ni),"Valves, shafts, alloy components","Gears, shafts, bearings",Alloy shafts and components,Alloy gears and bearings
+Molybdenum (Mo),Wear metal or lubricant additive,Wear metal or lubricant additive,Wear metal or additive,Wear metal or additive

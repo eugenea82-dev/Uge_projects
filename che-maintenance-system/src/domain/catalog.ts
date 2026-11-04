@@ -25,8 +25,9 @@ export const EQUIPMENT_TYPES: EquipmentType[] = ['Reach Stacker', 'Forklift', 'E
  *  ratioAboveRef      more than N × the reference
  *  isoAboveRef        ISO 4406 code steps above the target code
  *  category           a lab result chosen from a list
+ *  monitor            trended only, never Check/Stop (e.g. molybdenum, often an oil additive)
  */
-export type RuleKind = 'above' | 'below' | 'pctBelowRef' | 'pctAboveRef' | 'pctBandRef' | 'deltaBandRef' | 'deltaAboveRef' | 'ratioAboveRef' | 'isoAboveRef' | 'category'
+export type RuleKind = 'above' | 'below' | 'pctBelowRef' | 'pctAboveRef' | 'pctBandRef' | 'deltaBandRef' | 'deltaAboveRef' | 'ratioAboveRef' | 'isoAboveRef' | 'category' | 'monitor'
 
 /** What the reference is: an OEM target, the new/fresh-oil value, or the unit's own baseline (fleet default until it has enough history). */
 export type RefKind = 'oem' | 'newOil' | 'freshOil' | 'unitBaseline'
@@ -69,6 +70,12 @@ export interface DailyDef extends BaseDef {
 
 export interface LabDef extends BaseDef {
   compartment: OilCompartment
+  /** where the parameter is defined: the CHE data-entry sheet, or the oil-analysis element table */
+  origin?: 'sheet' | 'elements'
+  /** wear/contamination metal from the element table, e.g. "Copper (Cu)" */
+  element?: string
+  /** the element table's text: which components this metal comes from in this compartment */
+  sources?: string
   /** text results: ISO code or a category */
   text?: boolean
   options?: { value: string; level: Level }[]
@@ -198,7 +205,7 @@ const OX_NOTE = 'Fresh-oil oxidation baseline assumed 10 Abs/cm.'
 const FE_NOTE = (ppm: number) =>
   `“Above baseline” quantified as more than 1.5 × the unit’s baseline and “rapid increase” as more than 2 ×; fleet default baseline ${ppm} ppm until the unit has 3 samples.`
 
-export const LAB: LabDef[] = [
+const SHEET_LAB: LabDef[] = [
   // Engine oil
   lab({ key: 'eng.visc100', compartment: 'Engine', csvLocation: 'Engine Oil Analysis', csvName: 'Viscosity @ 100°C', csvWarning: '±15% from new oil', csvCritical: '±25%', indication: 'Oil thickening or thinning; possible oxidation or fuel dilution', label: 'Viscosity at 100 °C', unit: 'cSt', rule: 'pctBandRef', ref: 'newOil', decimals: 1, component: 'Engine', assumed: VISC_NOTE('15W-40', 14.5, 100), defaults: { warning: 15, critical: 25, ref: 14.5, min: 0, max: 60 } }),
   lab({ key: 'eng.water', compartment: 'Engine', csvLocation: 'Engine Oil Analysis', csvName: 'Water Content', csvWarning: 'Above 0.10%', csvCritical: 'Above 0.20%', indication: 'Water contamination, condensation, or coolant leakage', label: 'Water', unit: '%', rule: 'above', component: 'Engine', defaults: { warning: 0.1, critical: 0.2, min: 0, max: 100 } }),
@@ -231,9 +238,112 @@ export const LAB: LabDef[] = [
   lab({ key: 'gear.si', compartment: 'Gear', csvLocation: 'Gear Oil / Differential Oil Analysis', csvName: 'Silicon', csvWarning: 'Above baseline by 10 ppm', csvCritical: 'Above baseline by 20 ppm', indication: 'Possible dirt or dust ingress', label: 'Silicon (dirt)', unit: 'ppm', rule: 'deltaAboveRef', ref: 'unitBaseline', decimals: 0, component: 'Final drive', assumed: 'Fleet default silicon baseline 10 ppm until the unit has 3 samples.', defaults: { warning: 10, critical: 20, ref: 10, min: 0, max: 5000 } }),
 ]
 
+// ---------------------------------------------------------------------------
+// Wear & contamination metals (oil-analysis element table, ICP spectrometry)
+// ---------------------------------------------------------------------------
+// The element table says which components each metal comes from in each oil
+// compartment, but gives no numbers. They are quantified the same way the
+// data-entry sheet treats iron and silicon — against the unit's own baseline:
+// iron as a multiple of baseline, other metals as ppm above baseline. Fleet
+// default baselines apply until a unit has 3 reports. All are assumptions to
+// confirm with the oil laboratory.
+
+export interface ElementDef {
+  sym: string
+  name: string
+  kind: 'wear' | 'contaminant' | 'additive'
+  /** components this metal comes from, per compartment (element table, verbatim) */
+  sources: Record<OilCompartment, string>
+}
+
+export const ELEMENTS: ElementDef[] = [
+  { sym: 'fe', name: 'Iron (Fe)', kind: 'wear', sources: { Engine: 'Cylinder liner, crankshaft, camshaft, gears', Transmission: 'Gears, bearings, shafts, clutch components', Hydraulic: 'Pump, cylinder rods, valves', Gear: 'Ring and pinion gears, bearings' } },
+  { sym: 'cu', name: 'Copper (Cu)', kind: 'wear', sources: { Engine: 'Bearings, bushings, oil cooler', Transmission: 'Clutch plates, bushings, oil cooler', Hydraulic: 'Pump bushings, bearings, oil cooler', Gear: 'Bushings, thrust washers' } },
+  { sym: 'cr', name: 'Chromium (Cr)', kind: 'wear', sources: { Engine: 'Piston rings, cylinder liners', Transmission: 'Roller bearings, shafts', Hydraulic: 'Cylinder rods, plated surfaces', Gear: 'Roller bearings' } },
+  { sym: 'al', name: 'Aluminum (Al)', kind: 'wear', sources: { Engine: 'Pistons, bearings, housing', Transmission: 'Pump, thrust washers, housing', Hydraulic: 'Pump housing, bearings', Gear: 'Housing, thrust washers' } },
+  { sym: 'pb', name: 'Lead (Pb)', kind: 'wear', sources: { Engine: 'Engine bearings', Transmission: 'Bearing materials, some friction components', Hydraulic: 'Certain bearing materials', Gear: 'Certain bearing materials' } },
+  { sym: 'sn', name: 'Tin (Sn)', kind: 'wear', sources: { Engine: 'Bearings, bushings', Transmission: 'Bushings and bearings', Hydraulic: 'Certain bearing materials', Gear: 'Certain bearing materials' } },
+  { sym: 'si', name: 'Silicon (Si)', kind: 'contaminant', sources: { Engine: 'Dust ingestion, sealant, contamination', Transmission: 'Dust, dirt, sealant', Hydraulic: 'Dirt ingress and sealant', Gear: 'Dirt ingress and sealant' } },
+  { sym: 'na', name: 'Sodium (Na)', kind: 'contaminant', sources: { Engine: 'Possible coolant contamination', Transmission: 'Possible water or external contamination', Hydraulic: 'Possible water or external contamination', Gear: 'Possible water or external contamination' } },
+  { sym: 'ni', name: 'Nickel (Ni)', kind: 'wear', sources: { Engine: 'Valves, shafts, alloy components', Transmission: 'Gears, shafts, bearings', Hydraulic: 'Alloy shafts and components', Gear: 'Alloy gears and bearings' } },
+  { sym: 'mo', name: 'Molybdenum (Mo)', kind: 'additive', sources: { Engine: 'Wear metal or lubricant additive', Transmission: 'Wear metal or lubricant additive', Hydraulic: 'Wear metal or additive', Gear: 'Wear metal or additive' } },
+]
+
+const PREFIX: Record<OilCompartment, string> = { Engine: 'eng', Transmission: 'trn', Hydraulic: 'hyd', Gear: 'gear' }
+const LOCATION: Record<OilCompartment, string> = { Engine: 'Engine Oil Analysis', Transmission: 'Transmission Oil Analysis', Hydraulic: 'Hydraulic Oil Analysis', Gear: 'Gear Oil / Differential Oil Analysis' }
+const COMPONENT: Record<OilCompartment, string> = { Engine: 'Engine', Transmission: 'Transmission', Hydraulic: 'Hydraulic system', Gear: 'Final drive' }
+
+/** ppm above the unit's baseline that means Check / Stop, per metal. */
+const ELEMENT_DELTA: Record<string, [number, number]> = { cu: [15, 30], cr: [5, 10], al: [5, 10], pb: [10, 20], sn: [5, 10], ni: [3, 6], si: [10, 20], na: [20, 40] }
+/** Fleet default baseline (ppm) per metal and compartment, used until a unit has 3 reports. */
+const ELEMENT_BASE: Record<string, Record<OilCompartment, number>> = {
+  fe: { Engine: 30, Transmission: 40, Hydraulic: 10, Gear: 150 },
+  cu: { Engine: 10, Transmission: 30, Hydraulic: 10, Gear: 15 },
+  cr: { Engine: 3, Transmission: 2, Hydraulic: 1, Gear: 3 },
+  al: { Engine: 5, Transmission: 5, Hydraulic: 3, Gear: 5 },
+  pb: { Engine: 5, Transmission: 5, Hydraulic: 3, Gear: 5 },
+  sn: { Engine: 2, Transmission: 3, Hydraulic: 2, Gear: 3 },
+  ni: { Engine: 2, Transmission: 2, Hydraulic: 1, Gear: 3 },
+  si: { Engine: 8, Transmission: 10, Hydraulic: 5, Gear: 10 },
+  na: { Engine: 5, Transmission: 5, Hydraulic: 5, Gear: 5 },
+  mo: { Engine: 80, Transmission: 5, Hydraulic: 2, Gear: 5 },
+}
+
+function elementDef(c: OilCompartment, e: ElementDef): LabDef {
+  const base = ELEMENT_BASE[e.sym][c]
+  const common = {
+    key: `${PREFIX[c]}.${e.sym}`,
+    compartment: c,
+    origin: 'elements' as const,
+    element: e.name,
+    sources: e.sources[c],
+    csvLocation: LOCATION[c],
+    csvName: e.name,
+    csvWarning: '',
+    csvCritical: '',
+    label: e.name,
+    unit: 'ppm',
+    strict: true,
+    decimals: 0,
+    component: COMPONENT[c],
+    indication: e.kind === 'wear' ? `Wear from ${e.sources[c].charAt(0).toLowerCase()}${e.sources[c].slice(1)}` : e.sources[c],
+  }
+  if (e.kind === 'additive') {
+    return { ...common, rule: 'monitor', ref: 'newOil', assumed: `Element table gives no limit; trended only (often an oil additive). New-oil level assumed ${base} ppm.`, defaults: { warning: 0, critical: 0, ref: base, min: 0, max: 5000 } }
+  }
+  if (e.sym === 'fe') {
+    return { ...common, rule: 'ratioAboveRef', ref: 'unitBaseline', assumed: `Element table gives no limit. Quantified like the sheet’s ferrous rule: Check above 1.5 × and Stop above 2 × the unit’s baseline; fleet default ${base} ppm until the unit has 3 reports.`, defaults: { warning: 1.5, critical: 2, ref: base, min: 0, max: 5000 } }
+  }
+  const [w, cr] = ELEMENT_DELTA[e.sym]
+  return { ...common, rule: 'deltaAboveRef', ref: 'unitBaseline', assumed: `Element table gives no limit. Quantified as Check above baseline + ${w} ppm and Stop above + ${cr} ppm (like the sheet’s silicon rule); fleet default baseline ${base} ppm until the unit has 3 reports.`, defaults: { warning: w, critical: cr, ref: base, min: 0, max: 5000 } }
+}
+
+/** Sheet parameters that are also metals in the element table keep the sheet's rule and gain the source text. */
+for (const d of SHEET_LAB) {
+  const sym = d.key.split('.')[1]
+  const e = ELEMENTS.find((x) => x.sym === sym)
+  d.origin = 'sheet'
+  if (e) {
+    d.element = e.name
+    d.sources = e.sources[d.compartment]
+  }
+}
+
+export const COMPARTMENTS: OilCompartment[] = ['Engine', 'Transmission', 'Hydraulic', 'Gear']
+export const LAB: LabDef[] = [
+  ...SHEET_LAB,
+  ...COMPARTMENTS.flatMap((c) => ELEMENTS.filter((e) => !SHEET_LAB.some((d) => d.key === `${PREFIX[c]}.${e.sym}`)).map((e) => elementDef(c, e))),
+]
+
+/** A compartment's parameters split into oil-condition results and metals (in element-table order). */
+export function labGroups(c: OilCompartment): { condition: LabDef[]; metals: LabDef[] } {
+  const defs = LAB.filter((d) => d.compartment === c)
+  const order = (d: LabDef) => ELEMENTS.findIndex((e) => e.name === d.element)
+  return { condition: defs.filter((d) => !d.element), metals: defs.filter((d) => d.element).sort((a, b) => order(a) - order(b)) }
+}
+
 export const DAILY_BY_KEY = Object.fromEntries(DAILY.map((d) => [d.key, d])) as Record<ParamKey, DailyDef>
 export const LAB_BY_KEY: Record<LabKey, LabDef> = Object.fromEntries(LAB.map((d) => [d.key, d]))
-export const COMPARTMENTS: OilCompartment[] = ['Engine', 'Transmission', 'Hydraulic', 'Gear']
 export const COMPARTMENT_LABEL: Record<OilCompartment, string> = { Engine: 'Engine oil', Transmission: 'Transmission oil', Hydraulic: 'Hydraulic oil', Gear: 'Gear / differential oil' }
 export const DAILY_SYSTEMS: { id: DailySystem; title: string; icon: string }[] = [
   { id: 'Engine', title: 'Engine', icon: 'gauge' },
@@ -326,6 +436,7 @@ export function parseIso(code: string): number[] | null {
 export function evaluate(def: BaseDef & { options?: LabDef['options'] }, th: Threshold, value: number | string | undefined | null, unitBaseline?: number | null): Level | null {
   if (value === undefined || value === null || value === '') return null
   if (def.rule === 'category') return def.options?.find((o) => o.value === value)?.level ?? null
+  if (def.rule === 'monitor') return typeof value === 'number' && Number.isFinite(value) ? 'ok' : null
   if (def.rule === 'isoAboveRef') {
     const got = parseIso(String(value))
     const target = parseIso(th.refCode ?? '')
@@ -348,6 +459,7 @@ export function bands(def: BaseDef & { options?: LabDef['options'] }, th: Thresh
     const by = (l: Level) => def.options!.filter((o) => o.level === l).map((o) => o.value).join(', ')
     return { ok: by('ok'), check: by('warning'), stop: by('critical') }
   }
+  if (def.rule === 'monitor') return { ok: 'any level — trended only', check: 'not used', stop: 'not used' }
   if (def.rule === 'isoAboveRef') {
     return { ok: `${th.refCode} or cleaner`, check: `${th.warning} code above ${th.refCode}`, stop: `${th.critical}+ codes above ${th.refCode}` }
   }
@@ -389,6 +501,7 @@ export function ruleText(def: BaseDef, th: Threshold): string {
     case 'ratioAboveRef': return `Check > ${th.warning} × ${refName}; Stop > ${th.critical} × ${refName}`
     case 'isoAboveRef': return `Check ≥ ${th.warning} code above target; Stop ≥ ${th.critical} codes above`
     case 'category': return 'Lab result category'
+    case 'monitor': return `Monitor only; new-oil level ${th.ref} ${u}`
   }
 }
 

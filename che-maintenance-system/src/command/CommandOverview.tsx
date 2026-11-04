@@ -40,6 +40,16 @@ export function CommandOverview() {
   const reconciles = Math.abs(sumReq - k.requiredH) < 1e-6 && Math.abs(sumTech - k.techH) < 1e-6
 
   const pm = pmCompliance(data.workOrders, d.weeks[0], now)
+  // Oil condition: latest lab report per unit and compartment in the last 180 days.
+  const latestOil = new Map<string, (typeof data.oil)[number]>()
+  for (const o of data.oil) {
+    if (o.sampledAt < now - 180 * 86_400_000 || d.rel.get(o.assetId)?.excluded) continue
+    const k = `${o.assetId}|${o.compartment}`
+    const p = latestOil.get(k)
+    if (!p || o.sampledAt > p.sampledAt) latestOil.set(k, o)
+  }
+  const oilCritical = new Set([...latestOil.values()].filter((o) => o.severity === 'Critical').map((o) => o.assetId)).size
+  const oilCaution = new Set([...latestOil.values()].filter((o) => o.severity === 'Caution').map((o) => o.assetId)).size
   const planned = plannedRatio(data.workOrders, d.weeks[0])
   const open = data.alerts.filter((a) => a.status !== 'Closed')
   const pendingAuth = open.filter((a) => a.authorization?.state === 'Pending')
@@ -104,6 +114,7 @@ export function CommandOverview() {
           <StatTile label="PM compliance" value={fmtPct(pm.pct)} sub={`${pm.overdue.length} overdue · target ≥ 95%`} tone={(pm.pct ?? 0) >= 95 ? 'ok' : 'warn'} icon="calendar" onClick={() => nav.go({ page: 'pm' })} />
           <StatTile label="Planned maintenance" value={fmtPct(planned)} sub="PM + predictive ÷ all WOs · target ≥ 80%" tone={(planned ?? 0) >= 80 ? 'ok' : 'warn'} icon="sliders" />
           <StatTile label="Open alerts" value={open.length} sub={`${pendingAuth.length} await your authorization · ${overdue.length} past SLA`} tone={pendingAuth.length || overdue.length ? 'danger' : undefined} icon="bell" onClick={() => nav.go({ page: 'alerts' })} />
+          <StatTile label="Oil condition" value={`${oilCritical} / ${oilCaution}`} sub="units Critical / Caution in latest lab report" tone={oilCritical ? 'danger' : oilCaution ? 'warn' : 'ok'} icon="flask" onClick={() => nav.go({ page: 'oil' })} />
           <StatTile label="Alert precision / recall" value={`${fmtPct(perf.precisionPct, 0)} / ${fmtPct(perf.recallPct, 0)}`} sub="targets ≥ 60% / ≥ 70% (BO-04)" tone={(perf.precisionPct ?? 0) >= 60 && (perf.recallPct ?? 0) >= 70 ? 'ok' : 'warn'} icon="pulse" onClick={() => nav.go({ page: 'performance' })} />
         </div>
       </div>

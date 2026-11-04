@@ -28,6 +28,7 @@ const head = [
   'Assumption to confirm',
   'Possible indication',
   'Catalog key',
+  'Source document',
 ]
 
 const esc = (v: string | number) => {
@@ -65,6 +66,7 @@ function dailyRow(d: DailyDef) {
     d.assumed ?? '',
     d.indication,
     d.key,
+    'CHE Data Entry sheet',
   ]
 }
 
@@ -75,12 +77,12 @@ function labRow(d: LabDef) {
     d.csvLocation,
     d.csvName,
     'LBE Specialist Portal (planner / engineer)',
-    `Capture Readings › Oil lab report › ${d.compartment}`,
+    `Capture Readings › Oil lab report › ${d.compartment} › ${d.element ? 'Wear & contamination metals' : 'Oil condition'}`,
     d.label,
     d.unit,
     'Per lab report',
-    d.csvWarning,
-    d.csvCritical,
+    d.csvWarning || (d.origin === 'elements' ? '(not given)' : ''),
+    d.csvCritical || (d.origin === 'elements' ? '(not given)' : ''),
     ruleText(d, t),
     d.rule === 'isoAboveRef' ? `OEM target code: ${t.refCode}` : d.ref ? `${refLabel(d)}: ${t.ref}` : '',
     b.ok,
@@ -89,12 +91,13 @@ function labRow(d: LabDef) {
     'Same for all types',
     d.assumed ? 'Yes' : 'No',
     d.assumed ?? '',
-    d.indication,
+    d.sources && d.origin === 'sheet' ? `${d.indication} (element table: ${d.sources})` : d.indication,
     d.key,
+    d.origin === 'elements' ? 'Oil-analysis element table' : 'CHE Data Entry sheet',
   ]
 }
 
 const rows = [head, ...DAILY.map(dailyRow), ...LAB.map(labRow)]
 const out = new URL('../docs/CHE_Data_Entry_quantified.csv', import.meta.url)
-writeFileSync(out, '﻿' + rows.map((r) => r.map(esc).join(',')).join('\r\n') + '\r\n')
+writeFileSync(out, '\uFEFF' + rows.map((r) => r.map(esc).join(',')).join('\r\n') + '\r\n')
 console.log(`Wrote ${rows.length - 1} parameters to ${out.pathname}`)

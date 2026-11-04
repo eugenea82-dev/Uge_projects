@@ -15,7 +15,7 @@ type NumField = 'warning' | 'critical' | 'ref'
 
 /** Warning must be the milder of the two for the rule to make sense. */
 function orderProblem(def: DailyDef | LabDef, t: Threshold): string | null {
-  if (def.rule === 'category') return null
+  if (def.rule === 'category' || def.rule === 'monitor') return null
   const milderIsLarger = def.rule === 'below'
   const ok = milderIsLarger ? t.warning > t.critical : t.warning < t.critical
   if (!ok) return `${def.label}: the Check value must be ${milderIsLarger ? 'above' : 'below'} the Stop value for this rule.`
@@ -79,7 +79,13 @@ export function ThresholdsPage() {
         <td className="align-top">
           <div className="font-medium">{def.label}</div>
           <div className="text-[11.5px] text-ink-3">
-            Sheet: {def.csvWarning ? `Warning “${def.csvWarning}”` : 'no warning level'} · Critical “{def.csvCritical}”
+            {(def as LabDef).origin === 'elements' ? (
+              <>Element table: {(def as LabDef).sources}</>
+            ) : (
+              <>
+                Sheet: {def.csvWarning ? `Warning “${def.csvWarning}”` : 'no warning level'} · Critical “{def.csvCritical}”
+              </>
+            )}
           </div>
           <AssumedBadge text={def.assumed} />
         </td>
@@ -96,8 +102,8 @@ export function ThresholdsPage() {
             <span className="text-ink-3">—</span>
           )}
         </td>
-        <td className="num align-top">{def.rule === 'category' ? <span className="text-ink-3">list</span> : numInput(`${def.label} check value`, t.warning, (raw) => onCommit('warning', raw))}</td>
-        <td className="num align-top">{def.rule === 'category' ? <span className="text-ink-3">list</span> : numInput(`${def.label} stop value`, t.critical, (raw) => onCommit('critical', raw))}</td>
+        <td className="num align-top">{def.rule === 'category' ? <span className="text-ink-3">list</span> : def.rule === 'monitor' ? <span className="text-ink-3">—</span> : numInput(`${def.label} check value`, t.warning, (raw) => onCommit('warning', raw))}</td>
+        <td className="num align-top">{def.rule === 'category' ? <span className="text-ink-3">list</span> : def.rule === 'monitor' ? <span className="text-ink-3">—</span> : numInput(`${def.label} stop value`, t.critical, (raw) => onCommit('critical', raw))}</td>
         <td className="align-top text-[12px]">
           {b ? (
             <div className="flex flex-col gap-0.5">
@@ -158,7 +164,7 @@ export function ThresholdsPage() {
         {!editable && <span className="text-[12px] text-ink-3">View only — thresholds are set by the Asset Maintenance Manager</span>}
       </div>
       <Caveat>
-        All {DAILY.length + LAB.length} parameters from the CHE Data Entry sheet are quantified here. <b>{assumedCount} use assumed numbers</b> where the sheet says “TBA / As per OEM”, gives no warning level, or measures against an OEM target or new-oil value we do not have yet. Hover “Assumed” to see the assumption; confirm each with the OEM manual or the lab (A-06). Changes apply to the next reading saved and are audited.
+        All {DAILY.length + LAB.length} parameters are quantified here: {DAILY.length + LAB.filter((d) => d.origin === 'sheet').length} from the CHE Data Entry sheet and {LAB.filter((d) => d.origin === 'elements').length} wear and contamination metals from the oil-analysis element table. <b>{assumedCount} use assumed numbers</b> where the sheet says “TBA / As per OEM”, gives no warning level, or measures against an OEM target or new-oil value we do not have yet. Hover “Assumed” to see the assumption; confirm each with the OEM manual or the lab (A-06). Changes apply to the next reading saved and are audited.
       </Caveat>
       {err && (
         <div className="caveat notice-danger" role="alert">

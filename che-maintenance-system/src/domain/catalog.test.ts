@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { describe, it } from 'node:test'
-import { DAILY, DAILY_BY_KEY, EQUIPMENT_TYPES, LAB, LAB_BY_KEY, bands, defaultLabThresholds, defaultThresholds, evaluate, evaluateOilReport, resolveLimits } from './catalog.ts'
+import { COMPARTMENTS, DAILY, DAILY_BY_KEY, ELEMENTS, EQUIPMENT_TYPES, LAB, LAB_BY_KEY, bands, defaultLabThresholds, defaultThresholds, evaluate, evaluateOilReport, resolveLimits } from './catalog.ts'
 
 function parseCsv(text: string): string[][] {
   const rows: string[][] = []
@@ -46,7 +46,7 @@ const daily = defaultThresholds()
 const labTh = defaultLabThresholds()
 
 describe('CSV coverage', () => {
-  const all = [...DAILY, ...LAB]
+  const all = [...DAILY, ...LAB.filter((d) => d.origin === 'sheet')]
   it('has 38 data rows and 38 catalog entries', () => {
     assert.equal(csvRows.length, 38)
     assert.equal(all.length, 38)
@@ -59,6 +59,19 @@ describe('CSV coverage', () => {
       assert.equal(hits[0].csvCritical, crit, `${name} critical`)
       assert.equal(hits[0].indication, TYPO_FIXES[indication.trim()] ?? indication.trim(), `${name} indication`)
     }
+  })
+  it('maps every cell of the oil-analysis element table to one metal parameter, with its source text unchanged', () => {
+    const table = parseCsv(readFileSync(new URL('../../docs/CHE_Oil_Elements_source.csv', import.meta.url), 'utf8')).slice(1)
+    assert.equal(table.length, 10)
+    for (const [element, ...cells] of table) {
+      COMPARTMENTS.forEach((c, i) => {
+        const hits = LAB.filter((d) => d.compartment === c && d.element === element)
+        assert.equal(hits.length, 1, `${c} / ${element}`)
+        assert.equal(hits[0].sources, cells[i], `${c} / ${element} sources`)
+      })
+    }
+    assert.equal(LAB.filter((d) => d.origin === 'elements').length, 36) // 40 cells minus 4 already in the sheet
+    assert.equal(ELEMENTS.length, 10)
   })
   it('routes gauge readings to the daily check and lab results to the oil report', () => {
     assert.equal(DAILY.length, 13)
@@ -81,6 +94,7 @@ describe('Every parameter is quantified', () => {
   it('lab rules resolve to numbers, a target code or a category list', () => {
     for (const d of LAB) {
       if (d.rule === 'category') assert.ok(d.options && d.options.length >= 2)
+      else if (d.rule === 'monitor') assert.ok(Number.isFinite(labTh[d.key].ref))
       else if (d.rule === 'isoAboveRef') assert.ok(labTh[d.key].refCode)
       else assert.ok([resolveLimits(d, labTh[d.key]).highWarn, resolveLimits(d, labTh[d.key]).lowWarn].some((v) => Number.isFinite(v)), d.key)
     }
@@ -139,6 +153,18 @@ describe('Boundaries follow the sheet', () => {
     assert.equal(e('trn.fe', 61, 40), 'warning')
     assert.equal(e('trn.fe', 81, 40), 'critical')
     assert.equal(e('gear.si', 21, 10), 'warning')
+  })
+  it('wear metals are judged against the unit’s baseline and name the worn component', () => {
+    const e = (k: string, v: number, base?: number) => evaluate(LAB_BY_KEY[k], labTh[k], v, base)
+    assert.equal(e('eng.cu', 25), 'ok') // fleet default 10 + 15 = 25, strict
+    assert.equal(e('eng.cu', 26), 'warning')
+    assert.equal(e('eng.cu', 41), 'critical')
+    assert.equal(e('eng.cu', 41, 30), 'ok') // this unit’s own baseline is 30 ppm
+    assert.equal(e('eng.fe', 61), 'critical') // 2 × 30
+    assert.equal(e('eng.mo', 400), 'ok') // monitor only
+    const r = evaluateOilReport('Engine', { 'eng.cr': 20 }, labTh, [])
+    assert.equal(r.severity, 'Critical')
+    assert.match(r.findings[0].indication, /piston rings, cylinder liners/)
   })
   it('an oil report takes the worst parameter as its severity', () => {
     const r = evaluateOilReport('Engine', { 'eng.water': 0.25, 'eng.soot': 3 }, labTh, [])

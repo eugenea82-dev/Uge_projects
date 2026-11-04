@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { AuditPage } from '../command/AuditPage.tsx'
 import { CommandOverview } from '../command/CommandOverview.tsx'
 import { DataSyncPage } from '../command/DataSyncPage.tsx'
+import { OilAnalysisPage } from '../command/OilAnalysisPage.tsx'
 import { PerformancePage } from '../command/PerformancePage.tsx'
 import { PmPage } from '../command/PmPage.tsx'
 import { ReliabilityPage } from '../command/ReliabilityPage.tsx'
@@ -41,6 +42,7 @@ export const PAGES: Record<AppId, PageDef[]> = {
     { id: 'board', title: 'Fleet Status Board', subtitle: 'All 12 locations · current status beside rolling 13-week availability', icon: 'grid', render: (r) => <FleetBoard filter={r.filter} /> },
     { id: 'reliability', title: 'Reliability (A-R-M)', subtitle: 'Roll-ups, MTTR breakdown, downtime Pareto, aging & replacement (FR-37–FR-41)', icon: 'chart', render: () => <ReliabilityPage /> },
     { id: 'alerts', title: 'Alerts & Approvals', subtitle: 'Authorize High/Critical actions; monitor SLA and escalations (FR-20, FR-22)', icon: 'bell', render: (r) => <AlertsPage alertId={r.alertId} /> },
+    { id: 'oil', title: 'Oil Analysis', subtitle: 'Fleet oil condition and wear-source map from lab reports (element table + data-entry sheet)', icon: 'flask', render: () => <OilAnalysisPage /> },
     { id: 'performance', title: 'Prediction Performance', subtitle: 'Alert precision, recall and lead time; model governance (FR-25, NFR-M04/M05)', icon: 'pulse', render: () => <PerformancePage /> },
     { id: 'pm', title: 'PM Compliance', subtitle: 'Scheduled vs. on-time PM work orders from EMMS (FR-44)', icon: 'calendar', render: () => <PmPage /> },
     { id: 'thresholds', title: 'Thresholds', subtitle: 'All 38 CHE data-entry parameters, quantified — Check and Stop limits per type (FR-11)', icon: 'sliders', render: () => <ThresholdsPage /> },
